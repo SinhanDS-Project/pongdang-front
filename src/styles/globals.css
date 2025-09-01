@@ -1,12 +1,31 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 폰트 및 스크롤 관련 전역 설정 */
 :root {
-  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
-    'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --sidebar:
+    hsl(0 0% 98%);
+  --sidebar-foreground:
+    hsl(240 5.3% 26.1%);
+  --sidebar-primary:
+    hsl(240 5.9% 10%);
+  --sidebar-primary-foreground:
+    hsl(0 0% 98%);
+  --sidebar-accent:
+    hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground:
+    hsl(240 5.9% 10%);
+  --sidebar-border:
+    hsl(220 13% 91%);
+  --sidebar-ring:
+    hsl(217.2 91.2% 59.8%);
 }
-html, body { font-family: var(--font-sans); }
+html,
+body {
+  font-family: var(--font-sans);
+}
 
 /* Font */
 body {
@@ -19,13 +38,26 @@ body {
 
 /* 부드러운 스크롤 유틸리티 클래스 */
 @layer utilities {
-  .scroll-smooth { scroll-behavior: smooth; }
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+}
+
+@theme {
+  --color-primary-shinhan: #0046ff;
+  --color-primary-black: #000000;
+  --color-primary-white: #ffffff;
+
+  --color-secondary-light: #8cd2f5;
+  --color-secondary-sky: #4baff5;
+  --color-secondary-royal: #2878f5;
+  --color-secondary-navy: #00236e;
 }
 
 /* --- */
 
 /* 애니메이션 유틸 (tw-animate-css) */
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
