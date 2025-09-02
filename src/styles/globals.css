@@ -44,6 +44,8 @@ body {
   --color-secondary-sky: #4baff5;
   --color-secondary-royal: #2878f5;
   --color-secondary-navy: #00236e;
+
+  --shadow-badge: 0 4px 25px 0 rgba(0, 0, 0, 0.16);
 }
 
 /* --- */
