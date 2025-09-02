@@ -33,6 +33,10 @@ body {
   .scroll-smooth {
     scroll-behavior: smooth;
   }
+  .bg-bubble {
+    background: var(--color-bubble);
+    border-radius: var(--radius-full);
+  }
 }
 
 @theme {
@@ -46,6 +50,8 @@ body {
   --color-secondary-navy: #00236e;
 
   --shadow-badge: 0 4px 25px 0 rgba(0, 0, 0, 0.16);
+  --color-bubble: radial-gradient(50% 50% at 50% 50%, #9ed0f2 50%, #ffffff 100%);
+  --radius-full: 9999px;
 }
 
 /* --- */
