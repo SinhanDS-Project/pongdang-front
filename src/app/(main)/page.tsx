@@ -1,11 +1,9 @@
 import { ChevronRight } from 'lucide-react'
-import Link from 'next/link'
 
 import { AlertBar } from '@/components/main-page/AlertBar'
 import { Banner, BannerCarousel } from '@/components/main-page/BannerCarousel'
 import { CtaSection } from '@/components/main-page/CtaSection'
-import { Card, CardContent } from '@/components/ui/card'
-import { PongIcon } from '@/icons'
+import { StoreItem, StoreSection } from '@/components/main-page/StoreSection'
 import { serverFetchJSON } from '@/lib/net/server-fetch'
 
 export default async function MainHome() {
@@ -46,31 +44,7 @@ export default async function MainHome() {
         ctaHref="#"
         ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
       />
-
-      {/* 퐁당 스토어  */}
-      <div className="mb-8 flex items-center text-3xl font-semibold">
-        <div>퐁당퐁당 스토어</div>
-        <ChevronRight className="size-8" />
-      </div>
-      <div className="flex gap-x-8">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Link href={'#'} className="hover:shadow-badge w-1/4 rounded-xl">
-            <Card key={index} className="p-4">
-              <CardContent className="flex flex-col gap-y-4 p-0">
-                <div className="bg-accent-foreground aspect-6/5 w-full"></div>
-                <div className="text-xl font-bold">상품이름{index + 1}</div>
-                <div className="flex w-full items-center justify-end gap-x-4">
-                  <PongIcon />
-                  <div className="flex items-center gap-x-2">
-                    <div className="text-lg">100</div>
-                    <div className="text-primary-shinhan text-xl font-bold">퐁</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      <StoreSection items={storeItems} />
     </div>
   )
 }
