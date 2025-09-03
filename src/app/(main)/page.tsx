@@ -4,6 +4,30 @@ import Link from 'next/link'
 import { Banner, BannerCarousel } from '@/components/main-page/BannerCarousel'
 import { Card, CardContent } from '@/components/ui/card'
 import { PongIcon } from '@/icons'
+import { serverFetchJSON } from '@/lib/net/server-fetch'
+
+export default async function MainHome() {
+  // 서버사이드에서 API 호출하여 배너 데이터 가져오기
+  let banners: Banner[] = []
+
+  try {
+    const response = await serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', {
+      revalidate: 60,
+      auth: 'none',
+    })
+
+    banners = response.banners
+  } catch (error) {
+    console.error('배너 API 불러오기 실패: ', error)
+
+    banners = Array.from({ length: 3 }).map((_, index) => ({
+      id: `${index + 1}`,
+      title: `Placeholder Banner ${index + 1}`,
+      image_path: '/placeholder-banner.png', // 적절한 플레이스홀더 이미지 경로
+      banner_link_url: '#',
+      description: 'This is a placeholder banner',
+    }))
+  }
 
   return (
     <div className="lg:px-8) container mx-auto px-4 md:px-6">
