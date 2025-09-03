@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
+import { AlertBar } from '@/components/main-page/AlertBar'
 import { Banner, BannerCarousel } from '@/components/main-page/BannerCarousel'
 import { Card, CardContent } from '@/components/ui/card'
 import { PongIcon } from '@/icons'
@@ -33,9 +34,6 @@ export default async function MainHome() {
     <div className="lg:px-8) container mx-auto px-4 md:px-6">
       <BannerCarousel banners={banners} />
 
-      {/* 최신 알림 텍스트 바 */}
-      <div className="shadow-badge mb-8 rounded-full px-8 py-2 text-base">작은 퐁 하나가 내일의 큰 혜택이 됩니다</div>
-
       {/* AI 추천 CTA 섹션 */}
       <div className="bg-bubble mb-8 flex flex-col items-center gap-y-16 py-24">
         <div className="text-primary-shinhan text-5xl font-extrabold">나에게 맞는 금융은 뭐가 있을까?</div>
@@ -59,6 +57,7 @@ export default async function MainHome() {
           나의 금융 소비에 맞는 AI 추천 받으러 가기
         </Link>
       </div>
+      <AlertBar message="작은 퐁 하나가 내일의 큰 혜택이 됩니다" />
 
       {/* 퐁당 스토어  */}
       <div className="mb-8 flex items-center text-3xl font-semibold">
