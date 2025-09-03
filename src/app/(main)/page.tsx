@@ -9,14 +9,15 @@ import { serverFetchJSON } from '@/lib/net/server-fetch'
 export default async function MainHome() {
   // 서버사이드에서 API 호출하여 배너 데이터 가져오기
   let banners: Banner[] = []
+  let storeItems: StoreItem[] = []
 
   try {
-    const response = await serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', {
+    const bannerResponse = await serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', {
       revalidate: 60,
       auth: 'none',
     })
 
-    banners = response.banners
+    banners = bannerResponse.banners
   } catch (error) {
     console.error('배너 API 불러오기 실패: ', error)
 
@@ -26,6 +27,25 @@ export default async function MainHome() {
       image_path: '/placeholder-banner.png', // 적절한 플레이스홀더 이미지 경로
       banner_link_url: '#',
       description: 'This is a placeholder banner',
+    }))
+  }
+
+  try {
+    const storeResponse = await serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=1&size=4', {
+      revalidate: 60,
+      auth: 'none',
+    })
+
+    storeItems = storeResponse.content
+  } catch (error) {
+    console.error('상품 API 불러오기 실패: ', error)
+
+    storeItems = Array.from({ length: 4 }).map((_, index) => ({
+      id: index + 1,
+      name: `product ${index + 1}`,
+      price: 0,
+      img: null, // 적절한 플레이스홀더 이미지 경로
+      product_type: 'GIFT',
     }))
   }
 
