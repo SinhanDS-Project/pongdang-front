@@ -14,7 +14,7 @@ export function SectionTitle({ title, href, className }: SectionTitleProps) {
     <Link
       href={href}
       className={cn(
-        'hover:text-primary-shinhan mb-8 flex items-center text-3xl font-semibold transition-colors hover:underline',
+        'hover:text-primary-shinhan mb-4 flex items-center text-2xl font-semibold transition-colors hover:underline md:mb-8 md:text-3xl',
         className,
       )}
     >
