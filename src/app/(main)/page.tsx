@@ -1,8 +1,7 @@
-import { ChevronRight } from 'lucide-react'
-
 import { AlertBar } from '@/components/main-page/AlertBar'
 import { Banner, BannerCarousel } from '@/components/main-page/BannerCarousel'
 import { CtaSection } from '@/components/main-page/CtaSection'
+import { NoticeItem, NoticeSection } from '@/components/main-page/NoticeSection'
 import { StoreItem, StoreSection } from '@/components/main-page/StoreSection'
 import { serverFetchJSON } from '@/lib/net/server-fetch'
 
@@ -65,6 +64,7 @@ export default async function MainHome() {
         ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
       />
       <StoreSection items={storeItems} />
+      <NoticeSection items={noticeItems} />
     </div>
   )
 }
