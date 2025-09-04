@@ -5,77 +5,55 @@ import { NoticeItem, NoticeSection } from '@/components/main-page/NoticeSection'
 import { StoreItem, StoreSection } from '@/components/main-page/StoreSection'
 import { serverFetchJSON } from '@/lib/net/server-fetch'
 
+export const revalidate = 60 // 페이지 캐시 재생성 주기 (초)
+
 export default async function MainHome() {
-  // 서버사이드에서 API 호출하여 배너, 스토어, 공지사항 데이터 가져오기
-  let banners: Banner[] = []
-  let storeItems: StoreItem[] = []
-  let noticeItems: NoticeItem[] = []
-
-  try {
-    const bannerResponse = await serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', {
-      revalidate: 60,
+  const [bannerResponse, storeResponse, noticeResponse] = await Promise.allSettled([
+    serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', { auth: 'none' }),
+    serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=1&size=4', { auth: 'none' }),
+    serverFetchJSON<{ boards: { content: NoticeItem[] } }>('/api/board?category=NOTICE&page=1&size=5', {
       auth: 'none',
-    })
+    }),
+  ])
 
-    banners = bannerResponse.banners
-  } catch (error) {
-    console.error('배너 API 불러오기 실패: ', error)
+  const banners =
+    bannerResponse.status === 'fulfilled'
+      ? bannerResponse.value.banners
+      : Array.from({ length: 3 }).map((_, i) => ({
+          id: `${i + 1}`,
+          title: `Placeholder Banner ${i + 1}`,
+          image_path: '/placeholder-banner.png',
+          banner_link_url: '#',
+          description: 'This is a placeholder banner',
+        }))
 
-    banners = Array.from({ length: 3 }).map((_, index) => ({
-      id: `${index + 1}`,
-      title: `Placeholder Banner ${index + 1}`,
-      image_path: '/placeholder-banner.png', // 적절한 플레이스홀더 이미지 경로
-      banner_link_url: '#',
-      description: 'This is a placeholder banner',
-    }))
-  }
+  const storeItems =
+    storeResponse.status === 'fulfilled'
+      ? storeResponse.value.content
+      : Array.from({ length: 4 }).map((_, index) => ({
+          id: index + 1,
+          name: `product ${index + 1}`,
+          price: 0,
+          img: null, // 적절한 플레이스홀더 이미지 경로
+          product_type: 'GIFT',
+        }))
 
-  try {
-    const storeResponse = await serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=1&size=4', {
-      revalidate: 60,
-      auth: 'none',
-    })
-
-    storeItems = storeResponse.content
-  } catch (error) {
-    console.error('상품 API 불러오기 실패: ', error)
-
-    storeItems = Array.from({ length: 4 }).map((_, index) => ({
-      id: index + 1,
-      name: `product ${index + 1}`,
-      price: 0,
-      img: null, // 적절한 플레이스홀더 이미지 경로
-      product_type: 'GIFT',
-    }))
-  }
-
-  try {
-    const noticeResponse = await serverFetchJSON<{ boards: { content: NoticeItem[] } }>(
-      '/api/board?category=NOTICE&page=1&size=5',
-      {
-        revalidate: 60,
-        auth: 'none',
-      },
-    )
-
-    noticeItems = noticeResponse.boards.content
-  } catch (error) {
-    console.error('공지사항 API 불러오기 실패: ', error)
-
-    noticeItems = Array.from({ length: 5 }).map((_, index) => ({
-      id: index + 1,
-      title: `공지사항 제목 ${index + 1}`,
-      category: 'NOTICE',
-      content: 'This is a placeholder notice content',
-      nickname: '관리자',
-      created_at: `2024-10-0${index + 1}`,
-      view_count: 0,
-      user_id: 0,
-    }))
-  }
+  const noticeItems =
+    noticeResponse.status === 'fulfilled'
+      ? noticeResponse.value.boards.content
+      : Array.from({ length: 5 }).map((_, index) => ({
+          id: index + 1,
+          title: `공지사항 제목 ${index + 1}`,
+          category: 'NOTICE',
+          content: 'This is a placeholder notice content',
+          nickname: '관리자',
+          created_at: `2024-10-0${index + 1}`,
+          view_count: 0,
+          user_id: 0,
+        }))
 
   return (
-    <div className="lg:px-8) container mx-auto px-4 md:px-6">
+    <div className="container mx-auto px-4 md:px-6 lg:px-8">
       <BannerCarousel banners={banners} />
       <AlertBar message="작은 퐁 하나가 내일의 큰 혜택이 됩니다" />
       <CtaSection
