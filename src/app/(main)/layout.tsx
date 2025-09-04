@@ -5,7 +5,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
       <AppHeader />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="py-8 pb-48 md:p-8">{children}</main>
     </div>
   )
 }
