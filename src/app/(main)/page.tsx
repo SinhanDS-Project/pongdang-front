@@ -6,9 +6,10 @@ import { StoreItem, StoreSection } from '@/components/main-page/StoreSection'
 import { serverFetchJSON } from '@/lib/net/server-fetch'
 
 export default async function MainHome() {
-  // 서버사이드에서 API 호출하여 배너 데이터 가져오기
+  // 서버사이드에서 API 호출하여 배너, 스토어, 공지사항 데이터 가져오기
   let banners: Banner[] = []
   let storeItems: StoreItem[] = []
+  let noticeItems: NoticeItem[] = []
 
   try {
     const bannerResponse = await serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', {
@@ -45,6 +46,31 @@ export default async function MainHome() {
       price: 0,
       img: null, // 적절한 플레이스홀더 이미지 경로
       product_type: 'GIFT',
+    }))
+  }
+
+  try {
+    const noticeResponse = await serverFetchJSON<{ boards: { content: NoticeItem[] } }>(
+      '/api/board?category=NOTICE&page=1&size=5',
+      {
+        revalidate: 60,
+        auth: 'none',
+      },
+    )
+
+    noticeItems = noticeResponse.boards.content
+  } catch (error) {
+    console.error('공지사항 API 불러오기 실패: ', error)
+
+    noticeItems = Array.from({ length: 5 }).map((_, index) => ({
+      id: index + 1,
+      title: `공지사항 제목 ${index + 1}`,
+      category: 'NOTICE',
+      content: 'This is a placeholder notice content',
+      nickname: '관리자',
+      created_at: `2024-10-0${index + 1}`,
+      view_count: 0,
+      user_id: 0,
     }))
   }
 
