@@ -117,7 +117,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                   />
                 </div>
                 <div className="min-h-5">{error ? <p className="text-sm text-red-600">{error}</p> : null}</div>
-                <Button type="submit" className="bg-secondary-royal w-full" disabled={loading}>
+                <Button type="submit" className="bg-secondary-royal hover:bg-secondary-navy w-full" disabled={loading}>
                   {loading ? '로그인 중…' : '로그인'}
                 </Button>
                 <div className="text-center text-sm">

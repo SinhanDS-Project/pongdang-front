@@ -1,8 +1,20 @@
 'use client'
 
+import { Menu } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+import { cn } from '@/lib/utils'
+
+import { useAuthStore } from '@/stores/auth-store'
+
+import { useAuth } from '@/components/providers/auth-provider'
+
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,10 +25,6 @@ import {
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { cn } from '@/lib/utils'
-import { Menu } from 'lucide-react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 
 const NAVIGATIONMENU = [
   { href: '/', label: '서비스 소개' },
@@ -49,6 +57,9 @@ const NAVIGATIONMENU = [
 ] as const
 
 export function AppHeader() {
+  const { logout } = useAuth()
+  const user = useAuthStore((state) => state.user)
+
   const pathname = usePathname()
 
   return (
@@ -73,7 +84,7 @@ export function AppHeader() {
                         <Link
                           href={item.href}
                           className={cn(
-                            'text-foreground/90 hover:text-foreground relative text-sm font-medium transition-colors',
+                            'text-foreground/90 hover:text-foreground relative bg-transparent text-sm font-medium transition-colors hover:bg-transparent',
                             isActive && 'text-foreground font-semibold',
                           )}
                         >
@@ -112,24 +123,28 @@ export function AppHeader() {
           </NavigationMenu>
 
           <div className="flex items-center gap-4">
-            {/* 로그인: 비로그인 시 */}
-            <Button variant="outline">로그인</Button>
-
-            {/* 아바타(데스크톱): 로그인 시 */}
-            {/* <DropdownMenu>
-              <DropdownMenuTrigger className="hidden rounded-full ring-0 outline-none md:block">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">마이페이지</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alert('로그아웃 TODO')}>로그아웃</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> */}
+            {!user ? (
+              // 로그인: 비로그인 시
+              <Link href="/signin" className="hidden md:block" aria-label="로그인 페이지로 이동">
+                <Button variant="outline">로그인</Button>
+              </Link>
+            ) : (
+              // 아바타(데스크톱): 로그인 시
+              <DropdownMenu>
+                <DropdownMenuTrigger className="hidden rounded-full ring-0 outline-none md:block">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">마이페이지</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>로그아웃</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <ThemeToggle />
 
@@ -193,21 +208,23 @@ export function AppHeader() {
 
                 {/* 프로필/테마 (모바일 시트 하단에) */}
                 <div className="mt-6 border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">테마</span>
-                    <ThemeToggle />
-                  </div>
-                  <div className="mt-3">
-                    <Link href="/profile" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
-                      프로필
+                  {!user ? (
+                    <Link href="/signin" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
+                      로그인
                     </Link>
-                    <button
-                      onClick={() => alert('로그아웃 TODO')}
-                      className="hover:bg-muted mt-1 w-full rounded-md px-3 py-2 text-left text-sm"
-                    >
-                      로그아웃
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="mt-3">
+                      <Link href="/profile" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
+                        프로필
+                      </Link>
+                      <button
+                        onClick={logout}
+                        className="hover:bg-muted mt-1 w-full rounded-md px-3 py-2 text-left text-sm"
+                      >
+                        로그아웃
+                      </button>
+                    </div>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
