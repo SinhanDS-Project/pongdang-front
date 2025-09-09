@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import '@styles/globals.css'
 
+import { AuthProvider } from '@/components/providers/auth-provider'
 import { ThemeProvider } from '@components/providers/theme-provider'
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="bg-background text-foreground min-h-dvh antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </body>
     </html>
