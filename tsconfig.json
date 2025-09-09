@@ -52,6 +52,12 @@
       ],
       "@lib/*": [
         "./src/lib/*"
+      ],
+      "@types/*": [
+        "./src/types/*"
+      ],
+      "@features/*": [
+        "./src/features/*"
       ]
     }
   },
