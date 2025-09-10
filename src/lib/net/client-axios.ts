@@ -20,6 +20,11 @@ const api = axios.create({
   withCredentials: true, // 중요: refresh HttpOnly 쿠키 전송을 위해 필요
 })
 
+const apiPublic = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL, // 예: https://api.example.com
+  withCredentials: false, // 중요: refresh HttpOnly 쿠키 전송을 위해 필요
+})
+
 // ----- 요청 인터셉터: access 토큰 자동 주입
 api.interceptors.request.use((config) => {
   // auth 엔드포인트에는 토큰 주입/변조 하지 않음
@@ -116,4 +121,4 @@ api.interceptors.response.use(
   },
 )
 
-export default api
+export { api, apiPublic }
