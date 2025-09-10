@@ -262,7 +262,13 @@ export function StepNickName() {
         />
 
         {/* 서버 에러 */}
-        <div className="min-h-5">{serverError ? <p className="text-sm text-red-600">{serverError}</p> : null}</div>
+        <div className="min-h-5">
+          {serverError ? (
+            <p className="text-sm text-red-600">
+              {typeof serverError === 'string' ? serverError : JSON.stringify(serverError)}
+            </p>
+          ) : null}
+        </div>
 
         <div className="flex gap-2">
           <Button type="submit" className="bg-secondary-royal hover:bg-secondary-navy w-full" disabled={submitting}>

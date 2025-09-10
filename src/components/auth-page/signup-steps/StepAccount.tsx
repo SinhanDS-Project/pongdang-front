@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Lock, Mail, Send } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { step2Schema, type Step2 } from '@lib/auth/signup-schemas'
@@ -39,12 +39,20 @@ export function StepAccount() {
       email: emailLockedSnap ? emailSnap : emailSnap,
       password: '',
       passwordConfirm: '',
-      emailVerified: emailVerifiedSnap,
-      emailLockedFromBetting: emailLockedSnap,
+      emailVerified: emailVerifiedSnap ? true : emailVerifiedSnap,
+      emailLockedFromBetting: emailLockedSnap ?? false,
       emailCode: '',
     },
     mode: 'onChange',
   })
+
+  useEffect(() => {
+    if (emailLockedSnap) {
+      form.setValue('emailVerified', true, { shouldValidate: true })
+      form.setValue('emailLockedFromBetting', true, { shouldValidate: true })
+      form.clearErrors(['emailCode', 'emailVerified'])
+    }
+  }, [emailLockedSnap, form])
 
   // 이메일 인증 버튼 활성화 여부
   const emailLocked = form.watch('emailLockedFromBetting') === true
@@ -101,7 +109,6 @@ export function StepAccount() {
   }
 
   function onSubmit(values: Step2) {
-    console.log("🚀 ~ onSubmit ~ values:", values)
     patch({
       email: values.email,
       password: values.password,
@@ -132,9 +139,6 @@ export function StepAccount() {
             <p className="text-muted-foreground mt-2 text-xs">
               베팅포인트에서 가져온 이메일입니다. 이 단계에서는 이메일 변경/인증이 생략됩니다.
             </p>
-
-            {/* 스키마 만족을 위한 hidden 필드 */}
-            <input type="hidden" value="true" {...form.register('emailVerified')} />
           </div>
         ) : (
           <>
@@ -176,7 +180,15 @@ export function StepAccount() {
 
             {/* 인증 코드 입력 */}
             <div className="mb-2 flex items-center gap-2">
-              <Input placeholder="인증코드 6자리" inputMode="numeric" autoComplete="one-time-code" />
+              <FormField
+                control={form.control}
+                name="emailCode"
+                render={({ field }) => (
+                  <FormControl>
+                    <Input placeholder="인증코드 6자리" inputMode="numeric" autoComplete="one-time-code" {...field} />
+                  </FormControl>
+                )}
+              />
               <Button
                 type="button"
                 onClick={onVerifyEmailCode}
@@ -189,19 +201,7 @@ export function StepAccount() {
             </div>
 
             {/* 이메일 인증 완료 플래그 */}
-            <FormField
-              control={form.control}
-              name="emailVerified"
-              render={({ field }) => (
-                <FormItem className="mb-2">
-                  <Input type="hidden" {...field} value={String(field.value)} />
-                  <p className="h-4 text-xs text-emerald-600">
-                    {form.getValues('emailVerified') && '이메일 인증 완료'}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {form.watch('emailVerified') && <p className="mb-2 h-4 text-xs text-emerald-600">이메일 인증 완료</p>}
           </>
         )}
 
