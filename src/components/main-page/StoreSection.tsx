@@ -43,7 +43,7 @@ export function StoreSection({ items }: { items: StoreItem[] }) {
 
                 {/* 가격 */}
                 <div className="flex w-full items-center justify-end gap-x-3 sm:gap-x-4">
-                  <PongIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <PongIcon />
                   <div className="flex items-center gap-x-1 sm:gap-x-2">
                     <div className="text-sm sm:text-base md:text-lg">{item.price}</div>
                     <div className="text-primary-shinhan text-base font-bold sm:text-lg md:text-xl">퐁</div>
