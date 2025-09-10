@@ -12,27 +12,24 @@ import { cn } from '@lib/utils'
 
 import { login } from '@features/auth'
 
+import { ForgotAccountDialog } from '@/components/auth-page/forgot-account-dialog/ForgotAccountDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+// ---------- 로그인 스키마 ----------
 const LoginSchema = z.object({
-  email: z
-    .string()
-    .min(1, '이메일을 입력해주세요.') // 공백 검사
-    .email('올바른 이메일 주소를 입력해주세요.'), // 이메일 형식 검사
-
+  email: z.string().min(1, '이메일을 입력해주세요.').email('올바른 이메일 주소를 입력해주세요.'),
   password: z
     .string()
-    .min(6, '비밀번호는 최소 6자 이상이어야 합니다.') // 길이 검사
-    .regex(/[A-Z]/, '비밀번호에는 대문자가 최소 1개 포함되어야 합니다.') // 대문자
-    .regex(/[a-z]/, '비밀번호에는 소문자가 최소 1개 포함되어야 합니다.') // 소문자
-    .regex(/[0-9]/, '비밀번호에는 숫자가 최소 1개 포함되어야 합니다.') // 숫자
-    .regex(/[^A-Za-z0-9]/, '비밀번호에는 특수문자가 최소 1개 포함되어야 합니다.'), // 특수문자
+    .min(6, '비밀번호는 최소 6자 이상이어야 합니다.')
+    .regex(/[A-Z]/, '대문자 최소 1개')
+    .regex(/[a-z]/, '소문자 최소 1개')
+    .regex(/[0-9]/, '숫자 최소 1개')
+    .regex(/[^A-Za-z0-9]/, '특수문자 최소 1개'),
 })
-
 type LoginFormData = z.infer<typeof LoginSchema>
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
@@ -41,26 +38,23 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
     mode: 'onChange',
   })
-
   const loading = form.formState.isSubmitting
 
   async function onSubmit(formData: LoginFormData) {
     setError(null)
-
     try {
       await login(formData)
-
-      router.push('/') // 로그인 성공 시 메인 페이지로 이동
+      router.push('/')
     } catch (err) {
       setError((err as Error).message || '로그인에 실패했습니다. 다시 시도해주세요.')
     }
   }
+
+  // ====== 찾기/재설정 다이얼로그 상태 ======
+  const [forgotOpen, setForgotOpen] = useState(false)
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)} {...props}>
@@ -75,6 +69,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                   </Link>
                   <p className="text-muted-foreground text-balance">건강한 금융 습관, 퐁당퐁당과 시작하세요</p>
                 </div>
+
+                {/* 이메일 */}
                 <div className="grid gap-3">
                   <Label htmlFor="email">아이디 (Email)</Label>
                   <FormField
@@ -96,12 +92,19 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                     )}
                   />
                 </div>
+
+                {/* 비밀번호 */}
                 <div className="grid gap-3">
                   <div className="flex items-center">
                     <Label htmlFor="password">비밀번호</Label>
-                    <Link href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
-                      비밀번호를 잊으셨나요?
-                    </Link>
+                    <button
+                      type="button"
+                      className="ml-auto text-sm underline-offset-2 hover:underline"
+                      onClick={() => setForgotOpen(true)}
+                    >
+                      계정을 잊으셨나요?
+                    </button>
+                    <ForgotAccountDialog open={forgotOpen} onOpenChange={setForgotOpen} />
                   </div>
                   <FormField
                     control={form.control}
@@ -116,10 +119,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                     )}
                   />
                 </div>
+
                 <div className="min-h-5">{error ? <p className="text-sm text-red-600">{error}</p> : null}</div>
                 <Button type="submit" className="bg-secondary-royal hover:bg-secondary-navy w-full" disabled={loading}>
                   {loading ? '로그인 중…' : '로그인'}
                 </Button>
+
                 <div className="text-center text-sm">
                   계정이 없으신가요?{' '}
                   <Link href="/signup" className="underline underline-offset-4">
@@ -129,13 +134,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               </div>
             </form>
           </Form>
+
+          {/* 우측 이미지 */}
           <div className="bg-muted relative hidden md:block">
             <Image
               src="/auth-background.png"
-              alt="Image"
+              alt="로그인 배경"
               fill
-              content='"cover'
+              sizes="(max-width: 768px) 0, (max-width: 1200px) 50vw, 50vw"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              priority
             />
           </div>
         </CardContent>
