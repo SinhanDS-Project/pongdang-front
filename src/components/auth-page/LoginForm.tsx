@@ -22,13 +22,7 @@ import { Label } from '@/components/ui/label'
 // ---------- 로그인 스키마 ----------
 const LoginSchema = z.object({
   email: z.string().min(1, '이메일을 입력해주세요.').email('올바른 이메일 주소를 입력해주세요.'),
-  password: z
-    .string()
-    .min(6, '비밀번호는 최소 6자 이상이어야 합니다.')
-    .regex(/[A-Z]/, '대문자 최소 1개')
-    .regex(/[a-z]/, '소문자 최소 1개')
-    .regex(/[0-9]/, '숫자 최소 1개')
-    .regex(/[^A-Za-z0-9]/, '특수문자 최소 1개'),
+  password: z.string(),
 })
 type LoginFormData = z.infer<typeof LoginSchema>
 
