@@ -1,5 +1,5 @@
 import { tokenStore } from '@/lib/auth/token-store'
-import api from '@/lib/net/client-axios'
+import { api, apiPublic } from '@/lib/net/client-axios'
 
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -56,7 +56,7 @@ export type RegisterResponse = {
 }
 
 export async function register(payload: RegisterRequest) {
-  const res = await api.post<RegisterResponse>('/api/auth/register', payload)
+  const res = await apiPublic.post<RegisterResponse>('/api/auth/register', payload)
   return res.data
 }
 
@@ -72,14 +72,14 @@ export type BettingUser = {
 
 export async function findBettingUser(payload: { name: string; phone: string }) {
   // phone은 API 예시대로 하이픈 포함값을 사용 (010-xxxx-xxxx)
-  const res = await api.post<BettingUser>('/api/auth/find-betting-user', payload)
+  const res = await apiPublic.post<BettingUser>('/api/auth/find-betting-user', payload)
   return res.data
 }
 
 /** 닉네임 중복 검사: 사용 가능하면 true, 아니면 false 반환 */
 export async function checkNicknameDup(nickname: string): Promise<boolean> {
   try {
-    const res = await api.get(`/api/auth/check-nickname?nickname=${nickname}`)
+    const res = await apiPublic.get(`/api/auth/check-nickname?nickname=${nickname}`)
 
     if (typeof res.data?.duplicate === 'boolean') {
       return !res.data.duplicate // 중복 여부를 반대로 반환 (중복이면 false, 사용 가능하면 true)
@@ -93,7 +93,7 @@ export async function checkNicknameDup(nickname: string): Promise<boolean> {
 
 /** 이메일 인증번호 발송 */
 export async function requestEmailCode(email: string) {
-  const { data } = await api.post(
+  const { data } = await apiPublic.post(
     '/api/email/request',
     { email },
     {
@@ -105,7 +105,7 @@ export async function requestEmailCode(email: string) {
 
 /** 이메일 인증번호 검증 */
 export async function verifyEmailCode(email: string, code: string) {
-  const { data } = await api.post(
+  const { data } = await apiPublic.post(
     '/api/email/verify',
     { email, code },
     {
@@ -117,7 +117,7 @@ export async function verifyEmailCode(email: string, code: string) {
 
 /** 인증번호 발송 */
 export async function sendPhoneCode(phone: string) {
-  const { data } = await api.post(
+  const { data } = await apiPublic.post(
     '/api/auth/phone/send',
     { phone }, // 서버 예시가 하이픈 포함이라 그대로 보냄
     { headers: { 'Content-Type': 'application/json' } },
@@ -127,10 +127,45 @@ export async function sendPhoneCode(phone: string) {
 
 /** 인증번호 검증 */
 export async function verifyPhoneCode(phone: string, code: string) {
-  const { data } = await api.post(
+  const { data } = await apiPublic.post(
     '/api/auth/phone/verify',
     { phone, code },
     { headers: { 'Content-Type': 'application/json' } },
+  )
+  return data
+}
+
+// 아이디(이메일) 찾기: 이름+휴대폰 → 이메일 반환
+export async function findEmailByNamePhone(params: { user_name: string; phone_number: string }) {
+  try {
+    const res = await apiPublic.get('/api/user/findEmail', {
+      params: {
+        user_name: params.user_name,
+        phone_number: params.phone_number.replace(/-/g, ''), // 하이픈 제거
+      },
+    })
+    return res.data as { email: string }
+  } catch (error: any) {
+    // axios 에러 메시지 핸들링
+    throw new Error(error?.response?.data?.message || '아이디(이메일) 찾기에 실패했습니다.')
+  }
+}
+
+// 임시 비밀번호 발송 (예시 엔드포인트)
+// 실제 스펙이 있다면 URL/Body를 맞춰주세요.
+export async function sendTempPassword(email: string) {
+  const res = await apiPublic.post('/api/email/password', { email: email })
+  return res.data
+}
+
+/** 비밀번호 찾기 이메일 인증번호 발송 */
+export async function findPasswordRequestEmailCode(email: string) {
+  const { data } = await apiPublic.post(
+    '/api/email/find/request',
+    { email },
+    {
+      headers: { 'Content-Type': 'application/json' },
+    },
   )
   return data
 }
