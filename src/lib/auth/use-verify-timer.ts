@@ -38,9 +38,18 @@ export function useVerifyTimer(initial = 60) {
     }, 1000)
   }, [])
 
+  // ✅ 인증 타이머 & 쿨다운 모두 리셋
   const reset = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
+    if (cdRef.current) clearInterval(cdRef.current)
     setSeconds(0)
+    setCooldown(0)
+  }, [])
+
+  // (선택) 쿨다운만 리셋하고 싶을 때
+  const resetCooldown = useCallback(() => {
+    if (cdRef.current) clearInterval(cdRef.current)
+    setCooldown(0)
   }, [])
 
   useEffect(
@@ -59,5 +68,6 @@ export function useVerifyTimer(initial = 60) {
     start, // 인증요청 시 start(60)
     startCooldown, // 인증요청 후 재전송 쿨다운 start(30)
     reset,
+    resetCooldown,
   }
 }
