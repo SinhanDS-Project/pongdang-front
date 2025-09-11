@@ -1,26 +1,34 @@
-const ACCESS_KEY = 'access_token'
+// token-store.ts
+class TokenStore {
+  private ACCESS_KEY = 'access_token'
+  private listeners = new Set<() => void>()
 
-let accessTokenMemory: string | null = null
-
-export const tokenStore = {
-  get() {
-    if (typeof window === 'undefined') return accessTokenMemory
-    return accessTokenMemory ?? localStorage.getItem(ACCESS_KEY)
-  },
-  set(token: string | null) {
-    accessTokenMemory = token
-    if (typeof window !== 'undefined') {
-      if (token) localStorage.setItem(ACCESS_KEY, token)
-      else localStorage.removeItem(ACCESS_KEY)
-    }
-  },
   hydrateFromStorage() {
-    if (typeof window === 'undefined') return
-    const v = localStorage.getItem(ACCESS_KEY)
-    accessTokenMemory = v
-    return v
-  },
+    /* 그대로 */
+  }
+
+  get() {
+    return localStorage.getItem(this.ACCESS_KEY)
+  }
+
+  set(token: string) {
+    localStorage.setItem(this.ACCESS_KEY, token)
+    this.emit()
+  }
+
   clear() {
-    this.set(null)
-  },
+    localStorage.removeItem(this.ACCESS_KEY)
+    this.emit()
+  }
+
+  subscribe(fn: () => void) {
+    this.listeners.add(fn)
+    return () => this.listeners.delete(fn)
+  }
+
+  private emit() {
+    for (const fn of this.listeners) fn()
+  }
 }
+
+export const tokenStore = new TokenStore()

@@ -53,6 +53,10 @@ body {
 
   --color-placeholder: #eff1f3;
 
+  --color-game-hard: #fd4646;
+  --color-game-normal: #19af06;
+  --color-game-easy: #9ed0f2;
+
   --shadow-badge: 0 4px 25px 0 rgba(0, 0, 0, 0.16);
 }
 

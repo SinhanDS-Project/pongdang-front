@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { tokenStore } from '@/lib/auth/token-store'
-import api from '@/lib/net/client-axios'
+import { api } from '@/lib/net/client-axios'
 import { useAuthStore } from '@/stores/auth-store'
 
 import type { User } from '@/types/auth'
@@ -58,11 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokenStore.hydrateFromStorage()
     loadMe()
 
+    // 같은 탭 토큰 변경에도 반응
+    const unsubToken = tokenStore.subscribe(loadMe)
+
+    // 다른 탭용
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'access_token') {
-        // 토큰 변경 → me 재조회
-        loadMe()
-      }
+      if (e.key === 'access_token') loadMe()
     }
     window.addEventListener('storage', onStorage)
 
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted.current = false
       inFlight.current?.abort()
+      unsubToken()
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('focus', onFocus)
     }

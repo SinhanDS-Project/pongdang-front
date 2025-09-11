@@ -13,6 +13,7 @@ import { cn } from '@lib/utils'
 import { login } from '@features/auth'
 
 import { ForgotAccountDialog } from '@/components/auth-page/forgot-account-dialog/ForgotAccountDialog'
+import { useAuth } from '@/components/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
@@ -28,6 +29,7 @@ type LoginFormData = z.infer<typeof LoginSchema>
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const router = useRouter()
+  const { refetch } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<LoginFormData>({
@@ -41,6 +43,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     setError(null)
     try {
       await login(formData)
+      refetch()
       router.push('/')
     } catch (err) {
       setError((err as Error).message || '로그인에 실패했습니다. 다시 시도해주세요.')
