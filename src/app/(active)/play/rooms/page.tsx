@@ -6,8 +6,11 @@ import { GameRoomCard } from '@/components/play-page/room/GameRoomCard'
 import { PongPagination } from '@/components/PongPagination'
 import { Button } from '@/components/ui/button'
 import { GameIcon } from '@/icons'
+import { api } from '@/lib/net/client-axios'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Client } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 
 type GameRoom = {
   id: number
@@ -29,26 +32,65 @@ export default function PlayRoomsHome() {
   const page = Number(searchParams.get('page') ?? '1')
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [allRooms, setAllRooms] = useState<GameRoom[]>([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const totalPages = Math.max(1, Math.ceil(TOTAL_ROOMS / PAGE_SIZE))
+  // 1️⃣ API 호출
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setError(null)
 
-  const roomsThisPage: GameRoom[] = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    const end = Math.min(start + PAGE_SIZE, TOTAL_ROOMS)
-    return Array.from({ length: end - start }, (_, i) => {
-      const idx = start + i + 1
-      return {
-        id: idx,
-        title: `거북이 게임하기 #${idx}`,
-        entry_fee: 10 + (idx % 3) * 5,
-        status: idx % 4 === 0 ? 'PLAYING' : 'WAITING',
-        level: (['EASY', 'NORMAL', 'HARD'] as const)[idx % 3],
-        game_name: 'Turtle Run',
-        count: idx % 8,
-      }
-    })
+    api.get(`/api/gameroom?page=${page}`)
+      .then(({ data }) => {
+        if (!alive) return
+        setAllRooms(data.game_rooms.content)
+        setTotalPages(data.total_pages)
+      })
+      .catch((e: any) => {
+        if (!alive) return
+        setError(e?.message ?? '게임방 목록을 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+
+    return () => { alive = false }
   }, [page])
 
+  // 2️⃣ 웹소켓 연결
+  useEffect(() => {
+    const socket = new SockJS(process.env.NEXT_PUBLIC_WEBSOCKET_URL as string) // 서버 WebSocket 엔드포인트
+    const client = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+    })
+
+    client.onConnect = () => {
+
+      // 게임방 리스트 구독
+      client.subscribe('/topic/gameroom', (msg) => {
+        const body = JSON.parse(msg.body)
+        if (body.type === 'list') {
+          setAllRooms(body.data)
+          setTotalPages(Math.ceil(body.data.length / PAGE_SIZE))
+        }
+      })
+    }
+
+    client.activate()
+
+    return () => { client.deactivate() }
+  }, [])
+
+  // ---- 현재 페이지만 slice ----
+  const roomsThisPage = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return allRooms.slice(start, start + PAGE_SIZE)
+  }, [allRooms, page])
+  
   const roomsWithPlaceholders = useMemo(() => {
     const placeholders = Array.from({ length: Math.max(0, PAGE_SIZE - roomsThisPage.length) }, () => null)
     return [...roomsThisPage, ...placeholders]
@@ -68,9 +110,14 @@ export default function PlayRoomsHome() {
     //   game_name: data.game === 'TURTLE' ? 'Turtle Run' : 'Mugunghwa',
     //   level: data.level,
     // })
+    await api.post(`/api/gameroom`, {
+      title: data.title,
+      game_level_id: data.level,
+    })
     console.log('create room:', data)
     // 생성 후 목록 새로고침/데이터 refetch
     router.refresh?.()
+    setCreateOpen(false)
   }
 
   return (
@@ -78,7 +125,7 @@ export default function PlayRoomsHome() {
       <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
         <div className="flex items-center gap-2">
           <div className="text-foreground/70">
-            다같이 퐁!<span className="text-secondary-royal">게임밤</span>
+            다같이 퐁!<span className="text-secondary-royal">게임방</span>
           </div>
           <GameIcon />
         </div>
