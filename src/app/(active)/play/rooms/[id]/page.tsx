@@ -9,12 +9,17 @@ import { Input } from '@/components/ui/input'
 import { HostIcon, PlayerIcon } from '@/icons'
 import { cn } from '@/lib/utils'
 import { X } from 'lucide-react'
+import { api } from '@/lib/net/client-axios'
+import SockJS from 'sockjs-client'
+import { Client } from '@stomp/stompjs'
+import { useAuthStore } from '@/stores/auth-store'
 
 type Player = {
-  id: number
-  name: string
-  ready: boolean
+  userId: number
+  nickname: string
+  isReady: boolean
   isHost?: boolean
+  turtleId: string
 }
 
 type RoomDetail = {
@@ -47,18 +52,7 @@ export default function GameRoomPage() {
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // 데모용 내 유저 id (실제엔 auth-store에서 가져와 주세요)
-  // const userId = useAuthStore((s) => s.user?.id)
-  const userId = 15 // 데모
-
-  // --- 데모 상태 (실제에선 서버/소켓에서 주입) ---
-  const [players, setPlayers] = useState<Player[]>([
-    { id: 1, name: '암신한', ready: false, isHost: true },
-    { id: 2, name: '플레이어1', ready: false },
-    { id: 3, name: '플레이어2', ready: false },
-    { id: 4, name: '플레이어3', ready: true },
-  ])
+  const [players, setPlayers] = useState<Player[]>([])
 
   useEffect(() => {
     let alive = true
@@ -66,38 +60,13 @@ export default function GameRoomPage() {
       try {
         setLoading(true)
         setError(null)
-        // 실제 호출 예:
-        // const { data } = await api.get<RoomDetail>(`/api/rooms/${id}`)
-        // if (!alive) return
-        // setRoom(data)
 
-        // --- 데모 응답 ---
-        const demo: RoomDetail =
-          Number(id) % 2 === 0
-            ? {
-                id: Number(id),
-                title: '거북이 게임하기',
-                entry_fee: 10,
-                status: 'WAITING',
-                host_id: 15,
-                level: 'HARD',
-                game_name: 'Turtle Run',
-              }
-            : {
-                id: Number(id),
-                title: '무궁화 꽃이 피었습니다',
-                entry_fee: 5,
-                status: 'WAITING',
-                host_id: 15,
-                level: 'NORMAL',
-                game_name: 'Pong Marble',
-              }
-
+        const { data } = await api.get<RoomDetail>(`/api/gameroom/${id}`)
         if (!alive) return
-        setRoom(demo)
+        setRoom(data)
 
         // 호스트 표시 동기화(데모용)
-        setPlayers((prev) => prev.map((p) => ({ ...p, isHost: p.id === demo.host_id })))
+        setPlayers((prev) => prev.map((p) => ({ ...p, isHost: p.userId === data.host_id })))
       } catch (e: any) {
         setError(e?.message ?? '방 정보를 불러오지 못했습니다.')
       } finally {
@@ -109,10 +78,112 @@ export default function GameRoomPage() {
     }
   }, [id])
 
+  const token = localStorage.getItem('access_token')
+
+  useEffect(() => {
+    if (!id) return
+    const socket = new SockJS(process.env.NEXT_PUBLIC_WEBSOCKET_URL as string)
+    const client = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`, // <-- 필수
+      },
+      reconnectDelay: 5000,
+    })
+
+    client.onConnect = () => {
+      // 방 채널 구독
+      client.subscribe(`/topic/gameroom/${id}`, (message) => { // 서버 -> 클라
+        const body = JSON.parse(message.body)
+
+        switch (body.type) {
+          case 'enter':
+            // 여기가 입장 처리하는 부분이다~
+          case 'exit':
+            // 여기가 퇴장 처리하는 부분이다~
+          case 'ready':
+            // 여기가 준비완료/취소 렌더링 해주는 부분이다~
+          case 'choice':
+            // 여기가 거북이 선택 렌더링 해주는 부분이다~
+            setPlayers(
+              (body.data as Player[]).map((p) => ({
+                userId: p.userId,
+                nickname: p.nickname,
+                isReady: p.isReady,
+                turtleId: p.turtleId,
+                isHost: room?.host_id === p.userId,
+              })),
+            )
+            break
+          case 'start':
+            router.push(`/multi/${id}/turtlerun`)
+            break
+          case 'chat':
+            // 여기가 채팅 내용 받는 부분이다~
+            break
+          default:
+            console.warn('Unhandled WS event', body)
+        }
+      })
+
+      client.publish({ // 클라 -> 서버 
+        destination: `/app/gameroom/enter/${id}`,
+        headers: {
+          Authorization: `Bearer ${token}`, // 여기서 토큰 전달
+        },
+      })
+
+      // // 채팅
+      // client.publish({
+      //   destination: `/app/gameroom/chat/${id}`,
+      //   headers: {
+      //     Authorization: `Bearer ${token}`, // 여기서 토큰 전달
+      //   },
+      //   body: JSON.stringify({ msg })
+      // })
+
+      // // 거북이 선택
+      // client.publish({
+      //   destination: `/app/gameroom/choice/${id}`,
+      //   headers: {
+      //     Authorization: `Bearer ${token}`, // 여기서 토큰 전달
+      //   },
+      //   body: JSON.stringify({ turtleId })
+      // })
+
+      // // 준비 완료/취소
+      // client.publish({
+      //   destination: `/app/gameroom/ready/${id}`,
+      //   headers: {
+      //     Authorization: `Bearer ${token}`, // 여기서 토큰 전달
+      //   },
+      //   body: JSON.stringify({ isReady })
+      // })
+
+      // // 게임 페이지 이동
+      // client.publish({
+      //   destination: `/app/gameroom/start/${id}`,
+      //   headers: {
+      //     Authorization: `Bearer ${token}`, // 여기서 토큰 전달
+      //   }
+      // })
+    }
+
+    client.activate()
+
+    return () => {
+      client.deactivate()
+    }
+  }, [id, router])
+
+  console.log(players)
+
   const maxPlayers = room ? GAME_CONFIG[room.game_name] : 8
 
+  const userId = useAuthStore((state) => state.user?.id)
+
   // 본인/호스트
-  const me = useMemo(() => players.find((p) => p.id === userId), [players, userId])
+  const me = useMemo(() => players.find((p) => p.userId === userId), [players, userId])
   const isHost = !!me?.isHost
 
   const slots = useMemo(() => {
@@ -136,12 +207,12 @@ export default function GameRoomPage() {
 
   function toggleReady() {
     if (!me) return
-    setPlayers((prev) => prev.map((p) => (p.id === me.id ? { ...p, ready: !p.ready } : p)))
+    setPlayers((prev) => prev.map((p) => (p.userId === me.userId ? { ...p, ready: !p.isReady } : p)))
   }
 
   function startGame() {
     if (!room) return
-    const allOk = players.length > 1 && players.every((p) => p.ready || p.isHost)
+    const allOk = players.length > 1 && players.every((p) => p.isReady || p.isHost)
     if (!allOk) return
     // 실제 시작 요청 -> 성공 시 이동
     router.push(`/rooms/${room.id}/play`)
@@ -155,7 +226,7 @@ export default function GameRoomPage() {
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
         <div className="flex items-center gap-2">
-          <div className="text-foreground/70">게임방 이름이 들어갑니다</div>
+          <div className="text-foreground/70">{room.title}</div>
         </div>
         <Button onClick={() => router.back()} className="bg-secondary-royal hover:bg-secondary-sky">
           뒤로가기
@@ -185,7 +256,7 @@ export default function GameRoomPage() {
                 )
               }
               // player
-              return <PlayerTile key={slot.player.id} player={slot.player} />
+              return <PlayerTile key={slot.player.userId} player={slot.player} />
             })}
           </div>
           {/* 채팅/알림 영역 (placeholder) */}
@@ -206,10 +277,10 @@ export default function GameRoomPage() {
 
           {/* 시작 버튼 */}
           <div className="mt-8">
-            {!isHost ? (
+            {isHost ? (
               <Button
                 className="bg-secondary-royal hover:bg-secondary-navy h-14 w-full text-lg font-extrabold"
-                disabled={!isHost || players.length < 2 || !players.every((p) => p.ready || p.isHost)}
+                disabled={!isHost || players.length < 2 || !players.every((p) => p.isReady || p.isHost)}
                 onClick={startGame}
                 aria-disabled={!isHost}
                 title={!isHost ? '방장만 시작할 수 있습니다' : undefined}
@@ -221,10 +292,10 @@ export default function GameRoomPage() {
                 onClick={() => toggleReady()}
                 className={cn(
                   'h-14 w-full text-lg font-extrabold',
-                  me.ready ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-secondary-royal hover:bg-secondary-navy',
+                  me?.isReady ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-secondary-royal hover:bg-secondary-navy',
                 )}
               >
-                {me.ready ? '준비 해제' : '준비하기'}
+                {me?.isReady ? '준비 해제' : '준비하기'}
               </Button>
             )}
 
@@ -251,9 +322,9 @@ function PlayerTile({ player }: { player: Player }) {
       <CardContent className="flex h-full flex-col justify-between gap-2 p-0">
         <div className="bg-primary-black/10 grow"></div>
         <div className="flex items-center justify-between">
-          <div className="max-w-[70%] truncate font-bold">{player.name}</div>
-          <div className={cn('font-medium', player.ready ? 'text-emerald-600' : 'text-muted-foreground')}>
-            {player.ready ? '준비완료' : '대기중'}
+          <div className="max-w-[70%] truncate font-bold">{player.nickname}</div>
+          <div className={cn('font-medium', player.isReady ? 'text-emerald-600' : 'text-muted-foreground')}>
+            {player.isReady ? '준비완료' : '대기중'}
           </div>
         </div>
       </CardContent>
