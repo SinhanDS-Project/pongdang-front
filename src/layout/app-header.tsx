@@ -2,18 +2,25 @@
 
 import { Menu } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-
-import { cn } from '@/lib/utils'
-
-import { useAuthStore } from '@/stores/auth-store'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import { useAuth } from '@/components/providers/auth-provider'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   NavigationMenu,
@@ -26,41 +33,99 @@ import {
 } from '@/components/ui/navigation-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
+// ===================== 메뉴 스키마 (description 제거, requireAuth 추가) =====================
 const NAVIGATIONMENU = [
-  { href: '/', label: '서비스 소개' },
+  { href: '/', label: '서비스 소개', requireAuth: false },
   {
     label: '게임하기',
+    requireAuth: true,
     children: [
-      { href: '#', label: '퐁! 던지기', description: '오늘의 운세는? 동전 한 번에 퐁 GET!!' },
-      { href: '#', label: '터진다..퐁!', description: '지뢰를 피해 생존하라! 끝까지 버티면 퐁 보상!' },
-      { href: '#', label: '도전! 금융 골든벨', description: '오늘의 금융 퀴즈! 정답 맞히고 퐁을 모아보세요' },
-      { href: '#', label: '단체게임', description: '오늘의 금융 퀴즈! 정답 맞히고 퐁을 모아보세요' },
+      { href: '/play/throw', label: '퐁! 던지기' },
+      { href: '/play/bomb', label: '터진다..퐁!' },
+      { href: '/play/quiz', label: '도전! 금융 골든벨' },
+      { href: '/play/rooms', label: '단체게임' },
     ],
   },
-  { href: '#', label: '기부하기' },
-  { href: '#', label: '퐁 스토어' },
+  { href: '/donate', label: '기부하기', requireAuth: false },
+  { href: '/store', label: '퐁 스토어', requireAuth: true },
   {
     label: '게시판',
+    requireAuth: false,
     children: [
-      { href: '#', label: '공지사항' },
-      { href: '#', label: '자유게시판' },
-      { href: '#', label: '이벤트' },
+      { href: '/board/notice', label: '공지사항' },
+      { href: '/board/free', label: '자유게시판' },
+      { href: '/board/event', label: '이벤트' },
     ],
   },
   {
     label: '고객지원',
+    requireAuth: false,
     children: [
-      { href: '#', label: 'FAQ' },
-      { href: '#', label: '문의하기' },
+      { href: '/support/faq', label: 'FAQ' },
+      { href: '/support/contact', label: '문의하기' },
     ],
   },
 ] as const
 
+// ===================== 보호 링크 =====================
+function GuardedLink({
+  href,
+  requireAuth,
+  isAuthed,
+  onBlocked,
+  className,
+  children,
+  ...rest
+}: React.ComponentProps<typeof Link> & {
+  requireAuth?: boolean
+  isAuthed: boolean
+  onBlocked: (href: string) => void
+}) {
+  // 로그인 필요 & 비로그인 → 버튼 렌더
+  if (requireAuth && !isAuthed) {
+    return (
+      <button
+        type="button"
+        onClick={() => onBlocked(href as string)}
+        className={cn(className, 'w-full cursor-pointer text-start')}
+        aria-haspopup="dialog"
+      >
+        {children}
+      </button>
+    )
+  }
+
+  // 접근 허용 → Link
+  return (
+    <Link href={href} className={className} prefetch={false} {...rest}>
+      {children}
+    </Link>
+  )
+}
+
+// ===================== 헤더 =====================
 export function AppHeader() {
   const { logout } = useAuth()
   const user = useAuthStore((state) => state.user)
-
+  const isAuthed = !!user
   const pathname = usePathname()
+  const router = useRouter()
+
+  // 로그인 안내 모달 상태
+  const [loginNoticeOpen, setLoginNoticeOpen] = useState(false)
+  const [pendingPath, setPendingPath] = useState<string | null>(null)
+
+  const openLoginNotice = (href?: string) => {
+    if (href) setPendingPath(href)
+    setLoginNoticeOpen(true)
+  }
+
+  const goSignin = () => {
+    const redirect = pendingPath ?? pathname
+    setLoginNoticeOpen(false)
+    setPendingPath(null)
+    router.push(`/signin?redirect=${encodeURIComponent(redirect)}`)
+  }
 
   return (
     <header className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 w-full border-b backdrop-blur">
@@ -75,18 +140,21 @@ export function AppHeader() {
           <NavigationMenu viewport={false} className="relative hidden md:block">
             <NavigationMenuList className="gap-8">
               {NAVIGATIONMENU.map((item) => {
-                // 단일 링크
                 if ('href' in item) {
                   const isActive = pathname === item.href
                   return (
                     <NavigationMenuItem key={item.href}>
                       <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link
+                        <GuardedLink
                           href={item.href}
+                          requireAuth={item.requireAuth}
+                          isAuthed={isAuthed}
+                          onBlocked={openLoginNotice}
                           className={cn(
                             'text-foreground/90 hover:text-foreground relative bg-transparent text-sm font-medium transition-colors hover:bg-transparent',
                             isActive && 'text-foreground font-semibold',
                           )}
+                          aria-label={`${item.label}로 이동`}
                         >
                           <span
                             className={cn(
@@ -95,13 +163,14 @@ export function AppHeader() {
                             )}
                           />
                           {item.label}
-                        </Link>
+                        </GuardedLink>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                   )
                 }
 
-                // 드롭다운(하위 메뉴) — shadcn 예제 스타일
+                // 드롭다운
+                const groupNeedsAuth = !!item.requireAuth
                 return (
                   <NavigationMenuItem key={item.label} className="text-sm">
                     <NavigationMenuTrigger className="gap-1 bg-transparent hover:bg-transparent">
@@ -110,9 +179,19 @@ export function AppHeader() {
                     <NavigationMenuContent>
                       <ul className="grid w-60 gap-0.5 p-1">
                         {item.children.map((child) => (
-                          <ListItem key={child.href} href={child.href} title={child.label}>
-                            {'description' in child ? child.description : null}
-                          </ListItem>
+                          <li key={child.href}>
+                            <NavigationMenuLink asChild>
+                              <GuardedLink
+                                href={child.href}
+                                requireAuth={groupNeedsAuth}
+                                isAuthed={isAuthed}
+                                onBlocked={openLoginNotice}
+                                className="hover:bg-muted block rounded-md p-3 no-underline outline-hidden transition-colors focus:shadow-md"
+                              >
+                                <div className="text-sm leading-none font-medium">{child.label}</div>
+                              </GuardedLink>
+                            </NavigationMenuLink>
+                          </li>
                         ))}
                       </ul>
                     </NavigationMenuContent>
@@ -123,13 +202,11 @@ export function AppHeader() {
           </NavigationMenu>
 
           <div className="flex items-center gap-4">
-            {!user ? (
-              // 로그인: 비로그인 시
+            {!isAuthed ? (
               <Link href="/signin" className="hidden md:block" aria-label="로그인 페이지로 이동">
                 <Button variant="outline">로그인</Button>
               </Link>
             ) : (
-              // 아바타(데스크톱): 로그인 시
               <DropdownMenu>
                 <DropdownMenuTrigger className="hidden rounded-full ring-0 outline-none md:block">
                   <Avatar className="h-10 w-10">
@@ -149,10 +226,9 @@ export function AppHeader() {
             <ThemeToggle />
 
             {/* 모바일 햄버거 */}
-            {/* FIXME: 모바일 버전 수정 필요 */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
+                <Button variant="outline" size="icon" className="md:hidden" aria-label="모바일 메뉴 열기">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -161,20 +237,23 @@ export function AppHeader() {
                   <SheetTitle className="text-primary-shinhan">퐁당퐁당</SheetTitle>
                 </SheetHeader>
 
-                {/* 모바일 메뉴 (아코디언으로 2뎁스 노출) */}
+                {/* 모바일 메뉴 */}
                 <div className="mt-4 space-y-1">
                   {NAVIGATIONMENU.map((item) =>
                     'href' in item ? (
-                      <Link
+                      <GuardedLink
                         key={item.href}
                         href={item.href}
+                        requireAuth={item.requireAuth}
+                        isAuthed={isAuthed}
+                        onBlocked={openLoginNotice}
                         className={cn(
                           'hover:bg-muted block rounded-md px-3 py-2 text-sm',
                           pathname === item.href && 'bg-muted',
                         )}
                       >
                         {item.label}
-                      </Link>
+                      </GuardedLink>
                     ) : (
                       <Accordion type="single" collapsible key={item.label} className="rounded-md">
                         <AccordionItem value={item.label}>
@@ -186,16 +265,19 @@ export function AppHeader() {
                               {item.children.map((c) => {
                                 const active = pathname === c.href
                                 return (
-                                  <Link
+                                  <GuardedLink
                                     key={c.href}
                                     href={c.href}
+                                    requireAuth={item.requireAuth}
+                                    isAuthed={isAuthed}
+                                    onBlocked={openLoginNotice}
                                     className={cn(
                                       'hover:bg-muted block rounded-md px-3 py-2 text-sm',
                                       active && 'bg-muted',
                                     )}
                                   >
                                     {c.label}
-                                  </Link>
+                                  </GuardedLink>
                                 )
                               })}
                             </div>
@@ -206,9 +288,9 @@ export function AppHeader() {
                   )}
                 </div>
 
-                {/* 프로필/테마 (모바일 시트 하단에) */}
+                {/* 프로필/테마 (모바일 시트 하단) */}
                 <div className="mt-6 border-t pt-4">
-                  {!user ? (
+                  {!isAuthed ? (
                     <Link href="/signin" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
                       로그인
                     </Link>
@@ -231,28 +313,24 @@ export function AppHeader() {
           </div>
         </div>
       </div>
-    </header>
-  )
-}
 
-/** shadcn 예제 스타일의 블록형 아이템 */
-function ListItem({
-  title,
-  children,
-  href,
-  ...props
-}: React.ComponentPropsWithoutRef<'li'> & { href: string; title: string }) {
-  return (
-    <li {...props}>
-      <NavigationMenuLink asChild>
-        <Link
-          href={href}
-          className="hover:bg-muted block rounded-md p-3 no-underline outline-hidden transition-colors focus:shadow-md"
-        >
-          <div className="text-sm leading-none font-medium">{title}</div>
-          {children && <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-snug">{children}</p>}
-        </Link>
-      </NavigationMenuLink>
-    </li>
+      {/* 로그인 안내 모달 */}
+      <Dialog open={loginNoticeOpen} onOpenChange={setLoginNoticeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>로그인이 필요합니다</DialogTitle>
+            <DialogDescription>해당 메뉴는 로그인 후 이용할 수 있습니다.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:space-x-0">
+            <Button variant="outline" onClick={() => setLoginNoticeOpen(false)}>
+              닫기
+            </Button>
+            <Button onClick={goSignin} className="bg-secondary-royal hover:bg-secondary-navy">
+              로그인하러 가기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </header>
   )
 }
