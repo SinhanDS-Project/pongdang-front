@@ -3,6 +3,7 @@
 import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, User } from 'lucide-react'
 import * as React from 'react'
 
+import { useAuth } from '@/components/providers/auth-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -27,11 +28,15 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useAuthStore } from '@/stores/auth-store'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
+
+  const user = useAuthStore((state) => state.user)
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -112,8 +117,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">암신한</span>
-                    <span className="text-muted-foreground truncate text-xs">test@gmail.com</span>
+                    <span className="truncate font-medium">{user?.user_name}</span>
+                    <span className="text-muted-foreground truncate text-xs">{user?.email}</span>
                   </div>
                   <EllipsisVertical className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -131,13 +136,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">암신한</span>
-                      <span className="text-muted-foreground truncate text-xs">test@gmail.com</span>
+                      <span className="truncate font-medium">{user?.user_name}</span>
+                      <span className="text-muted-foreground truncate text-xs">{user?.email}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
                   <LogOut />
                   로그아웃
                 </DropdownMenuItem>
