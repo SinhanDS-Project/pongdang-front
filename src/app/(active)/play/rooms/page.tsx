@@ -32,7 +32,7 @@ export default function PlayRoomsHome() {
   const page = Number(searchParams.get('page') ?? '1')
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [allRooms, setAllRooms] = useState<GameRoom[]>([])
+  const [roomsThisPage, setRooms] = useState<GameRoom[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export default function PlayRoomsHome() {
     api.get(`/api/gameroom?page=${page}`)
       .then(({ data }) => {
         if (!alive) return
-        setAllRooms(data.game_rooms.content)
+        setRooms(data.game_rooms.content)
         setTotalPages(data.total_pages)
       })
       .catch((e: any) => {
@@ -74,8 +74,11 @@ export default function PlayRoomsHome() {
       client.subscribe('/topic/gameroom', (msg) => {
         const body = JSON.parse(msg.body)
         if (body.type === 'list') {
-          setAllRooms(body.data)
-          setTotalPages(Math.ceil(body.data.length / PAGE_SIZE))
+          const start = (page - 1) * PAGE_SIZE
+          const slicedRooms = body.data.slice(start, start + PAGE_SIZE)
+
+          setRooms(slicedRooms)
+          setTotalPages(Math.ceil(body.data.length / PAGE_SIZE));
         }
       })
     }
@@ -83,14 +86,8 @@ export default function PlayRoomsHome() {
     client.activate()
 
     return () => { client.deactivate() }
-  }, [])
+  }, [page])
 
-  // ---- 현재 페이지만 slice ----
-  const roomsThisPage = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return allRooms.slice(start, start + PAGE_SIZE)
-  }, [allRooms, page])
-  
   const roomsWithPlaceholders = useMemo(() => {
     const placeholders = Array.from({ length: Math.max(0, PAGE_SIZE - roomsThisPage.length) }, () => null)
     return [...roomsThisPage, ...placeholders]
