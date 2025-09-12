@@ -58,7 +58,10 @@
       ],
       "@features/*": [
         "./src/features/*"
-      ]
+      ],
+      "@public/*": [
+        "./public/*"
+      ],
     }
   },
   "include": [
