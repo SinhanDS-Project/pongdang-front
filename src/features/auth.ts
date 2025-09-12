@@ -14,14 +14,12 @@ export async function login(payload: LoginPayload) {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true,
     })
-
     const access = res.data?.access_token
     const user = res.data?.user
 
     if (!access || !user) throw new Error('로그인 정보가 올바르지 않습니다.')
 
     tokenStore.set(access)
-    useAuthStore.getState().setUser(user)
 
     return res.data
   } catch (error: any) {

@@ -43,6 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const res = await api.get<User>('/api/user/me', { signal: ac.signal })
+
+      useAuthStore.getState().setUser(res.data)
       setState({ status: 'authenticated', user: res.data })
     } catch (error: any) {
       if (error?.name === 'CanceledError' || error?.name === 'AbortError') return
