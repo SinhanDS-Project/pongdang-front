@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label'
 
 // ---------- 로그인 스키마 ----------
 const LoginSchema = z.object({
-  email: z.string().min(1, '이메일을 입력해주세요.').email('올바른 이메일 주소를 입력해주세요.'),
+  email: z.string(),
   password: z.string(),
 })
 type LoginFormData = z.infer<typeof LoginSchema>
