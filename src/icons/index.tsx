@@ -6,6 +6,9 @@ import GameIcon from './game.svg'
 import HostIcon from './host.svg'
 import PlayerIcon from './player.svg'
 import PongIcon from './pong.svg'
+import SingleBellIcon from './single_bell.svg'
+import SingleBombIcon from './single_bomb.svg'
+import SingleCoinIcon from './single_coin.svg'
 import SuccessIcon from './success.svg'
 import TitleCoinIcon from './title_coin.svg'
 
@@ -20,4 +23,7 @@ export {
   PongIcon,
   SuccessIcon,
   TitleCoinIcon,
+  SingleBellIcon,
+  SingleBombIcon,
+  SingleCoinIcon,
 }
