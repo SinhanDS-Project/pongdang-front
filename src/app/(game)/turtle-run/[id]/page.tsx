@@ -11,6 +11,7 @@ import { useTurtleStore } from '@stores/turtle-store'
 
 import { Track } from '@/components/turtle-run-page'
 import { useTurtleSocket } from '@/lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
+import { connected } from 'process'
 
 export type Winner = {
   rank: 1 | 2 | 3
@@ -100,7 +101,7 @@ export default function TurtleRunPage() {
   // 2) 소켓 하나로 통일: 플레이어 + 레이스
   const { send, connected } = useTurtleSocket(String(id), userId, {
     topics: {
-      race: (rid) => `/topic/game/${rid}`, // 진행/결승
+      race: (rid) => `/topic/game/turtle/${rid}`, // 진행/결승
       players: (rid) => `/topic/game/turtle/${rid}`, // 플레이어 목록
     },
     onPlayers: (rawList) => {
