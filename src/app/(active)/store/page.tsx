@@ -109,7 +109,6 @@ export default function StorePage() {
         return
       }
 
-      // 보유 포인트 부족 체크
       if (user.pong_balance < p.price) {
         setErrorMessage('보유 포인트가 부족합니다.')
         setErrorOpen(true)
@@ -123,13 +122,14 @@ export default function StorePage() {
         const payload = { product_id: p.id, price: p.price }
         await api.post('/api/store/purchase', payload)
 
-        closeModal()
-
         // 결제 성공 시 포인트 차감
         setUser({ ...user, pong_balance: user.pong_balance - p.price })
 
-        setLoadingOpen(false)
-        setSuccessOpen(true) // 결제 완료 모달 열기
+        // 로딩 모달 닫기 + 1.5초 후 성공 모달 열기
+        setTimeout(() => {
+          setLoadingOpen(false)
+          setSuccessOpen(true)
+        }, 1500)
       } catch (err) {
         setLoadingOpen(false)
         const error = err as AxiosError<{ message?: string }>
@@ -140,7 +140,7 @@ export default function StorePage() {
         setPaying(false)
       }
     },
-    [user, closeModal, setUser],
+    [user, setUser],
   )
 
   const handlePageChange = (p: number) => {
@@ -251,7 +251,14 @@ export default function StorePage() {
       {/* 모달들 */}
       <ErrorModal open={errorOpen} message={errorMessage} onClose={() => setErrorOpen(false)} />
       <LoadingModal open={loadingOpen} message="이메일로 상품을 발송중입니다." />
-      <SuccessModal open={successOpen} message="✅ 결제가 완료되었습니다." onClose={() => setSuccessOpen(false)} />
+      <SuccessModal
+        open={successOpen}
+        message="✅ 결제가 완료되었습니다."
+        onClose={() => {
+          setSuccessOpen(false)
+          closeModal() //  성공 모달 닫을 때 ProductModal도 닫기
+        }}
+      />
     </div>
   )
 }
