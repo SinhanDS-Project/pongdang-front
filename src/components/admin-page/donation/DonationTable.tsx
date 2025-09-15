@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Button } from "@components/ui/button";
@@ -8,49 +8,64 @@ import { Badge } from "@components/ui/badge";
 import { Progress } from "@components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/ui/table";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTrigger,
 } from "@components/ui/alert-dialog";
 import { fetcher } from "@lib/admin/swr";
-import { api } from "@lib/admin/axios";
 import { useAdminStore } from "@stores/admin";
 import type { Donation } from "@/types/admin";
 import { Edit, Trash2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
 
 const PAGE_SIZE = 10;
 
 const won = (n: number | null | undefined) =>
   (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) + "원";
 
-const pct = (current: number | null, goal: number) =>
-  goal > 0 ? Math.min(100, Math.round(((current ?? 0) / goal) * 100)) : 0;
+const pct = (current: number | null | undefined, goal: number | null | undefined) => {
+  const g = goal ?? 0;
+  const c = current ?? 0;
+  return g > 0 ? Math.min(100, Math.round((c / g) * 100)) : 0;
+};
 
-// 상단에 유틸
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | null | undefined;
-
 const getBadgeProps = (status: string): { variant: BadgeVariant; className?: string } => {
   switch (status) {
     case "진행중":
-      return { variant: "default" }; // 기본 색
+      return { variant: "default" };
     case "달성":
       return {
-        variant: "secondary", // 타입에 맞춤
-        className: "bg-green-600/10 text-green-700 border-green-600/20 dark:bg-green-900/30 dark:text-green-200",
+        variant: "secondary",
+        className:
+          "bg-green-600/10 text-green-700 border-green-600/20 dark:bg-green-900/30 dark:text-green-200",
       };
     case "예정":
       return { variant: "outline" };
-    default: // "종료" 등
+    default:
       return { variant: "secondary" };
   }
 };
 
+type Page<T> = {
+  content: T[];
+  total_pages?: number;
+  totalPages?: number;
+  totalElements?: number;
+};
+
+// Page 응답인지 판별
+function isPage<T>(x: unknown): x is Page<T> {
+  return !!x && typeof x === "object" && "content" in (x as any) && Array.isArray((x as any).content);
+}
 
 const statusByDates = (d: Donation) => {
   const now = new Date();
   const s = new Date(d.start_date);
   const e = new Date(d.end_date);
-  if ((d.current ?? 0) >= d.goal) return "달성";
+  if ((d.current ?? 0) >= (d.goal ?? 0)) return "달성";
   if (now < s) return "예정";
   if (now > e) return "종료";
   return "진행중";
@@ -60,32 +75,39 @@ export function DonationTable() {
   const { search } = useAdminStore();
   const [page, setPage] = useState(0);
 
-  // ✅ 백엔드: GET /api/admin/donation (배열 반환)
-  const { data, error, isLoading } = useSWR<Donation[]>("/api/admin/donation", fetcher, {
+  // ✅ 서버 페이징/검색 쿼리 안 붙임 (배열만 받아서 클라 페이징)
+  const { data, error, isLoading } = useSWR<Donation[] | Page<Donation>>
+    ("/api/admin/donation", fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });
 
-  const filtered = useMemo(() => {
-    const q = (search ?? "").trim().toLowerCase();
+  // 검색어 바뀌면 페이지를 0으로 리셋
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
+
+  // 필터링
+  const rows = useMemo<Donation[]>(() => {
     if (!data) return [];
-    if (!q) return data;
-    return data.filter(
-      (d) =>
-        (d.title ?? "").toLowerCase().includes(q) ||
-        (d.org ?? "").toLowerCase().includes(q) ||
-        (d.type ?? "").toLowerCase().includes(q),
-    );
-  }, [data, search]);
+    if (Array.isArray(data)) return data;
+    if (isPage<Donation>(data)) return data.content ?? [];
+    return [];
+  }, [data]);
 
-  // 클라 페이지네이션
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // 페이지 수 (서버 페이징 있으면 우선 사용)
+  const serverTotalPages =
+    !Array.isArray(data) && isPage<Donation>(data)
+      ? (data.total_pages ?? data.totalPages ?? null)
+      : null;
+
+  const clientTotalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const totalPages = serverTotalPages ?? clientTotalPages;
   const safePage = Math.min(page, totalPages - 1);
-  const pageItems = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-
-  if (isLoading) return <div>로딩 중...</div>;
-  if (error) return <div>오류가 발생했습니다.</div>;
-  if (!data || data.length === 0) return <div>데이터가 없습니다.</div>;
+  const pageItems =
+    serverTotalPages != null
+      ? rows // 서버가 이미 잘라서 줌
+      : rows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -133,13 +155,16 @@ export function DonationTable() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <Link
-                        href={{ pathname: `/admin/donation/${d.id}`, query: { data: encodeURIComponent(JSON.stringify(d)) }, // ✅ 안전하게 인코딩
+                        href={{
+                          pathname: `/admin/donation/${d.id}`,
+                          query: { data: encodeURIComponent(JSON.stringify(d)) },
                         }}
                       >
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -147,14 +172,9 @@ export function DonationTable() {
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>기부 삭제</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              정말로 이 기부를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
+                          <AlertDialogHeader />
                           <AlertDialogFooter>
-                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogCancel>닫기</AlertDialogCancel>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -169,7 +189,12 @@ export function DonationTable() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+          >
             이전
           </Button>
           <span className="text-sm text-muted-foreground">

@@ -59,31 +59,29 @@ export function ProductForm() {
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setSubmitting(true);
+
   try {
+    // 1) 서버 DTO와 필드가 일치하는 JSON 페이로드 구성
+    const payload = {
+      name: form.name.trim(),
+      price: Number(form.price || 0),
+      type: form.type || "GIFT",
+      description: (form.description ?? "").trim(),
+    };
+
+    // 2) 멀티파트 생성: JSON은 @RequestPart("request")로 받도록 Blob으로
     const fd = new FormData();
-    fd.append("name", form.name.trim());
-    fd.append("price", String(Number(form.price || 0)));
-    fd.append("type", form.type || "GIFT");
+    fd.append(
+      "request",
+      new Blob([JSON.stringify(payload)], { type: "application/json" })
+    );
 
-    // descMainFiles: 설명/대표 이미지 묶음 (PasteImageBoxMulti에서 받은 File[])
-    const imgs = descMainFiles;
+    // 3) 이미지 파트(최대 2장). 컨트롤러가 'files'를 받는다면 아래 그대로,
+    // 단수 'file'이라면 키를 "file"로 바꿔주세요.
+    descMainFiles.slice(0, 2).forEach((f) => fd.append("files", f, f.name));
 
-    if (imgs.length >= 2) {
-      // ✅ 2장: files 두 개만 전송, description은 전송하지 않음
-      imgs.slice(0, 2).forEach((f) => fd.append("files", f, f.name));
-    } else if (imgs.length === 1) {
-      // ✅ 1장: description(텍스트) + files(1개)
-      const desc = (form.description ?? "").trim();
-      fd.append("description", desc === "" ? "-" : desc);
-      fd.append("files", imgs[0], imgs[0].name);
-    } else {
-      // ✅ 0장: description만
-      const desc = (form.description ?? "").trim();
-      fd.append("description", desc === "" ? "-" : desc);
-    }
-
-    // 백엔드 엔드포인트로 직행
-    await api.post("/api/admin/product", fd); // 서버 실제 경로
+    // 4) headers에 Content-Type 수동 지정 금지! (브라우저가 boundary 포함해서 자동 설정)
+    await api.post("/api/admin/product", fd);
 
     toast({ title: "성공", description: "상품이 등록되었습니다." });
     router.push("/admin/product");

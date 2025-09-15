@@ -3,14 +3,13 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import useSWR, { mutate } from "swr"
+import useSWR, { mutate as globalMutate } from "swr"
 import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
 import { Textarea } from "@components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { fetcher } from "@lib/admin/swr"
 import type { Donation } from "@/types/admin"
 import { PasteImageBox } from "@/components/admin-page/common/PasteImageBox"
 import { toast } from "@/components/ui/use-toast"
@@ -18,28 +17,57 @@ import { ArrowLeft } from "lucide-react"
 import { buildMultipart, sanitizeString } from "@lib/admin/multipart"
 import { api } from "@lib/admin/axios"
 
-type Props = { donationId?: string | number; initialData?: Donation } // ✅ optional로 변경
+type Props = { donationId?: string | number; initialData?: Donation }
+
+// --- 일반 API 응답 스키마 (명세 그대로)
+type PublicDonationInfo = {
+  id: number
+  title: string
+  purpose: string
+  content: string
+  org: string
+  start_date: string
+  end_date: string
+  type: string
+  goal: number
+  current: number | null
+  img: string | null
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
 
 const toDateInput = (iso?: string) => (iso ? iso.slice(0, 10) : "")
 const toIso00 = (d: string) => (d ? `${d}T00:00:00` : "")
-const pong = (n: number | null | undefined) =>
-  (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) + "퐁"
+
+const publicFetcher = async (url: string) => {
+  const res = await fetch(url, { headers: { "Content-Type": "application/json" } })
+  let body: any = undefined
+  try { body = await res.json() } catch {}
+  if (!res.ok) {
+    const err = new Error(body?.message || `Request failed (${res.status})`) as any
+    err.status = res.status
+    err.code = body?.error
+    throw err
+  }
+  return body as PublicDonationInfo
+}
 
 export function DonationForm({ donationId, initialData }: Props) {
   const router = useRouter()
 
-  // ✅ 안전한 id 파싱(+ NaN 가드)
   const idNum = useMemo(() => {
     if (donationId === undefined || donationId === null) return undefined
     const n = typeof donationId === "string" ? Number(donationId) : donationId
     return Number.isFinite(n) ? n : undefined
   }, [donationId])
 
-  // ✅ 상세 조회는 id가 있을 때만
-  const detailKey = idNum !== undefined ? `/api/donation/${idNum}` : null
-  const { data: donation, isLoading, error } = useSWR<Donation>(detailKey, fetcher, {
-    revalidateOnFocus: false, fallbackData: initialData,
-  })
+  // ✅ 일반 API 상세 조회 (절대 URL 키 권장)
+  const detailKey = idNum !== undefined ? `${API_BASE}/api/donation/${idNum}` : null
+  const { data: donation, isLoading, error } = useSWR<PublicDonationInfo>(
+    detailKey,
+    publicFetcher,
+    { revalidateOnFocus: false, shouldRetryOnError: false }
+  )
 
   const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
@@ -50,25 +78,40 @@ export function DonationForm({ donationId, initialData }: Props) {
     img: "" as string | null | undefined,
   })
 
-  // 상세조회가 없다고 했으니 initialData 기준 세팅
+  // ✅ 데이터 도착 시 폼 채우기: 1순위 일반 API -> 2순위 initialData
   useEffect(() => {
-    const d = initialData
-    if (!d) return
-    setForm({
-      title: d.title ?? "",
-      purpose: d.purpose ?? "",
-      content: d.content ?? "",
-      org: d.org ?? "",
-      start_date: toDateInput(d.start_date),
-      end_date: toDateInput(d.end_date),
-      type: d.type ?? "",
-      goal: String(d.goal ?? 0),
-      current: String(d.current ?? 0),
-      img: d.img,
-    })
-  }, [initialData])
+    if (donation) {
+      setForm({
+        title: donation.title ?? "",
+        purpose: donation.purpose ?? "",
+        content: donation.content ?? "",
+        org: donation.org ?? "",
+        start_date: toDateInput(donation.start_date),
+        end_date: toDateInput(donation.end_date),
+        type: donation.type ?? "",
+        goal: String(donation.goal ?? 0),
+        current: donation.current == null ? "" : String(donation.current),
+        img: donation.img,
+      })
+      return
+    }
+    if (initialData) {
+      setForm({
+        title: initialData.title ?? "",
+        purpose: initialData.purpose ?? "",
+        content: initialData.content ?? "",
+        org: (initialData as any).org ?? (initialData as any).organization ?? "",
+        start_date: toDateInput((initialData as any).start_date ?? (initialData as any).startDate),
+        end_date: toDateInput((initialData as any).end_date ?? (initialData as any).endDate),
+        type: (initialData as any).type ?? (initialData as any).category ?? "",
+        goal: String((initialData as any).goal ?? (initialData as any).goalAmount ?? 0),
+        current: String((initialData as any).current ?? (initialData as any).currentAmount ?? 0),
+        img: (initialData as any).img ?? (initialData as any).imageUrl ?? null,
+      })
+    }
+  }, [donation, initialData])
 
-  const disabled = useMemo(() => saving, [saving])
+  const disabled = saving
 
   const onChange =
     (key: keyof typeof form) =>
@@ -76,58 +119,63 @@ export function DonationForm({ donationId, initialData }: Props) {
       setForm((s) => ({ ...s, [key]: e.target.value }))
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!donation) return;
+    e.preventDefault()
+    if (idNum === undefined) {
+      toast({ title: "잘못된 접근", description: "수정하려면 ID가 필요합니다.", variant: "destructive" })
+      return
+    }
 
-    setSaving(true);
+    setSaving(true)
     try {
-      // 서버가 not-null로 받을 가능성 있는 문자열은 fallback 지정
       const json = {
         title: sanitizeString(form.title, "-"),
         purpose: sanitizeString(form.purpose, "-"),
-        content: (form.content ?? "").trim(),          // 내용은 빈값 허용이면 "" 유지
+        content: (form.content ?? "").trim(),
         org: sanitizeString(form.org, "-"),
         start_date: sanitizeString(toIso00(form.start_date), "-"),
         end_date: sanitizeString(toIso00(form.end_date), "-"),
         type: sanitizeString(form.type, "-"),
         goal: Number(form.goal || 0),
-        // current가 null 허용이면 JSON엔 null, 텍스트 필드는 "0" 같은 값으로도 같이 전달
         current: form.current === "" ? null : Number(form.current),
-      };
+      }
 
-      // 서버에서 @RequestPart 이름이 애매하므로 donation/info 둘 다 넣음 + 파일 키도 다중
       const fd = buildMultipart(json, file, {
         jsonPartNames: ["donation", "info"],
         fileFieldNames: ["file", "image", "img", "files"],
-        coerceEmptyTo: "-", // 텍스트 필드로 받을 때 null 방지
-      });
+        coerceEmptyTo: "-",
+      })
 
-      await api.put(`/api/admin/donation/${idNum}`, fd);
+      // ✅ 수정은 관리자 API로
+      await api.put(`/api/admin/donation/${idNum}`, fd)
 
-      await Promise.all([
-        mutate(`/api/admin/donation/${idNum}`),
-        mutate(`/api/admin/donation`),
-      ]);
+      // ✅ 캐시 갱신: 일반 상세 + (있다면) 일반/관리자 목록 + 관리자 상세
+      await Promise.allSettled([
+        detailKey ? globalMutate(detailKey) : Promise.resolve(),
+        globalMutate(`/api/donation`),            // 일반 목록을 쓰는 화면이 있다면
+        globalMutate(`/api/admin/donation/${idNum}`),
+        globalMutate(`/api/admin/donation`),
+      ])
 
-      toast({ title: "성공", description: "기부 정보가 수정되었습니다." });
-      router.push("/admin/donation");
-    } catch {
+      toast({ title: "성공", description: "기부 정보가 수정되었습니다." })
+      router.push("/admin/donation")
+    } catch (err: any) {
       toast({
         title: "수정 실패",
-        description: "입력값 또는 서버 응답을 확인해주세요.",
+        description: err?.message || "입력값 또는 서버 응답을 확인해주세요.",
         variant: "destructive",
-      });
+      })
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  // id 없이 이 폼이 렌더되면(예: 라우팅 문제) 가드
+  // ---- 화면 상태 가드 ----
   if (donationId === undefined) return <div>잘못된 접근입니다. (id 없음)</div>
-  if (isLoading) return <div>로딩 중...</div>
-  if (error) return <div>데이터 로드 실패</div>
-  if (!donation) return <div>데이터가 없습니다.</div>
+  if (isLoading && !initialData) return <div>로딩 중...</div>
+  if (error && (error as any).status === 404) return <div>기부 정보가 존재하지 않습니다. (ID: {donationId})</div>
+  if (error && !initialData) return <div>데이터 로드 실패</div>
 
+  // ---- 폼 UI ----
   return (
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
@@ -197,7 +245,6 @@ export function DonationForm({ donationId, initialData }: Props) {
               <Textarea id="content" value={form.content} onChange={onChange("content")} rows={5} />
             </div>
 
-            {/* 공통 이미지 박스 (붙여넣기/드래그/파일 선택 지원) */}
             <PasteImageBox
               label="대표 이미지"
               hint="이미지를 붙여넣기/드래그하거나, 파일을 선택하세요."

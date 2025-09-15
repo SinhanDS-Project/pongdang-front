@@ -39,7 +39,7 @@ export function BannerForm() {
       await api.post("/api/admin/banner", fd);
 
       toast({ title: "성공", description: "배너가 등록되었습니다." });
-      router.push("/admin/banner");
+      router.push("/admin");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||

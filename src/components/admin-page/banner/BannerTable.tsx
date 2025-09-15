@@ -30,39 +30,6 @@ export function BannerTable() {
 
   const { data, error, isLoading } = useSWR<Page<Banner>>(`/api/admin/banner?page=${page}&search=${search}`, fetcher)
 
-  const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/api/admin/banner/${id}`)
-      mutate(`/api/admin/banner?page=${page}&search=${search}`)
-      toast({
-        title: "성공",
-        description: "배너가 삭제되었습니다.",
-      })
-    } catch (error) {
-      toast({
-        title: "오류",
-        description: "배너 삭제에 실패했습니다.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const toggleVisibility = async (id: number, visible: boolean) => {
-    try {
-      await api.put(`/api/admin/banner/${id}`, { visible: !visible })
-      mutate(`/api/admin/banner?page=${page}&search=${search}`)
-      toast({
-        title: "성공",
-        description: `배너가 ${!visible ? "활성화" : "비활성화"}되었습니다.`,
-      })
-    } catch (error) {
-      toast({
-        title: "오류",
-        description: "배너 상태 변경에 실패했습니다.",
-        variant: "destructive",
-      })
-    }
-  }
 
   if (isLoading) return <div>로딩 중...</div>
   if (error) return <div>오류가 발생했습니다.</div>
