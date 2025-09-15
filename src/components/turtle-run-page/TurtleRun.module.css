@@ -1,0 +1,60 @@
+@keyframes turtle-run {
+  0% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  20% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  70% {
+    transform: translateY(8px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+}
+
+/* img 태그에만 적용 */
+.racing {
+  animation: turtle-run 0.37s infinite linear;
+}
+
+/* X 이동은 바깥 래퍼가 담당: --x 변수만 바뀜 */
+.turtleWrap {
+  --x: 0px;
+  /* X 이동 + 세로 중앙을 모두 여기서 처리 */
+  transform: translate3d(var(--x), -50%, 0);
+  will-change: transform;
+  /* transition은 끄는 걸 권장 (tickLerp가 보간 담당) */
+}
+
+/* 안쪽 요소는 Y만 살짝 흔들리게 (X는 건드리지 않음) */
+.turtleBob {
+  animation: turtle-bob 600ms infinite linear;
+}
+
+/* X는 안 건드리고 Y만 왕복 */
+@keyframes turtle-bob {
+  0% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(-2px);
+  }
+}
+.selected {
+  outline: 3px solid #f59e0b; /* amber-500 */
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.25);
+  border-radius: 9999px;
+  animation: selected-pulse 1.2s ease-in-out infinite;
+}
+
+.turtleFinished {
+  animation: none;
+  filter: drop-shadow(0 0 6px gold);
+}

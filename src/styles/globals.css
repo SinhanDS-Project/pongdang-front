@@ -242,3 +242,36 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ─────────────────────────────────────────
+   5.5) Turtle run custom utilities
+   - bg-crowd: 관중 배경
+   - turtleRacing: 거북이 살랑살랑 애니메이션
+────────────────────────────────────────── */
+@layer utilities {
+  .bg-crowd {
+    background-image: url('/resources/images/crowd.png');
+  }
+
+  @keyframes turtle-run {
+    0% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    20% {
+      transform: translateY(-8px) rotate(1deg);
+    }
+    50% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    70% {
+      transform: translateY(8px) rotate(1deg);
+    }
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+  }
+
+  .turtleRacing {
+    animation: turtle-run 0.37s ease-in-out infinite;
+  }
+}

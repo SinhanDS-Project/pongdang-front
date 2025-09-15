@@ -8,7 +8,7 @@ import SockJS from 'sockjs-client'
 import { tokenStore } from '@/lib/auth/token-store'
 import { api } from '@/lib/net/client-axios'
 
-import { CreateRoomDialog, type CreateRoomValues } from '@/components/play-page/room/CreateRoomDialog'
+import { CreateRoomDialog } from '@/components/play-page/room/CreateRoomDialog'
 import { EmptyRoomCard } from '@/components/play-page/room/EmptyRoomCard'
 import { GameRoomCard } from '@/components/play-page/room/GameRoomCard'
 import { PongPagination } from '@/components/PongPagination'
@@ -90,7 +90,7 @@ export default function PlayRoomsHome() {
 
     client.onConnect = () => {
       // 서버가 브로드캐스트하는 토픽 경로에 맞춰주세요.
-      const sub = client.subscribe('/topic/gameroom', (msg: IMessage) => {
+      client.subscribe('/topic/gameroom', (msg: IMessage) => {
         try {
           const body = JSON.parse(msg.body)
 
@@ -123,7 +123,7 @@ export default function PlayRoomsHome() {
       })
 
       // 필요 시 서버로 초기 요청 publish (서버가 page별로 push 해줄 때)
-      // client.publish({ destination: '/app/gameroom', body: JSON.stringify({ page }) })
+      client.publish({ destination: '/app/gameroom', body: JSON.stringify({ page }) })
     }
 
     client.activate()
@@ -143,25 +143,6 @@ export default function PlayRoomsHome() {
     const p = new URLSearchParams(searchParams.toString())
     p.set('page', String(next))
     router.push(`${pathname}?${p.toString()}`)
-  }
-
-  // 5) 방 만들기
-  async function handleCreate(data: CreateRoomValues) {
-    try {
-      await api.post(`/api/gameroom`, {
-        title: data.title,
-        game_level_id: data.game_level_id,
-      })
-      setCreateOpen(false)
-      // 서버가 '/topic/gameroom'으로 created 이벤트를 브로드캐스트 한다면 자동 반영됨.
-      // 즉시 반영 원하면 fetch 재요청:
-      const { data: refetched } = await api.get(`/api/gameroom?page=${page}`)
-      setRooms(refetched.game_rooms?.content ?? [])
-      setTotalPages(Math.max(1, refetched.total_pages ?? 1))
-    } catch (e: any) {
-      console.error('방 생성 실패:', e)
-      alert(e?.response?.data?.message ?? '방 생성에 실패했습니다.')
-    }
   }
 
   return (
