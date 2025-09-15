@@ -8,12 +8,6 @@ import { CountdownOverlay } from '@components/turtle-run-page'
 
 import styles from './TurtleRun.module.css'
 
-export const raceStream = {
-  lastPositions: [] as number[] | null,
-  finished: [] as boolean[],
-  seq: 0, // ★ 메시지 카운터
-}
-
 const TRACKS = 8
 
 // 치수/좌표
@@ -89,50 +83,37 @@ export function Track({
     let raf = 0
     let mounted = true
 
-    // 이 프레임에 “새 메시지(positions)”를 소비했는지 여부
-    const hadNewMsgRef = { current: false }
-
     const loop = () => {
       if (!mounted) return
 
-      const st = useTurtleStore.getState()
-
-      // --- 0) WS 메시지 소비(있을 때만) ---
+      // --- 1) WS 메시지 소비 (있을 때만) ---
       // 외부(소켓 수신부)에서 raceStream.lastPositions = number[] 로 넣어주면,
       // 여기서 "한 프레임만" 읽고 비웁니다.
-      if (raceStream.lastPositions) {
-        const nextPositions = raceStream.lastPositions as number[]
-        // ✅ 네가 원한 패턴: 보간은 하지 않고 “setPositions”만 호출
-        st.setPositions(nextPositions)
-        raceStream.lastPositions = null
-        hadNewMsgRef.current = true
-      }
+      // 이 부분은 애니메이션의 연속성과는 별개로, 데이터 소스만 업데이트합니다.
 
-      // --- 1) 새 메시지 없으면, 보간/DOM업데이트/패닝 모두 스킵 ---
-      if (!hadNewMsgRef.current) {
-        raf = requestAnimationFrame(loop)
-        return
-      }
+      // --- 삭제 ---
 
-      // --- 2) 새 메시지가 있었을 때만 보간 수행 ---
-      st.tickLerp(0.12)
+      // --- 2) 보간 로직은 "매 프레임" 실행 ---
+      // hadNewMsgRef 체크를 제거하여 항상 보간을 수행하도록 합니다.
+      const st = useTurtleStore.getState()
+      st.tickLerp(0.12) // 부드러운 움직임을 위해 계속 호출
 
       // 보간 결과
-      const displayedNow = useTurtleStore.getState().displayed ?? []
+      const displayedNow = st.displayed ?? []
 
-      // --- 3) DOM 업데이트 (새 메시지 프레임에만) ---
+      // --- 3) DOM 업데이트도 "매 프레임" 실행 ---
       for (let i = 0; i < displayedNow.length; i++) {
         const el = turtleRefs.current[i]
         if (!el || !el.isConnected || !el.parentElement) continue
-        const progress = Math.min(100, displayedNow[i] ?? 0) // 안전 클램프
+
+        const progressRaw = displayedNow[i] ?? 0
+        const progress = Math.max(0, Math.min(100, progressRaw))
+
         const rawLeft = START_MARGIN / 2 + (TRACK_LENGTH * progress) / 100
-        const left = Math.round(rawLeft) // 픽셀 스냅
-        if (el.style.transition) el.style.transition = '' // 이중 스무딩 방지
+        const left = Math.round(rawLeft)
+
         el.style.setProperty('--x', `${left}px`)
       }
-
-      // 이 프레임 처리 종료 → 다음 프레임엔 스킵되도록 플래그 내림
-      hadNewMsgRef.current = false
 
       // --- 4) 패닝 계산 (selected가 있을 때만) ---
       const vp = viewportRef.current

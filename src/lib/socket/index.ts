@@ -1,15 +1,10 @@
 'use client'
 
 import { tokenStore } from '@/lib/auth/token-store'
+import { useTurtleStore } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SockJS from 'sockjs-client'
-
-export const raceStream = {
-  lastPositions: [] as number[] | null,
-  finished: [] as boolean[],
-  seq: 0,
-}
 
 export type WSMessage =
   | { type: 'race_update'; positions?: number[]; data?: number[] }
@@ -57,7 +52,7 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
         setConnected(true)
 
         // ---- 토픽 경로 결정 (기본값 제공) ----
-        const raceTopic = opts?.topics?.race?.(roomId) ?? `/topic/game/${roomId}`
+        const raceTopic = opts?.topics?.race?.(roomId) ?? `/topic/game/turtle/${roomId}`
         const playersTopic = opts?.topics?.players?.(roomId) ?? `/topic/game/turtle/${roomId}`
 
         // ---- (A) 레이스 진행/결과 ----
@@ -78,7 +73,9 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
 
           if ((pkt as any).type === 'race_update' || positions) {
             // Track 루프에서 setPositions + tickLerp 하게 하려고 여기서는 버퍼에만 저장
-            raceStream.lastPositions = positions ?? []
+            const positionsPercent = (positions ?? []).map((p: number) => p * 100);
+            // raceStream 사용 x
+            useTurtleStore.getState().setPositions(positionsPercent)
             return
           }
 
@@ -88,6 +85,7 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
             (typeof (pkt as any)?.winner !== 'undefined' && Array.isArray((pkt as any)?.results))
 
           if (looksLikeFinish) {
+            console.log('[race_finish]', pkt)
             opts?.onFinish?.(pkt as any)
           }
         })
