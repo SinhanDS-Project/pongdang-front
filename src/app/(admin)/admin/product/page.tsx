@@ -1,10 +1,9 @@
 "use client"
-import Link from "next/link"
 import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
-import { ProductTable } from "@/components/admin-page/product/ProductTable"
 import { useAdminStore } from "@stores/admin"
 import { Plus, Search } from "lucide-react"
+import Link from "next/link"
 
 export default function ProductsPage() {
   const { search, setSearch } = useAdminStore()
@@ -36,7 +35,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <ProductTable />
     </div>
   )
 }
