@@ -1,9 +1,12 @@
 'use client'
 
-import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, Star, Swords, User } from 'lucide-react'
+import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, User } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 import * as React from 'react'
 
-import { useAuth } from '@/components/providers/auth-provider'
+import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -28,15 +31,12 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useAuthStore } from '@/stores/auth-store'
-import Image from 'next/image'
-import Link from 'next/link'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile } = useSidebar()
-  const { logout } = useAuth()
+  const { logout } = useAuthStore()
 
-  const user = useAuthStore((state) => state.user)
+  const user = useCurrentUser()
 
   return (
     <Sidebar collapsible="icon" {...props}>

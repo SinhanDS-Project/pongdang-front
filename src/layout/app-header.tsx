@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { useAuth } from '@/components/providers/auth-provider'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -108,7 +107,7 @@ function GuardedLink({
 
 // ===================== 헤더 =====================
 export function AppHeader() {
-  const { logout } = useAuth()
+  const { logout } = useAuthStore()
   const user = useAuthStore((state) => state.user)
   const isAuthed = !!user
   const pathname = usePathname()
