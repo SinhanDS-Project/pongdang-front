@@ -57,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="/mypage">
                   <User />
                   <span>마이페이지</span>
                 </Link>

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
 
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -108,7 +108,7 @@ function GuardedLink({
 // ===================== 헤더 =====================
 export function AppHeader() {
   const { logout } = useAuthStore()
-  const user = useAuthStore((state) => state.user)
+  const user = useCurrentUser()
   const isAuthed = !!user
   const pathname = usePathname()
   const router = useRouter()
@@ -235,7 +235,7 @@ export function AppHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">마이페이지</Link>
+                    <Link href="/mypage">마이페이지</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout}>로그아웃</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -315,8 +315,8 @@ export function AppHeader() {
                     </Link>
                   ) : (
                     <div className="mt-3">
-                      <Link href="/profile" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
-                        프로필
+                      <Link href="/mypage" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
+                        마이페이지
                       </Link>
                       <button
                         onClick={logout}
