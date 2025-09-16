@@ -88,9 +88,12 @@ export function DonationForm({ donationId, initialData }: Props) {
         org: donation.org ?? "",
         start_date: toDateInput(donation.start_date),
         end_date: toDateInput(donation.end_date),
-        type: donation.type ?? "",
+        type: (() => {
+          const t = (donation.type ?? "").trim();
+          return TYPE_OPTIONS.includes(t as any) ? t : "";
+        })(),
         goal: String(donation.goal ?? 0),
-        current: donation.current == null ? "" : String(donation.current),
+        current: donation.current == null ? "0" : String(donation.current),
         img: donation.img,
       })
       return
@@ -169,6 +172,8 @@ export function DonationForm({ donationId, initialData }: Props) {
     }
   }
 
+  const TYPE_OPTIONS = ["보건복지", "재난구휼", "환경보전", "자선", "시민사회구축"] as const;
+
   // ---- 화면 상태 가드 ----
   if (donationId === undefined) return <div>잘못된 접근입니다. (id 없음)</div>
   if (isLoading && !initialData) return <div>로딩 중...</div>
@@ -202,7 +207,10 @@ export function DonationForm({ donationId, initialData }: Props) {
 
               <div className="space-y-2">
                 <Label htmlFor="type">분류 *</Label>
-                <Select value={form.type} onValueChange={(v) => setForm((s) => ({ ...s, type: v }))}>
+                <Select
+                      value={form.type ? form.type : undefined}
+                      onValueChange={(v) => setForm((s) => ({ ...s, type: v }))}
+                    >
                   <SelectTrigger><SelectValue placeholder="분류 선택" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="보건복지">보건복지</SelectItem>
