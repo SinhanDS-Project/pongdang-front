@@ -1,6 +1,6 @@
 export const runtime = "nodejs"; // 파일/스트림 전송은 node 런타임이 안전
 
-const BACKEND = process.env.BACKEND_URL ?? "http://192.168.0.16:9090";
+const BACKEND = process.env.API_BASE_URL;
 
 /** JSON 본문을 그대로 백엔드로 포워딩 */
 export async function forwardJson(
