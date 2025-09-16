@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { SurveyInput, ReportPayload } from './types'
+import type { SurveyInput, ReportPayload } from '../../types/report'
 
 /* ── 유틸 ─────────────────────────────── */
 function parseNumber(v: string): number | '' {
@@ -30,7 +30,7 @@ export default function ReportForm({
     goal_term: '중기',
   })
 
-  // 유효성 검사 (추가 검증 포함)
+  // 유효성 검사
   const isValid = useMemo(() => {
     const requiredValid = ['age', 'income', 'spend', 'saving_goal', 'current_saving'].every(
       (k) => typeof form[k as keyof SurveyInput] === 'number',
