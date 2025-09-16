@@ -1,8 +1,6 @@
 import { tokenStore } from '@/lib/auth/token-store'
 import { api, apiPublic } from '@/lib/net/client-axios'
 
-import { useAuthStore } from '@/stores/auth-store'
-
 import type { User } from '@/types/auth'
 
 type LoginPayload = { email: string; password: string }
@@ -21,7 +19,6 @@ export async function login(payload: LoginPayload) {
     if (!access || !user) throw new Error('로그인 정보가 올바르지 않습니다.')
 
     tokenStore.set(access)
-    useAuthStore.getState().setUser(user)
 
     return res.data
   } catch (error: any) {
