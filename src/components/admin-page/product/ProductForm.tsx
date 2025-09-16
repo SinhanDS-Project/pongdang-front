@@ -77,14 +77,14 @@ export function ProductForm() {
     );
 
     // 3) 이미지 파트(최대 2장). 컨트롤러가 'files'를 받는다면 아래 그대로,
-    // 단수 'file'이라면 키를 "file"로 바꿔주세요.
     descMainFiles.slice(0, 2).forEach((f) => fd.append("files", f, f.name));
 
     // 4) headers에 Content-Type 수동 지정 금지! (브라우저가 boundary 포함해서 자동 설정)
     await api.post("/api/admin/product", fd);
 
     toast({ title: "성공", description: "상품이 등록되었습니다." });
-    router.push("/admin/product");
+    alert("상품이 등록되었습니다.");
+    router.push("/admin/product/new");
   } catch (err: any) {
     const msg =
       err?.response?.data?.message ||
@@ -140,10 +140,14 @@ export function ProductForm() {
                     <SelectValue placeholder="분류 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="GIFT">GIFT</SelectItem>
-                    <SelectItem value="FOOD">COUPON</SelectItem>
-                    <SelectItem value="DAILY">SUBSCRIBE</SelectItem>
-                    <SelectItem value="ETC">ETC</SelectItem>
+                    {/* GIFT, CARD, SHOP, ACCOUNT, INVESTMENT, OTT */}
+                    <SelectItem value="GIFT">GIFT(기프트카드)</SelectItem>
+                    <SelectItem value="CARD">CARD(카드 연회비)</SelectItem>
+                    <SelectItem value="SHOP">SHOP(올댓)</SelectItem>
+                    <SelectItem value="ACCOUNT">ACCOUNT(우대 금리)</SelectItem>
+                    <SelectItem value="INVESTMENT">INVESTMENT(투자 상품)</SelectItem>
+                    <SelectItem value="INSURANCE">INSURANCE(보험)</SelectItem>
+                    <SelectItem value="OTT">OTT</SelectItem>
                     {/* 필요 시 서버 허용 값 추가 */}
                     {/* <SelectItem value="GOODS">GOODS</SelectItem> */}
                   </SelectContent>
@@ -163,7 +167,7 @@ export function ProductForm() {
 
             {/* 설명/대표를 한 박스에서 최대 2장까지 */}
             <PasteImageBoxMulti
-              label="이미지 (① 설명용, ② 대표)"
+              label="이미지 (① 대표, ② 설명용)"
               files={descMainFiles}
               setFiles={setDescMainFiles}
               maxCount={2}

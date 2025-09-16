@@ -95,7 +95,7 @@ export function PasteImageBoxMulti({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={`preview-${idx + 1}`} className="block w-full h-32 object-contain rounded border" />
                 <div className="absolute top-1 left-1 text-xs bg-black/60 text-white px-1 rounded">
-                  {idx === 0 ? "① 설명용" : idx === 1 ? "② 대표" : idx + 1}
+                  {idx === 0 ? "① 대표" : idx === 1 ? "② 설명용" : idx + 1}
                 </div>
                 <button
                   type="button"
