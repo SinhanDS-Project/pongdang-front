@@ -3,6 +3,7 @@
 import { tokenStore } from '@/lib/auth/token-store'
 import { useTurtleStore } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SockJS from 'sockjs-client'
 
@@ -26,6 +27,7 @@ type UseTurtleSocketOpts = {
 export function useTurtleSocket(roomId: string, userId: number | null, opts?: UseTurtleSocketOpts) {
   const clientRef = useRef<Client | null>(null)
   const [connected, setConnected] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -58,6 +60,7 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
         // ---- (A) 레이스 진행/결과 ----
         client.subscribe(raceTopic, (message: IMessage) => {
           let pkt: WSMessage
+
           try {
             pkt = JSON.parse(message.body)
           } catch {
@@ -73,20 +76,19 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
 
           if ((pkt as any).type === 'race_update' || positions) {
             // Track 루프에서 setPositions + tickLerp 하게 하려고 여기서는 버퍼에만 저장
-            const positionsPercent = (positions ?? []).map((p: number) => p * 100);
+            const positionsPercent = (positions ?? []).map((p: number) => p * 100)
             // raceStream 사용 x
             useTurtleStore.getState().setPositions(positionsPercent)
-            return
           }
 
           // 결승/결과
-          const looksLikeFinish =
-            (pkt as any)?.type === 'race_finish' ||
-            (typeof (pkt as any)?.winner !== 'undefined' && Array.isArray((pkt as any)?.results))
-
+          const looksLikeFinish = pkt?.type === 'race_finish'
           if (looksLikeFinish) {
-            console.log('[race_finish]', pkt)
             opts?.onFinish?.(pkt as any)
+
+            setTimeout(() => {
+              router.push(`/play/rooms/${roomId}`)
+            }, 3000)
           }
         })
 
