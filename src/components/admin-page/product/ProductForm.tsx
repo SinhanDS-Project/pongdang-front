@@ -143,7 +143,7 @@ export function ProductForm() {
                     {/* GIFT, CARD, SHOP, ACCOUNT, INVESTMENT, OTT */}
                     <SelectItem value="GIFT">GIFT(기프트카드)</SelectItem>
                     <SelectItem value="CARD">CARD(카드 연회비)</SelectItem>
-                    <SelectItem value="SHOP">SHOP(올댓)</SelectItem>
+                    <SelectItem value="SHOP">SHOP(올댓, 서비스 내 상품)</SelectItem>
                     <SelectItem value="ACCOUNT">ACCOUNT(우대 금리)</SelectItem>
                     <SelectItem value="INVESTMENT">INVESTMENT(투자 상품)</SelectItem>
                     <SelectItem value="INSURANCE">INSURANCE(보험)</SelectItem>
