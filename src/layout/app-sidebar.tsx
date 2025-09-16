@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, User } from 'lucide-react'
+import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, ShoppingBag, Star, Swords, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import * as React from 'react'
@@ -143,6 +143,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </CollapsibleContent>
               </SidebarMenuItem>
             </Collapsible>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/store">
+                  <ShoppingBag />
+                  <span>퐁 스토어</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#">
