@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import ReportForm from '@/components/report-page/ReportForm'
 import ReportModal from '@/components/report-page/ReportModal'
-import type { ReportPayload, FinanceReport } from '@/components/report-page/types'
+import LoadingModal from '@/components/report-page/LoadingModal'
+import type { ReportPayload, FinanceReport } from '@/types/report'
 import { api } from '@/lib/net/client-axios'
 
 export default function FinanceReportPage() {
@@ -13,14 +14,14 @@ export default function FinanceReportPage() {
 
   const handleSubmit = async (payload: ReportPayload) => {
     try {
-      setLoading(true)
+      setLoading(true) //  로딩 시작
       const { data } = await api.post<FinanceReport>('/api/finance/report', payload)
       setReport(data)
-      setModalOpen(true)
+      setModalOpen(true) // 결과 모달 열기
     } catch {
       alert('리포트 생성 실패')
     } finally {
-      setLoading(false)
+      setLoading(false) //  로딩 끝
     }
   }
 
@@ -32,6 +33,9 @@ export default function FinanceReportPage() {
       </header>
 
       <ReportForm onSubmit={handleSubmit} loading={loading} />
+
+      {/* 로딩 모달 */}
+      <LoadingModal open={loading && !report} />
 
       {/* 결과 모달 */}
       <ReportModal open={modalOpen} onClose={() => setModalOpen(false)} report={report} />
