@@ -23,7 +23,7 @@ const navigation = [
   },
   {
     name: "배너 등록",
-    href: "/admin/banner/new",
+    href: "/admin/banner",
     icon: ImageIcon,
   },
   {
