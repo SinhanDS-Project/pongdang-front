@@ -25,10 +25,10 @@ export function StoreSection({ items }: { items: StoreItem[] }) {
             href={`/store/${item.id}`}
             className="hover:shadow-badge block rounded-xl transition-shadow"
           >
-            <Card className="p-3 sm:p-4">
-              <CardContent className="flex flex-col gap-y-3 p-0 sm:gap-y-4">
+            <Card className="p-2.5">
+              <CardContent className="flex flex-col gap-y-2 p-0">
                 {/* 이미지 */}
-                <div className="bg-placeholder relative aspect-[6/5] w-full overflow-hidden rounded-lg">
+                <div className="bg-placeholder relative aspect-[2/1] w-full overflow-hidden rounded">
                   <Image
                     src={item.img ?? '/placeholder-banner.png'}
                     alt={item.name}
@@ -39,7 +39,7 @@ export function StoreSection({ items }: { items: StoreItem[] }) {
                 </div>
 
                 {/* 상품명 */}
-                <div className="line-clamp-1 text-base font-bold sm:text-lg md:text-xl">{item.name}</div>
+                <div className="line-clamp-1 text-base font-semibold sm:text-lg">{item.name}</div>
 
                 {/* 가격 */}
                 <div className="flex w-full items-center justify-end gap-x-3 sm:gap-x-4">

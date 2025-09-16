@@ -66,9 +66,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Collapsible asChild defaultOpen={false} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={'게임플레이'}>
+                  <SidebarMenuButton tooltip={'개인게임'}>
                     <Gamepad2 />
-                    <span>게임플레이</span>
+                    <Link href={'/play'}>개인게임</Link>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -76,15 +76,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'#'}>
-                          <span>개인게임</span>
+                        <Link href={'/play/coin'}>
+                          <span>퐁! 던지기</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
                         <Link href={'#'}>
-                          <span>단체게임</span>
+                          <span>터진다..퐁!</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>도전! 금융 골든벨</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/play/rooms">
+                  <Swords />
+                  <span>단체게임</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <Collapsible asChild defaultOpen={false} className="group/collapsible">
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={'개인게임'}>
+                    <Star />
+                    <Link href={'/event'}>이벤트</Link>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'/play/coin'}>
+                          <span>퐁당퐁당 출석체크</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>랜덤 퐁 터져라!</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>퐁! 환율을 맞춰라</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
