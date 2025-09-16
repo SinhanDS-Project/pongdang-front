@@ -359,7 +359,7 @@ export default function GameRoomPage() {
         <div className="flex items-center gap-2">
           <div className="text-foreground/70">{room.title}</div>
         </div>
-        <Button onClick={() => router.back()} className="bg-secondary-royal hover:bg-secondary-sky">
+        <Button onClick={() => router.push('/play/rooms')} className="bg-secondary-royal hover:bg-secondary-sky">
           뒤로가기
         </Button>
       </div>
