@@ -1,16 +1,19 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import type { AxiosError } from 'axios'
-import { api } from '@/lib/net/client-axios'
-import { BackendProduct, Category, mapProducts, Product, PRODUCT_TYPE, SpringPage } from '@/components/store-page/types'
 import { PongPagination } from '@/components/PongPagination'
-import ProductModal from '@/components/store-page/ProductModal'
-import ProductList from '@/components/store-page/ProductList'
-import { useCurrentUser, useAuthStore } from '@/stores/auth-store'
 import ErrorModal from '@/components/store-page/ErrorModal'
 import LoadingModal from '@/components/store-page/LoadingModal'
+import ProductList from '@/components/store-page/ProductList'
+import ProductModal from '@/components/store-page/ProductModal'
 import SuccessModal from '@/components/store-page/SuccessModal'
+import { BackendProduct, Category, mapProducts, Product, PRODUCT_TYPE, SpringPage } from '@/components/store-page/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { api } from '@/lib/net/client-axios'
+import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
+import type { AxiosError } from 'axios'
+import { Search } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // ── 디바운스 ───────────────────────────────
 function useDebounce<T>(value: T, delay = 500): T {
@@ -151,74 +154,63 @@ export default function StorePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      {/* 헤더 */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">스토어</h1>
-          <p className="mt-1 hidden text-sm text-gray-500 md:block">포인트로 즐기는 베스트 아이템</p>
+    <div className="container mx-auto flex grow flex-col gap-6 p-4 md:p-6 lg:p-8">
+      {/* 상단 타이틀 */}
+      <div className="flex w-full items-center justify-between gap-2 text-3xl font-extrabold">
+        <div className="text-foreground/70">
+          퐁! <span className="text-secondary-royal">스토어</span>
         </div>
+        <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-base font-medium text-gray-800">
+          <span className="hidden font-bold sm:inline">내 보유 포인트</span>
+          <span className="rounded-full bg-gray-800 px-4 py-0.5 font-bold text-white">
+            {user && user.pong_balance} 퐁
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-x-8">
+        {/* 카테고리 탭 */}
+        <nav className="grow">
+          <div className="flex w-full gap-1">
+            {PRODUCT_TYPE.map((cat) => {
+              const active = activeCat === cat
 
-        {/* 보유 포인트 표시 */}
-        {user && (
-          <div className="flex items-center gap-2 rounded-full bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-800 shadow-sm">
-            <span className="hidden sm:inline">내 보유 포인트</span>
-            <span className="rounded-full bg-gray-800 px-3 py-0.5 font-bold text-white">
-              {user.pong_balance.toLocaleString()}P
-            </span>
+              return (
+                <Button
+                  key={cat}
+                  onClick={() => setActiveCat(cat)}
+                  size={'sm'}
+                  className={[
+                    'grow rounded border font-bold',
+                    active
+                      ? 'border-secondary-royal bg-secondary-royal hover:border-secondary-sky hover:bg-secondary-sky text-white'
+                      : 'border-primary-black/20 text-primary-black/10 hover:border-secondary-sky hover:bg-secondary-sky hover:text-primary-white bg-white',
+                  ].join(' ')}
+                >
+                  {cat}
+                </Button>
+              )
+            })}
           </div>
-        )}
+        </nav>
 
         {/* 검색 */}
         <div className="relative w-full max-w-md">
-          <input
+          <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="상품명으로 검색"
-            className="w-full rounded-2xl border bg-white/90 px-4 py-2.5 pl-10 shadow-sm ring-0 transition outline-none focus:border-black"
+            className="focus:border-primary-black focus:ring-primary-black w-full rounded-lg border border-gray-300 bg-white/90 pr-4 pl-10 text-sm transition outline-none"
           />
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
         </div>
-      </header>
-
-      {/* 카테고리 탭 */}
-      <nav className="no-scrollbar overflow-x-auto pb-1">
-        <div className="flex w-max gap-2">
-          {PRODUCT_TYPE.map((cat) => {
-            const active = activeCat === cat
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCat(cat)}
-                className={[
-                  'rounded-full border px-4 py-2 text-sm font-semibold transition',
-                  active
-                    ? 'border-[var(--color-secondary-royal)] bg-[var(--color-secondary-royal)] text-white hover:border-[var(--color-secondary-navy)] hover:bg-[var(--color-secondary-navy)]'
-                    : 'border-[var(--color-secondary-royal)] bg-white text-[var(--color-secondary-royal)] hover:border-[var(--color-secondary-sky)] hover:bg-[var(--color-secondary-sky)] hover:text-white',
-                ].join(' ')}
-              >
-                {cat}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+      </div>
 
       {/* 결과 영역 */}
-      <section className="rounded-3xl border bg-white/70 p-4 shadow-sm sm:p-6">
+      <section className="">
         {loading && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
           </div>

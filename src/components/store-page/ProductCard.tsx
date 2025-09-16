@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { PongIcon } from '@/icons'
+import Image from 'next/image'
 import { useCallback } from 'react'
 import { Product } from './types'
 
@@ -21,41 +21,39 @@ export default function ProductCard({ product, onClick }: { product: Product; on
   const imgSrc = product.img || '/placeholder-banner.png'
 
   return (
-    <div
+    <Card
+      className="hover:shadow-badge block rounded-xl p-2.5 transition-shadow"
       role="button"
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      aria-label={`${product.name} 상세 보기`}
-      className="hover:shadow-badge block rounded-xl transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-black/20"
     >
-      <Card className="p-3 sm:p-4">
-        <CardContent className="flex flex-col gap-y-3 p-0 sm:gap-y-4">
-          {/* 이미지 */}
-          <div className="bg-placeholder relative aspect-[6/5] w-full overflow-hidden rounded-lg">
-            <Image
-              src={imgSrc}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              priority={false}
-            />
-          </div>
+      <CardContent className="flex flex-col gap-y-2 p-0">
+        {/* 이미지 */}
+        <div className="bg-placeholder relative aspect-[2/1] w-full overflow-hidden rounded">
+          <Image
+            src={imgSrc}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            priority={false}
+          />
+        </div>
 
-          {/* 상품명 */}
-          <h3 className="line-clamp-1 text-base font-bold sm:text-lg md:text-xl">{product.name}</h3>
+        {/* 상품명 */}
+        <div className="line-clamp-1 text-base font-semibold sm:text-lg">{product.name}</div>
 
-          {/* 가격 */}
-          <div className="flex w-full items-center justify-end gap-x-3 sm:gap-x-4">
-            <PongIcon />
-            <div className="flex items-center gap-x-1 sm:gap-x-2">
-              <span className="text-sm tabular-nums sm:text-base md:text-lg">{fmt(product.price as number)}</span>
-              <span className="text-primary-shinhan text-base font-bold sm:text-lg md:text-xl">퐁</span>
-            </div>
+        {/* 가격 */}
+        <div className="flex w-full items-center justify-end gap-x-3 sm:gap-x-4">
+          <PongIcon />
+          <div className="flex items-center gap-x-1 sm:gap-x-2">
+            <span className="text-secondary-royal text-sm font-semibold tabular-nums sm:text-base md:text-lg">
+              {fmt(product.price as number)} 퐁
+            </span>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

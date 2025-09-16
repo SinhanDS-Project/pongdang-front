@@ -5,7 +5,7 @@ export type Product = {
   price: number
   img: string
   description: string
-  product_type: string
+  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INVESTMENT' | 'OTT'
 }
 
 // ── 백엔드 원본 ───────────────────────────────────────────
@@ -14,8 +14,8 @@ export type BackendProduct = {
   name: string
   price: number
   img: string | null
-  description: string
-  type: string // ← 백엔드는 'type' 필드
+  description: string | null
+  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INVESTMENT' | 'OTT'
 }
 
 // ── Spring Page 응답 ─────────────────────────────────────
@@ -36,13 +36,13 @@ export const PRODUCT_TYPE = ['ALL', 'GIFT', 'CARD', 'SHOP', 'ACCOUNT', 'INVESTME
 export type Category = (typeof PRODUCT_TYPE)[number]
 
 // ── 매핑 함수: Backend → Front ──────────────────────────
-export function mapProducts(raw: BackendProduct[], fallbackImg = '/images/placeholder.png'): Product[] {
+export function mapProducts(raw: BackendProduct[], fallbackImg = '/placeholder-banner.png'): Product[] {
   return raw.map((d) => ({
     id: d.id,
     name: d.name,
     price: d.price,
     img: d.img ?? fallbackImg, // null 이면 대체 이미지
-    description: d.description,
-    product_type: d.type, // 백엔드 'type' → 프론트 'product_type'
+    description: d.description ?? fallbackImg,
+    product_type: d.product_type, // 백엔드 'type' → 프론트 'product_type'
   }))
 }
