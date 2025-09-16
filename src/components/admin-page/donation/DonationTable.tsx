@@ -20,7 +20,7 @@ import { useAdminStore } from "@stores/admin";
 import type { Donation } from "@/types/admin";
 import { Edit, Trash2 } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 40;
 
 const won = (n: number | null | undefined) =>
   (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) + "원";
@@ -155,29 +155,12 @@ export function DonationTable() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <Link
-                        href={{
-                          pathname: `/admin/donation/${d.id}`,
-                          query: { data: encodeURIComponent(JSON.stringify(d)) },
-                        }}
+                        href={`/admin/donation/${d.id}`}
                       >
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader />
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>닫기</AlertDialogCancel>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
