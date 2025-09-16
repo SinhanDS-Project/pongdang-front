@@ -3,7 +3,7 @@ import { forwardMultipart } from "@/app/(admin)/api/_utils/forward"
 
 export const runtime = "nodejs"
 
-const BACKEND = process.env.BACKEND_URL // e.g. http://192.168.0.16:9090
+const BACKEND = process.env.API_BASE_URL // e.g. http://192.168.0.16:9090
 const BANNER_INSERT_PATH = process.env.BANNER_INSERT_PATH || "/api/admin/banner"
 
 export async function POST(req: NextRequest) {
