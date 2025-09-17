@@ -71,8 +71,8 @@ export default function AttendancePage() {
         date: dateStr(year, month + 1, day),
       }
 
-      // 출석 저장
-      await api.put('/api/attendance', payload)
+      // // 출석 저장
+      // await api.put('/api/attendance', payload)
 
       // 퐁 적립
       await api.put('/api/wallet/add', {
