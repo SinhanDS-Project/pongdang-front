@@ -1,4 +1,4 @@
-// src/stores/auth-store.ts
+'use client'
 
 import { tokenStore } from '@/lib/auth/token-store'
 import { api, apiPublic } from '@/lib/net/client-axios'
@@ -22,6 +22,7 @@ type AuthActions = {
   setUser: (user: User | null) => void
   /** 내부용: status 수동 설정 */
   setStatus: (s: AuthStatus) => void
+  reset: () => void
 }
 
 async function tryRefresh(): Promise<string | null> {
@@ -96,10 +97,21 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           set({ status: 'unauthenticated', user: null })
         }
       },
+
+      reset: () => {
+        tokenStore.clear()
+        set({ user: null, status: 'unauthenticated' })
+        setTimeout(() => {
+          try {
+            useAuthStore.persist.clearStorage()
+          } catch {}
+        }, 0)
+      },
     }),
     {
       name: 'pd_auth_store',
       storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ user: s.user, status: s.status }),
     },
   ),
 )
