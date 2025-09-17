@@ -53,7 +53,7 @@ export default function AttendancePage() {
     })()
   }, [year, month, today])
 
-  //  오늘 출석하기
+  // 오늘 출석하기
   const handleCheck = async (day: number) => {
     if (day !== today) return
     if (attendance[day]) return
@@ -71,7 +71,15 @@ export default function AttendancePage() {
         date: dateStr(year, month + 1, day),
       }
 
-      await api.post('/api/attendance', payload)
+      // 출석 저장
+      await api.put('/api/attendance', payload)
+
+      // 퐁 적립
+      await api.put('/api/wallet/add', {
+        amount: 1, // 출석 보상 퐁
+        wallet_type: 'PONG', // 포인트 타입
+        event_type: 'ATTENDANCE', // 이벤트 타입
+      })
 
       setAttendance((prev) => ({ ...prev, [day]: true }))
       setRewardMsg('오늘의 출석체크가 완료되었습니다. ✅')
@@ -88,7 +96,7 @@ export default function AttendancePage() {
         setSubMsg('이미 1퐁이 적립되었습니다.')
       } else {
         console.error(err)
-        setRewardMsg('출석 저장에 실패했습니다. 잠시 후 다시 시도해주세요.')
+        setRewardMsg('출석 저장/적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
       }
     } finally {
       setLoading(false)
