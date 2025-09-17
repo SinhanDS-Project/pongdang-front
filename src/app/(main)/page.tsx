@@ -64,7 +64,7 @@ export default async function MainHome() {
             ['소비패턴', '절약', '보험', '연금', '주거/부동산'],
           ] as string[][]
         }
-        ctaHref="#"
+        ctaHref="/report"
         ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
       />
       <StoreSection items={storeItems} />
