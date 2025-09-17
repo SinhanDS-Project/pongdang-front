@@ -1,30 +1,58 @@
-"use client";
+// src/components/admin-page/chatlogs/ChatlogsTable.tsx
+'use client';
 
-import useSWR from "swr";
-import { useMemo, useState } from "react";
-import { inquiriesApi } from "@/lib/admin/chatlogs";
-import type { Chatlog } from "@/types/admin";
-import { useAdminStore } from "@stores/admin";
-import AnswerDialog from "@components/admin-page/chatlogs/AnswerDialog";
-import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState } from 'react';
+import type { Chatlog } from '@/types/admin';
+import { useAdminStore } from '@stores/admin';
+import { Button } from '@/components/ui/button';
+import AnswerDialog from './AnswerDialog';
+import { api } from '@/lib/net/client-axios';
 
-const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "-");
+const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : '-');
 
 export function ChatlogsTable() {
   const { search } = useAdminStore();
-  const q = search?.trim() ?? "";
+  const q = search?.trim() ?? '';
 
-  const { data, error, isLoading, mutate } = useSWR(
-    ["chatlogs", q],
-    () => inquiriesApi.list(q ? { q } : undefined)
+  const [content, setContent] = useState<Chatlog[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await api.get('/api/admin/chatlogs');
+        if (!mounted) return;
+        setContent(data);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'fetch error');
+        // 실패 시 플레이스홀더
+        setContent(
+          Array.from({ length: 3 }).map((_, i) => ({
+            id: i + 1,
+            title: `Placeholder Banner ${i + 1}`,
+            question: '/placeholder-banner.png',
+            response: '#',
+            chat_date: `2024-10-0${i + 1}`,
+            response_date: null,
+            user_id: i + 1,
+            nickname: 'User',
+          }))
   );
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const items = useMemo(() => {
-    if (!data) return [];
-    if (!q) return data;
+    if (!content) return [];
+    if (!q) return content;
     const lower = q.toLowerCase();
-    return data.filter((it) => (it.title ?? "").toLowerCase().includes(lower));
-  }, [data, q]);
+    return content.filter((it) => (it.title ?? '').toLowerCase().includes(lower));
+  }, [content, q]);
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Chatlog | null>(null);
@@ -33,9 +61,6 @@ export function ChatlogsTable() {
     setSelected(item);
     setOpen(true);
   };
-
-  if (isLoading) return <div className="text-sm text-gray-500">불러오는 중…</div>;
-  if (error) return <div className="text-sm text-red-600">조회 실패: {String((error as any)?.message ?? error)}</div>;
 
   return (
     <>
@@ -53,13 +78,17 @@ export function ChatlogsTable() {
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 ? (
+            {!content ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">불러오는 중…</td>
+              </tr>
+            ) : items.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-gray-500">문의가 없습니다.</td>
               </tr>
             ) : (
               items.map((it) => {
-                const status = it.response ? "ANSWERED" : "OPEN";
+                const status = it.response ? 'ANSWERED' : 'OPEN';
                 return (
                   <tr key={it.id} className="border-t">
                     <td className="px-4 py-2">{it.id}</td>
@@ -70,9 +99,9 @@ export function ChatlogsTable() {
                     <td className="px-4 py-2">
                       <span
                         className={
-                          status === "OPEN"
-                            ? "inline-block rounded bg-yellow-100 px-2 py-0.5 text-yellow-800"
-                            : "inline-block rounded bg-green-100 px-2 py-0.5 text-green-800"
+                          status === 'OPEN'
+                            ? 'inline-block rounded bg-yellow-100 px-2 py-0.5 text-yellow-800'
+                            : 'inline-block rounded bg-green-100 px-2 py-0.5 text-green-800'
                         }
                       >
                         {status}
@@ -80,7 +109,7 @@ export function ChatlogsTable() {
                     </td>
                     <td className="px-4 py-2">
                       <Button size="sm" onClick={() => onAnswer(it)}>
-                        {it.response ? "수정" : "답변"}
+                        {it.response ? '수정' : '답변'}
                       </Button>
                     </td>
                   </tr>
@@ -91,12 +120,9 @@ export function ChatlogsTable() {
         </table>
       </div>
 
-      <AnswerDialog
-        open={open}
-        onOpenChange={setOpen}
-        item={selected}
-        onSaved={mutate}
-      />
+      {error && <p className="mt-2 text-xs text-red-500">에러: {error}</p>}
+
+      <AnswerDialog open={open} onOpenChange={setOpen} item={selected} />
     </>
   );
 }

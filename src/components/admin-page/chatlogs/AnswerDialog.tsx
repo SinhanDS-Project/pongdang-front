@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { inquiriesApi } from "@/lib/admin/chatlogs";
 import type { Chatlog } from "@/types/admin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/net/client-axios";
 
 type Props = {
   open: boolean;
@@ -26,7 +26,9 @@ export default function AnswerDialog({ open, onOpenChange, item, onSaved }: Prop
     if (!item) return;
     setSaving(true);
     try {
-      await inquiriesApi.answer(item.id, text);
+      await api.put(`/api/admin/chatlogs/${item.id}`, { response: text }, {
+        headers: { "Content-Type": "application/json" },
+      });
       onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
