@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 
 import '@styles/globals.css'
 
-import { AuthProvider } from '@/components/providers/auth-provider'
 import { ThemeProvider } from '@components/providers/theme-provider'
+
+import AuthBootstrapClient from '@/stores/auth-bootstrap'
 
 export const metadata: Metadata = {
   title: '퐁당퐁당',
@@ -19,7 +20,8 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="bg-background text-foreground min-h-dvh antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthBootstrapClient />
+          {children}
         </ThemeProvider>
       </body>
     </html>

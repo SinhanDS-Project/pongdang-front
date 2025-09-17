@@ -55,7 +55,7 @@ export default async function MainHome() {
   return (
     <div className="container mx-auto px-4 md:px-6 lg:px-8">
       <BannerCarousel banners={banners} />
-      <AlertBar message="작은 퐁 하나가 내일의 큰 혜택이 됩니다" />
+      <AlertBar />
       <CtaSection
         title="나에게 맞는 금융은 뭐가 있을까?"
         rows={
