@@ -4,7 +4,7 @@
 export type LoanFlag = '있음' | '없음'
 
 // 투자 성향
-export type InvestType = '극보수형' | '중립형' | '공격형'
+export type InvestType = '안정형' | '중립형' | '공격형'
 
 // 목표 기간
 export type GoalTerm = '단기' | '중기' | '장기'
