@@ -45,9 +45,22 @@ export default function AnswerDialog({ open, onOpenChange, item, onSaved }: Prop
           <DialogTitle>답변 {item?.response ? "수정" : "작성"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
           <div className="text-sm text-gray-600"><b>제목</b>: {item?.title}</div>
-          <div className="text-sm text-gray-600"><b>문의</b>: {item?.question}</div>
+            {/* 본문: 스크롤 가능 + 긴 문자열 줄바꿈 + 이미지 자동 리사이즈 */}
+          <div className="px-5 pb-4 flex flex-col gap-3 h-[calc(100%-140px)]">
+            <div className="text-sm text-muted-foreground">문의:</div>
+
+            <div
+              className="
+                flex-1 rounded-md border bg-muted/30 p-3
+                overflow-auto
+                whitespace-pre-wrap break-words break-all
+                [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md
+                [&_p]:mb-2 [&_p:last-child]:mb-0
+              "
+              // 서버에서 온 HTML이라면 그대로 렌더 (필요시 sanitize 고려)
+              dangerouslySetInnerHTML={{ __html: item?.question ?? '' }}
+            />
           <Textarea
             rows={6}
             value={text}
