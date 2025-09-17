@@ -8,12 +8,21 @@ const clamp01_100 = (n: number) => {
   return n
 }
 
+/** 서버 색상 고정 순서 (인덱스 매핑용) */
+export const COLOR_ORDER = [
+  'green','orange','pink','yellow','brown','purple','gray','blue',
+] as const
+type TurtleColor = typeof COLOR_ORDER[number]
+const COLOR_TO_INDEX: Record<string, number> =
+  Object.fromEntries(COLOR_ORDER.map((c, i) => [c, i]))
+
+
 interface TurtleState {
   // 게임/선택 상태
   isHost: boolean
-  selectedTurtle: number | null // 0-based (없으면 null)
+  selectedTurtle: string | null // 0-based (없으면 null)
   setIsHost: (v: boolean) => void
-  setSelected: (tid: number | null) => void
+  setSelected: (tid: string | null) => void
 
   // 레이스 진행률
   /** 소켓으로 받은 "원시" 진행률 (0~100) */
@@ -26,6 +35,10 @@ interface TurtleState {
    * 길이가 달라지면 displayed도 자동으로 길이를 맞추고 부족한 부분은 마지막 값(또는 0)으로 채웁니다.
    */
   setPositions: (next: number[]) => void
+
+   /** 선택 색상 문자열 → 인덱스(number|null) (패닝용) */
+  getSelectedIndex: (total: number) => number | null
+
 
   /**
    * 한 프레임 보간 (displayed -> positions 로 alpha 만큼 이동)
@@ -87,5 +100,13 @@ export const useTurtleStore = create<TurtleState>((set, get) => ({
 
   resetRace: () => {
     set({ positions: [], displayed: [] })
+  },
+
+   /** 서버 selectedTurtle(string) → number|null (난이도/마릿수 total 기준) */
+  getSelectedIndex: (total: number) => {
+    const key = get().selectedTurtle
+    if (!key) return null
+    const idx = COLOR_TO_INDEX[String(key).toLowerCase()]
+    return Number.isInteger(idx) && idx >= 0 && idx < total ? idx : null
   },
 }))

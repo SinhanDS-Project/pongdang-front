@@ -101,6 +101,7 @@ export function Track({
       // 보간 결과
       // const displayedNow = st.displayed ?? []
       const N = turtles.length
+      const selectedIdx = useTurtleStore.getState().getSelectedIndex(N)
       const pos = st.positions ?? []
       const dispRaw = st.displayed ?? []
       const displayedNow = Array.from({ length : N }, (_, i) => {
@@ -123,16 +124,16 @@ export function Track({
       }
 
       console.debug('[pan]',
-        { selected, N: displayedNow.length, selVal: displayedNow[selected!] }
+        { selected, N: displayedNow.length, selVal: displayedNow[selectedIdx!] }
       )
 
 
       // --- 4) 패닝 계산 (selected가 있을 때만) ---
       const vp = viewportRef.current
-      if (vp && typeof selected === 'number' &&
-        selected >= 0 && selected < displayedNow.length &&
+      if (vp && typeof selectedIdx === 'number' &&
+        selectedIdx >= 0 && selectedIdx < displayedNow.length &&
         hadPositions.current) {
-        const selProgress = Math.min(100, displayedNow[selected] ?? 0)
+        const selProgress = Math.min(100, displayedNow[selectedIdx] ?? 0)
 
         // ① 월드 좌표: 렌더와 동일 기준(START_MARGIN/2 → START 왼쪽 대기)
         const selWorldX = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH

@@ -80,6 +80,7 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
             // const positionsPercent = (positions ?? []).map((p: number) => p * 100)
             // raceStream 사용 x
             useTurtleStore.getState().setPositions(positions)
+            console.log("positions[] : ", positions)
           }
 
           // 결승/결과
@@ -103,7 +104,14 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
             const payload = JSON.parse(message.body)
             // 서버 예시: { type: 'game_start', data: Player[] }
             if (payload?.type === 'game_start' && Array.isArray(payload.data)) {
-              opts.onPlayers(payload.data)
+              const players = payload.data as Array<{ user_id: number; turtle_id: string }>
+              opts.onPlayers(players)
+
+              // ✅ 내 거북이 색을 store에 저장 (예: 'green','brown'...)
+              const me = players.find(p => p.user_id === userId)
+              if (me?.turtle_id) {
+                useTurtleStore.getState().setSelected(me.turtle_id)
+              }
             }
           } catch (e) {
             console.error('[players parse error]', e)

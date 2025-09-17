@@ -7,11 +7,10 @@ import { tokenStore } from '@/lib/auth/token-store'
 import { api } from '@/lib/net/client-axios'
 
 import { useAuthStore } from '@/stores/auth-store'
-import { useTurtleStore } from '@stores/turtle-store'
+import { useTurtleStore, COLOR_ORDER } from '@stores/turtle-store'
 
 import { Track } from '@/components/turtle-run-page'
 import { useTurtleSocket } from '@/lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
-import { connected } from 'process'
 
 export type Winner = {
   rank: 1 | 2 | 3
@@ -73,6 +72,7 @@ export default function TurtleRunPage() {
   const isHost = useTurtleStore((s) => s.isHost)
   const setIsHost = useTurtleStore((s) => s.setIsHost)
   const setSelected = useTurtleStore((s) => s.setSelected)
+  const getSelectedIndex = useTurtleStore((s) => s.getSelectedIndex)
 
   // 1) 방 정보: REST
   useEffect(() => {
@@ -174,6 +174,7 @@ export default function TurtleRunPage() {
 
   const turtleCount = difficultyMap[room.level]
   const turtleImages = Array.from({ length: 8 }).map((_, i) => `/turtle${i + 1}.png`)
+  const selectedIdx = getSelectedIndex(turtleCount)
 
   return (
     <div className="flex min-h-svh w-screen items-center justify-center bg-white">
@@ -184,8 +185,13 @@ export default function TurtleRunPage() {
         <Track
           difficulty={room.level}
           turtleImages={turtleImages.slice(0, turtleCount)}
-          selected={useTurtleStore.getState().selectedTurtle}
-          onSelect={useTurtleStore.getState().setSelected}
+          selected={selectedIdx}
+          onSelect={(idx) => {
+            // 인덱스→색 문자열로 저장 (스토어에 indexToColor가 있으면 그걸 써도 OK)
+            const COLOR_ORDER = ['green','orange','pink','yellow','brown','purple','gray','blue'] as const;
+            const color = idx == null || idx < 0 || idx >= COLOR_ORDER.length ? null : COLOR_ORDER[idx];
+            setSelected(color);
+          }}
           overlayShow={showCountdown}
           overlayCount={count}
         />
