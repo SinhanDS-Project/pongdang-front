@@ -35,6 +35,8 @@ export default function AnswerDialog({ open, onOpenChange, item, onSaved }: Prop
       alert(e?.response?.data?.message ?? e.message ?? "저장 실패");
     } finally {
       setSaving(false);
+      alert("답변이 등록되었습니다.");
+      window.location.href = "/admin/chatlogs";
     }
   };
 
