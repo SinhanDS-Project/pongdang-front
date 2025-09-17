@@ -42,7 +42,7 @@ export function Track({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const crowdRef = useRef<HTMLDivElement | null>(null)
   const crowdStandRef = useRef<HTMLDivElement | null>(null)
-  const turtleRefs = useRef<(HTMLImageElement | null)[]>([])
+  const turtleRefs = useRef<(HTMLDivElement | null)[]>([])
 
   // 패닝 상태
   const followRef = useRef(false)
@@ -99,7 +99,14 @@ export function Track({
       st.tickLerp(0.12) // 부드러운 움직임을 위해 계속 호출
 
       // 보간 결과
-      const displayedNow = st.displayed ?? []
+      // const displayedNow = st.displayed ?? []
+      const N = turtles.length
+      const pos = st.positions ?? []
+      const dispRaw = st.displayed ?? []
+      const displayedNow = Array.from({ length : N }, (_, i) => {
+        const v = dispRaw[i] ?? pos[i] ?? 0
+        return Number.isFinite(v) ? v: 0
+      })
 
       // --- 3) DOM 업데이트도 "매 프레임" 실행 ---
       for (let i = 0; i < displayedNow.length; i++) {
@@ -115,27 +122,46 @@ export function Track({
         el.style.setProperty('--x', `${left}px`)
       }
 
+      console.debug('[pan]',
+        { selected, N: displayedNow.length, selVal: displayedNow[selected!] }
+      )
+
+
       // --- 4) 패닝 계산 (selected가 있을 때만) ---
       const vp = viewportRef.current
-      if (vp && typeof selected === 'number' && hadPositions.current) {
+      if (vp && typeof selected === 'number' &&
+        selected >= 0 && selected < displayedNow.length &&
+        hadPositions.current) {
         const selProgress = Math.min(100, displayedNow[selected] ?? 0)
 
-        const START_TH = 6
-        const STOP_TH = 4
-        if (!startedFollowRef.current && selProgress > START_TH && selProgress < 90) {
+        // ① 월드 좌표: 렌더와 동일 기준(START_MARGIN/2 → START 왼쪽 대기)
+        const selWorldX = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH
+
+        // ② 현재 패닝 오프셋을 뺀 "화면 내 X(px)"
+        const screenX = selWorldX - panRef.current
+
+        // ③ '가운데쯤' 임계점(뷰포트 중앙 근처) + 히스테리시스
+        const vpW = vp.clientWidth
+        const MID_RATIO = 0.50    // 정확히 중앙 (살짝 왼쪽이면 0.45~0.48)
+        const HYST = 24           // px, 들락날락 방지 폭
+        const startX = vpW * MID_RATIO
+        const stopX  = startX - HYST
+
+        // ④ 가운데 도달 시점부터만 follow 시작/해제
+        if (!startedFollowRef.current && screenX >= startX && selProgress < 90) {
           startedFollowRef.current = true
           followRef.current = true
-        } else if (startedFollowRef.current && selProgress < STOP_TH) {
+        } else if (startedFollowRef.current && screenX <= stopX) {
+          // 원치 않으면 이 해제 블록은 제거 가능
           startedFollowRef.current = false
+          followRef.current = false
         }
 
-        const rawSelPx = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH
-        selPxSmoothRef.current =
-          selPxSmoothRef.current === 0 ? rawSelPx : selPxSmoothRef.current + (rawSelPx - selPxSmoothRef.current) * 0.25
+        // ⑤ 패닝 타깃: 중앙 정렬(스무딩)
+        if (selPxSmoothRef.current === 0) selPxSmoothRef.current = selWorldX
+        else selPxSmoothRef.current += (selWorldX - selPxSmoothRef.current) * 0.25
 
-        const vpW = vp.clientWidth
-        let panTarget = selPxSmoothRef.current - vpW * 0.45
-
+        let panTarget = selPxSmoothRef.current - vpW * 0.5 // 중앙 정렬
         const maxPan = Math.max(0, TOTAL_WIDTH - vpW)
         if (panTarget < 0) panTarget = 0
         if (panTarget > maxPan) panTarget = maxPan
@@ -143,7 +169,38 @@ export function Track({
         panTargetRef.current = followRef.current ? panTarget : 0
       } else {
         panTargetRef.current = 0
+        followRef.current = false
+        startedFollowRef.current = false
       }
+      // // --- 4) 패닝 계산 (selected가 있을 때만) ---
+      // const vp = viewportRef.current
+      // if (vp && typeof selected === 'number' && hadPositions.current) {
+      //   const selProgress = Math.min(100, displayedNow[selected] ?? 0)
+
+      //   const START_TH = 6
+      //   const STOP_TH = 4
+      //   if (!startedFollowRef.current && selProgress > START_TH && selProgress < 90) {
+      //     startedFollowRef.current = true
+      //     followRef.current = true
+      //   } else if (startedFollowRef.current && selProgress < STOP_TH) {
+      //     startedFollowRef.current = false
+      //   }
+
+      //   const rawSelPx = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH
+      //   selPxSmoothRef.current =
+      //     selPxSmoothRef.current === 0 ? rawSelPx : selPxSmoothRef.current + (rawSelPx - selPxSmoothRef.current) * 0.25
+
+      //   const vpW = vp.clientWidth
+      //   let panTarget = selPxSmoothRef.current - vpW * 0.45
+
+      //   const maxPan = Math.max(0, TOTAL_WIDTH - vpW)
+      //   if (panTarget < 0) panTarget = 0
+      //   if (panTarget > maxPan) panTarget = maxPan
+
+      //   panTargetRef.current = followRef.current ? panTarget : 0
+      // } else {
+      //   panTargetRef.current = 0
+      // }
 
       // 적용 단계 (데드존 + 감쇠 + 스텝 제한)
       const target = panTargetRef.current
@@ -245,25 +302,25 @@ export function Track({
                   /* 바깥 래퍼: X 이동만 담당 (CSS 변수로 전달) */
                   <div
                     key={idx}
-                    ref={(el: HTMLImageElement | null) => {
+                    ref={(el: HTMLDivElement | null) => {
                       turtleRefs.current[idx] = el
                     }}
-                    className={`absolute z-[45] h-[70%] max-h-[84px] ${styles.turtleWrap} ${selected === idx ? styles.selected : ''}`}
+                    className={`absolute z-[45] ${styles.turtleWrap} ${selected === idx ? styles.selected : ''}`}
                     style={{ top: '50%' }}
                   >
                     {/* X를 적용받는 래퍼 (transition도 여기에) */}
-                    <div className={`turtleWrap ${selected === idx ? 'outline outline-2 outline-yellow-400' : ''}`}>
+                    {/* <div className={`turtleWrap ${selected === idx ? 'outline outline-2 outline-yellow-400' : ''}`}> */}
                       {/* 안쪽 요소: 애니메이션은 Y만 살짝 흔들기 */}
                       <img
                         src={src}
                         alt={`turtle-${idx + 1}`}
-                        width={64}
-                        height={64}
-                        className={isRacing ? styles.racing : ''}
+                        // width={64}
+                        // height={64}
+                        className={`${styles.turtleImg} ${isRacing ? styles.racing : ''}`}
                         draggable={false}
                         onClick={() => onSelect(idx)}
                       />
-                    </div>
+                    {/* </div> */}
                   </div>
                 )
               })}

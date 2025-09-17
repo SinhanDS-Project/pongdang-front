@@ -77,9 +77,9 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
 
           if ((pkt as any).type === 'race_update' || positions) {
             // Track 루프에서 setPositions + tickLerp 하게 하려고 여기서는 버퍼에만 저장
-            const positionsPercent = (positions ?? []).map((p: number) => p * 100)
+            // const positionsPercent = (positions ?? []).map((p: number) => p * 100)
             // raceStream 사용 x
-            useTurtleStore.getState().setPositions(positionsPercent)
+            useTurtleStore.getState().setPositions(positions)
           }
 
           // 결승/결과
