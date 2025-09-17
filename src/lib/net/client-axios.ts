@@ -1,124 +1,132 @@
+// src/lib/net/client-axios.ts
 // - 매 요청에 access_token 자동 주입
-// - 401이면 refresh(백엔드가 내려준 HttpOnly 쿠키 자동 전송) → access 갱신 → "요청" 1회 재시도
-// - 동시 401 폭주 시 refresh 1회만 수행하고 나머지는 큐에 대기
+// - 401이면 refresh(쿠키) → access 갱신 → "요청" 1회 재시도
+// - 동시 401 폭주 시 refresh 1회만 수행하고 나머지는 대기(구독/발행 패턴)
 
-import { tokenStore } from '@/lib/auth/token-store' // 메모리+localStorage 저장소 (access만 보관)
-import axios, { AxiosError, AxiosRequestConfig } from 'axios'
+import { tokenStore } from '@/lib/auth/token-store'
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 
-// ----- 헬퍼: 요청 URL이 /auth/login 또는 /auth/refresh인지 체크 (무한루프/토큰주입 제외용)
+// ----- 유틸: 인증 예외 경로(토큰 주입/리프레시 재귀 방지)
 function isAuthExempt(url?: string) {
   if (!url) return false
-  // axios에 상대경로/절대경로 모두 들어올 수 있음
   const path = url.startsWith('http') ? new URL(url).pathname : url
-  return /\/auth\/(login|refresh)/.test(path)
+  return /\/auth\/(login|refresh|logout)/.test(path)
 }
 
-// ----- axios 인스턴스
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL, // 예: https://api.example.com
+// ----- 인스턴스
+export const api: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 10000,
-  withCredentials: true, // 중요: refresh HttpOnly 쿠키 전송을 위해 필요
+  withCredentials: true, // refresh에 HttpOnly 쿠키 필요
 })
 
-const apiPublic = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL, // 예: https://api.example.com
-  withCredentials: false, // 중요: refresh HttpOnly 쿠키 전송을 위해 필요
+export const apiPublic: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  timeout: 10000,
+  withCredentials: false,
 })
 
-// ----- 요청 인터셉터: access 토큰 자동 주입
-api.interceptors.request.use((config) => {
-  // auth 엔드포인트에는 토큰 주입/변조 하지 않음
-  if (isAuthExempt(config.url)) return config
+// ---------------------------------------------------------------------------
+// 리프레시 토큰 동시성 제어 (구독/발행 방식)
+// ---------------------------------------------------------------------------
+let refreshPromise: Promise<string | null> | null = null
+let subscribers: Array<(token: string | null) => void> = []
 
-  const access = tokenStore.get()
-  if (access) {
-    config.headers = config.headers ?? {}
-    config.headers.Authorization = `Bearer ${access}`
-  }
-  return config
-})
-
-// ----- 401 동시성 제어를 위한 상태/큐
-let isRefreshing = false
-let pendingQueue: {
-  resolve: (v?: any) => void
-  reject: (e: any) => void
-  config: AxiosRequestConfig
-}[] = []
-
-// ----- refresh 호출 (백엔드는 refresh_token을 HttpOnly 쿠키로 보관 중 → 자동 전송됨)
-async function callRefresh(): Promise<string> {
-  const res = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
-    {}, // 보통 바디 불필요 (쿠키만으로 인증)
-    { withCredentials: true },
-  )
-  const newAccess: string | undefined = res.data?.access_token
-  if (!newAccess) throw new Error('No access token from refresh')
-  // 새 access 저장(메모리+localStorage) + UX용 쿠키 갱신(선택)
-  tokenStore.set(newAccess)
-  return newAccess
+function subscribeRefresh(cb: (token: string | null) => void) {
+  subscribers.push(cb)
+}
+function publishRefreshDone(token: string | null) {
+  subscribers.forEach((cb) => {
+    try {
+      cb(token)
+    } catch {}
+  })
+  subscribers = []
 }
 
-// ----- 응답 인터셉터: 401 → refresh → 원 요청 재시도
-api.interceptors.response.use(
-  (res) => res,
-  async (error: AxiosError) => {
-    const original = error.config
-    const status = error.response?.status
-
-    // 네트워크 오류이거나 401 외 에러는 그대로 throw
-    if (!original || status !== 401) {
-      return Promise.reject(error)
+async function doRefresh(): Promise<string | null> {
+  try {
+    const res = await axios.post<{ access_token: string }>(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
+      {},
+      { withCredentials: true },
+    )
+    const access = res.data?.access_token
+    if (access) {
+      tokenStore.set(access) // 메모리+로컬스토리지 갱신
+      return access
     }
+  } catch {
+    // ignore
+  }
+  tokenStore.clear()
+  return null
+}
 
-    // auth 엔드포인트에서의 401은 그대로 throw (무한 루프 방지)
-    if (isAuthExempt(original.url)) {
-      return Promise.reject(error)
+// ---------------------------------------------------------------------------
+// 인터셉터 장착 함수(재사용 가능)
+// ---------------------------------------------------------------------------
+function attachInterceptors(instance: AxiosInstance) {
+  // 요청: 액세스 토큰 주입
+  instance.interceptors.request.use((config) => {
+    if (isAuthExempt(config.url)) return config
+    const access = tokenStore.get()
+    if (access) {
+      config.headers = config.headers ?? {}
+      config.headers.Authorization = `Bearer ${access}`
     }
+    return config
+  })
 
-    // 같은 요청이 이미 재시도 중이라면 다시 재시도하지 않도록 플래그
-    if ((original as any)._retry) {
-      return Promise.reject(error)
-    }
-    ;(original as any)._retry = true
+  // 응답: 401 → refresh → 1회 재시도
+  instance.interceptors.response.use(
+    (res: AxiosResponse) => res,
+    async (error: AxiosError) => {
+      const original = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
+      const status = error.response?.status
 
-    // 이미 다른 요청이 refresh 중이라면, 큐에 넣고 refresh 완료 후 재시도
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        pendingQueue.push({ resolve, reject, config: original })
+      // 원본 설정이 없거나, 401이 아니면 그대로 전달
+      if (!original || status !== 401) return Promise.reject(error)
+      // 인증 예외 경로에서의 401은 그대로
+      if (isAuthExempt(original.url)) return Promise.reject(error)
+      // ⬇️ 액세스 토큰이 전혀 없으면 리프레시 시도하지 않음
+      if (!tokenStore.get()) return Promise.reject(error)
+      // 이미 재시도한 요청이면 중복 방지
+      if (original._retry) return Promise.reject(error)
+      original._retry = true
+
+      // 이미 다른 곳에서 refresh 진행 중이면 구독 후 재시도
+      if (refreshPromise) {
+        const token = await new Promise<string | null>((resolve) => subscribeRefresh(resolve))
+        if (!token) return Promise.reject(error) // refresh 실패
+        original.headers = original.headers ?? {}
+        original.headers.Authorization = `Bearer ${token}`
+        return instance(original)
+      }
+
+      // 새 refresh 시작(전역 1회)
+      refreshPromise = doRefresh()
+      const newToken = await refreshPromise.finally(() => {
+        // publish 전에 반드시 null로 리셋
+        const t = refreshPromise
+        refreshPromise = null
+        return t
       })
-    }
 
-    // 여기서 refresh 수행 (1회)
-    isRefreshing = true
-    try {
-      const newAccess = await callRefresh()
+      // 구독자 깨우기
+      publishRefreshDone(newToken)
 
-      // 큐에 쌓인 요청들 재시도
-      pendingQueue.forEach(({ resolve, config }) => {
-        config.headers = config.headers ?? {}
-        config.headers.Authorization = `Bearer ${newAccess}`
-        resolve(api(config)) // 재요청 시작
-      })
-      pendingQueue = []
+      if (!newToken) {
+        // 실패 → 세션 종료(선택) 후 에러 전파
+        return Promise.reject(error)
+      }
 
-      // 현재 "원 요청" 재시도
+      // 현재 원 요청 재시도
       original.headers = original.headers ?? {}
-      original.headers.Authorization = `Bearer ${newAccess}`
-      return api(original)
-    } catch (e) {
-      // refresh 실패: 큐 비우고 세션 종료 처리
-      pendingQueue.forEach(({ reject }) => reject(e))
-      pendingQueue = []
-      tokenStore.clear()
-      // 필요 시 라우팅
-      // if (typeof window !== 'undefined') window.location.replace('/')
-      return Promise.reject(e)
-    } finally {
-      isRefreshing = false
-    }
-  },
-)
+      original.headers.Authorization = `Bearer ${newToken}`
+      return instance(original)
+    },
+  )
+}
 
-export { api, apiPublic }
+attachInterceptors(api)

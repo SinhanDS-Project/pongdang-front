@@ -1,9 +1,12 @@
 'use client'
 
-import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, User } from 'lucide-react'
+import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, ShoppingBag, Star, Swords, User } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 import * as React from 'react'
 
-import { useAuth } from '@/components/providers/auth-provider'
+import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -28,15 +31,12 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useAuthStore } from '@/stores/auth-store'
-import Image from 'next/image'
-import Link from 'next/link'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile } = useSidebar()
-  const { logout } = useAuth()
+  const { logout } = useAuthStore()
 
-  const user = useAuthStore((state) => state.user)
+  const user = useCurrentUser()
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -66,9 +66,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Collapsible asChild defaultOpen={false} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={'게임플레이'}>
+                  <SidebarMenuButton tooltip={'개인게임'}>
                     <Gamepad2 />
-                    <span>게임플레이</span>
+                    <Link href={'/play'}>개인게임</Link>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -76,15 +76,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'#'}>
-                          <span>개인게임</span>
+                        <Link href={'/play/coin'}>
+                          <span>퐁! 던지기</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
                         <Link href={'#'}>
-                          <span>단체게임</span>
+                          <span>터진다..퐁!</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>도전! 금융 골든벨</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -92,6 +99,58 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </CollapsibleContent>
               </SidebarMenuItem>
             </Collapsible>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/play/rooms">
+                  <Swords />
+                  <span>단체게임</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <Collapsible asChild defaultOpen={false} className="group/collapsible">
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={'개인게임'}>
+                    <Star />
+                    <Link href={'/event'}>이벤트</Link>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'/play/coin'}>
+                          <span>퐁당퐁당 출석체크</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>랜덤 퐁 터져라!</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link href={'#'}>
+                          <span>퐁! 환율을 맞춰라</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/store">
+                  <ShoppingBag />
+                  <span>퐁 스토어</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#">

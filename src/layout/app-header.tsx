@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { useAuth } from '@/components/providers/auth-provider'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -28,6 +27,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -107,7 +107,7 @@ function GuardedLink({
 
 // ===================== 헤더 =====================
 export function AppHeader() {
-  const { logout } = useAuth()
+  const { logout } = useAuthStore()
   const user = useAuthStore((state) => state.user)
   const isAuthed = !!user
   const pathname = usePathname()
@@ -145,33 +145,30 @@ export function AppHeader() {
                 const isActive = pathname === item.href
 
                 if ('children' in item) {
-                  // 드롭다운
+                  // ✅ 부모는 Trigger, 자식은 Content 안에서 GuardedLink
                   const groupNeedsAuth = !!item.requireAuth
                   return (
                     <NavigationMenuItem key={item.label} className="text-sm">
-                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <GuardedLink
-                          href={item.href}
-                          requireAuth={item.requireAuth}
-                          isAuthed={isAuthed}
-                          onBlocked={openLoginNotice}
+                      <NavigationMenuTrigger
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          'text-foreground/90 hover:text-foreground bg-transparent text-sm font-medium',
+                          isActive && 'text-foreground font-semibold',
+                        )}
+                        aria-label={`${item.label} 메뉴 열기`}
+                      >
+                        <span
                           className={cn(
-                            'text-foreground/90 hover:text-foreground relative bg-transparent text-sm font-medium transition-colors hover:bg-transparent',
-                            isActive && 'text-foreground font-semibold',
+                            'bg-primary-shinhan pointer-events-none absolute -bottom-1.5 left-0 h-[2px] w-0 rounded-full transition-all',
+                            isActive && 'w-full',
                           )}
-                          aria-label={`${item.label}로 이동`}
-                        >
-                          <span
-                            className={cn(
-                              'bg-primary-shinhan pointer-events-none absolute -bottom-1.5 left-0 h-[2px] w-0 rounded-full transition-all',
-                              isActive && 'w-full',
-                            )}
-                          />
-                          {item.label}
-                        </GuardedLink>
-                      </NavigationMenuLink>
+                        />
+                        <Link href={item.href}>{item.label}</Link>
+                      </NavigationMenuTrigger>
+
                       <NavigationMenuContent>
                         <ul className="grid w-60 gap-0.5 p-1">
+                          {/* (선택) 전체 보기 링크를 맨 위에 두고 싶다면 여기에 GuardedLink 추가 가능 */}
                           {item.children.map((child) => (
                             <li key={child.href}>
                               <NavigationMenuLink asChild>
@@ -193,6 +190,7 @@ export function AppHeader() {
                   )
                 }
 
+                // ✅ 자식 없는 단일 항목은 기존처럼 Link 사용
                 return (
                   <NavigationMenuItem key={item.href}>
                     <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>

@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'bettopia-s3-bucket.s3.ap-northeast-2.amazonaws.com',
+        pathname: '/**',
       },
     ],
   },
