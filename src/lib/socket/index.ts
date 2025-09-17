@@ -6,6 +6,7 @@ import { Client, IMessage } from '@stomp/stompjs'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SockJS from 'sockjs-client'
+import { api } from '../net/client-axios'
 
 export type WSMessage =
   | { type: 'race_update'; positions?: number[]; data?: number[] }
@@ -85,6 +86,9 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
           const looksLikeFinish = pkt?.type === 'race_finish'
           if (looksLikeFinish) {
             opts?.onFinish?.(pkt as any)
+            
+            // 게임 시작 API로 방 Status=WAITING 변경
+            api.post(`/api/gameroom/start/${roomId}`, { status: "WAITING" });
 
             setTimeout(() => {
               router.push(`/play/rooms/${roomId}`)
