@@ -88,12 +88,12 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
           if (looksLikeFinish) {
             opts?.onFinish?.(pkt as any)
             
-            // 게임 시작 API로 방 Status=WAITING 변경
-            api.post(`/api/gameroom/start/${roomId}`, { status: "WAITING" });
-
             setTimeout(() => {
               router.push(`/play/rooms/${roomId}`)
-            }, 3000)
+            }, 7000)
+            
+            // 게임 시작 API로 방 Status=WAITING 변경
+            api.post(`/api/gameroom/start/${roomId}`, { status: "WAITING" });
           }
         })
 

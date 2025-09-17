@@ -16,11 +16,14 @@ const START_BLOCK_W = 38 // px
 const TRACK_LENGTH = 4000 // px
 const TOTAL_WIDTH = START_MARGIN + TRACK_LENGTH + START_BLOCK_W + 92 // px
 const FINISH_LINE_X = START_MARGIN + TRACK_LENGTH // px
+const END_MARGIN = START_BLOCK_W + 92 // px
 
 // 상단 퍼센트 레이아웃
 const CROWD_PCT = 16 // %
 const STAND_PCT = 2 // %
 const TRACK_PCT = 100 - (CROWD_PCT + STAND_PCT)
+
+const rankDepth = (rank: string) => rank === 'FIRST' ? 0.70 : rank === 'SECOND' ? 0.47 : rank === 'THIRD' ? 0.25 : 0.08
 
 export function Track({
   difficulty,
@@ -29,6 +32,8 @@ export function Track({
   onSelect,
   overlayShow = false,
   overlayCount = null,
+
+  finishResults,
 }: {
   difficulty: 'EASY' | 'NORMAL' | 'HARD'
   turtleImages: string[]
@@ -36,6 +41,8 @@ export function Track({
   onSelect: (idx: number) => void
   overlayShow?: boolean
   overlayCount?: number | null
+
+  finishResults?: { idx: number; rank: string }[]
 }) {
   // DOM refs
   const viewportRef = useRef<HTMLDivElement | null>(null)
@@ -43,6 +50,7 @@ export function Track({
   const crowdRef = useRef<HTMLDivElement | null>(null)
   const crowdStandRef = useRef<HTMLDivElement | null>(null)
   const turtleRefs = useRef<(HTMLDivElement | null)[]>([])
+  const lockPanRef = useRef<number | null>(null); // finish 순간 pan 고정값
 
   // 패닝 상태
   const followRef = useRef(false)
@@ -77,6 +85,14 @@ export function Track({
     }
     return arr
   }, [laneRange])
+
+  
+  const finished = Array.isArray(finishResults) && finishResults.length > 0
+  const finishMap = useMemo(() => {
+    const m = new Map<number, string>()
+    finishResults?.forEach(({ idx, rank }) => m.set(idx, String(rank)))
+    return m 
+  }, [finishResults])
 
   // 메인 루프(소켓 수신 → setPositions, 보간 → DOM 업데이트 + 패닝)
   useEffect(() => {
@@ -113,120 +129,108 @@ export function Track({
       for (let i = 0; i < displayedNow.length; i++) {
         const el = turtleRefs.current[i]
         if (!el || !el.isConnected || !el.parentElement) continue
+        
+        let left: number
+        if(finished && finishMap.has(i)) {
+          // ✅ 종료 후: 등수별 깊이로 결승선 뒤쪽 정착
+          const rank = finishMap.get(i)!
+          const depth = rankDepth(rank)
+          left = Math.round(FINISH_LINE_X + END_MARGIN * depth)
+        } else {
+          const progressRaw = displayedNow[i] ?? 0
+          const progress = Math.max(0, Math.min(100, progressRaw))
 
-        const progressRaw = displayedNow[i] ?? 0
-        const progress = Math.max(0, Math.min(100, progressRaw))
-
-        const rawLeft = START_MARGIN / 2 + (TRACK_LENGTH * progress) / 100
-        const left = Math.round(rawLeft)
+          const rawLeft = START_MARGIN / 2 + (TRACK_LENGTH * progress) / 100
+          left = Math.round(rawLeft)
+        }
 
         el.style.setProperty('--x', `${left}px`)
       }
 
-      console.debug('[pan]',
-        { selected, N: displayedNow.length, selVal: displayedNow[selectedIdx!] }
-      )
-
-
       // --- 4) 패닝 계산 (selected가 있을 때만) ---
-      const vp = viewportRef.current
-      if (vp && typeof selectedIdx === 'number' &&
-        selectedIdx >= 0 && selectedIdx < displayedNow.length &&
-        hadPositions.current) {
-        const selProgress = Math.min(100, displayedNow[selectedIdx] ?? 0)
-
-        // ① 월드 좌표: 렌더와 동일 기준(START_MARGIN/2 → START 왼쪽 대기)
-        const selWorldX = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH
-
-        // ② 현재 패닝 오프셋을 뺀 "화면 내 X(px)"
-        const screenX = selWorldX - panRef.current
-
-        // ③ '가운데쯤' 임계점(뷰포트 중앙 근처) + 히스테리시스
-        const vpW = vp.clientWidth
-        const MID_RATIO = 0.50    // 정확히 중앙 (살짝 왼쪽이면 0.45~0.48)
-        const HYST = 24           // px, 들락날락 방지 폭
-        const startX = vpW * MID_RATIO
-        const stopX  = startX - HYST
-
-        // ④ 가운데 도달 시점부터만 follow 시작/해제
-        if (!startedFollowRef.current && screenX >= startX && selProgress < 90) {
-          startedFollowRef.current = true
-          followRef.current = true
-        } else if (startedFollowRef.current && screenX <= stopX) {
-          // 원치 않으면 이 해제 블록은 제거 가능
-          startedFollowRef.current = false
-          followRef.current = false
-        }
-
-        // ⑤ 패닝 타깃: 중앙 정렬(스무딩)
-        if (selPxSmoothRef.current === 0) selPxSmoothRef.current = selWorldX
-        else selPxSmoothRef.current += (selWorldX - selPxSmoothRef.current) * 0.25
-
-        let panTarget = selPxSmoothRef.current - vpW * 0.5 // 중앙 정렬
-        const maxPan = Math.max(0, TOTAL_WIDTH - vpW)
-        if (panTarget < 0) panTarget = 0
-        if (panTarget > maxPan) panTarget = maxPan
-
-        panTargetRef.current = followRef.current ? panTarget : 0
-      } else {
-        panTargetRef.current = 0
-        followRef.current = false
-        startedFollowRef.current = false
+      const vp = viewportRef.current;
+      if (!vp) {
+        raf = requestAnimationFrame(loop);
+        return;
       }
-      // // --- 4) 패닝 계산 (selected가 있을 때만) ---
-      // const vp = viewportRef.current
-      // if (vp && typeof selected === 'number' && hadPositions.current) {
-      //   const selProgress = Math.min(100, displayedNow[selected] ?? 0)
 
-      //   const START_TH = 6
-      //   const STOP_TH = 4
-      //   if (!startedFollowRef.current && selProgress > START_TH && selProgress < 90) {
-      //     startedFollowRef.current = true
-      //     followRef.current = true
-      //   } else if (startedFollowRef.current && selProgress < STOP_TH) {
-      //     startedFollowRef.current = false
-      //   }
+      const vpW = vp.clientWidth;
+      const maxPan = Math.max(0, TOTAL_WIDTH - vpW);
 
-      //   const rawSelPx = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH
-      //   selPxSmoothRef.current =
-      //     selPxSmoothRef.current === 0 ? rawSelPx : selPxSmoothRef.current + (rawSelPx - selPxSmoothRef.current) * 0.25
+      if (finished) {
+        // ✅ 경기 종료: '끝난 그 프레임의 pan'을 고정해서 계속 유지
+        if (lockPanRef.current == null) {
+          const pin = Math.max(0, Math.min(maxPan, panRef.current)); // 현재 pan을 고정점으로
+          lockPanRef.current = pin;
+          panTargetRef.current = pin;
+          panRef.current = pin; // 첫 프레임 점프 방지
+        } else {
+          panTargetRef.current = lockPanRef.current;
+        }
+        followRef.current = false;
+        startedFollowRef.current = false;
+      } else {
+        // 🟢 진행 중(기존 로직)
+        if (
+          typeof selectedIdx === 'number' &&
+          selectedIdx >= 0 &&
+          selectedIdx < displayedNow.length &&
+          hadPositions.current
+        ) {
+          const selProgress = Math.min(100, displayedNow[selectedIdx] ?? 0);
+          const selWorldX = START_MARGIN / 2 + (selProgress / 100) * TRACK_LENGTH;
+          const screenX = selWorldX - panRef.current;
 
-      //   const vpW = vp.clientWidth
-      //   let panTarget = selPxSmoothRef.current - vpW * 0.45
+          const MID_RATIO = 0.50;
+          const HYST = 24;
+          const startX = vpW * MID_RATIO;
+          const stopX = startX - HYST;
 
-      //   const maxPan = Math.max(0, TOTAL_WIDTH - vpW)
-      //   if (panTarget < 0) panTarget = 0
-      //   if (panTarget > maxPan) panTarget = maxPan
+          if (!startedFollowRef.current && screenX >= startX && selProgress < 90) {
+            startedFollowRef.current = true;
+            followRef.current = true;
+          } else if (startedFollowRef.current && screenX <= stopX) {
+            startedFollowRef.current = false;
+            followRef.current = false;
+          }
 
-      //   panTargetRef.current = followRef.current ? panTarget : 0
-      // } else {
-      //   panTargetRef.current = 0
-      // }
+          if (selPxSmoothRef.current === 0) selPxSmoothRef.current = selWorldX;
+          else selPxSmoothRef.current += (selWorldX - selPxSmoothRef.current) * 0.25;
 
-      // 적용 단계 (데드존 + 감쇠 + 스텝 제한)
-      const target = panTargetRef.current
-      const cur = panRef.current
-      let delta = target - cur
+          let panTarget = selPxSmoothRef.current - vpW * 0.5; // 중앙 정렬
+          if (panTarget < 0) panTarget = 0;
+          if (panTarget > maxPan) panTarget = maxPan;
 
-      const DEADZONE = 8
-      const ALPHA = 0.1
-      const MAX_STEP = 40
+          panTargetRef.current = followRef.current ? panTarget : Math.max(0, Math.min(maxPan, panTargetRef.current));
+        } else {
+          // ❗ 선택 없다고 0으로 리셋하지 말고 현재 값 유지
+          panTargetRef.current = Math.max(0, Math.min(maxPan, panTargetRef.current));
+          followRef.current = false;
+          startedFollowRef.current = false;
+        }
+      }
+
+      // 공통: 감쇠 이동(데드존 + 스텝 제한)
+      const target = panTargetRef.current;
+      const cur = panRef.current;
+      let delta = target - cur;
+      const DEADZONE = 8, ALPHA = 0.1, MAX_STEP = 40;
 
       if (Math.abs(delta) <= DEADZONE) {
-        panRef.current = target
+        panRef.current = target;
       } else {
-        let step = delta * ALPHA
-        if (step > MAX_STEP) step = MAX_STEP
-        if (step < -MAX_STEP) step = -MAX_STEP
-        panRef.current = cur + step
+        let step = delta * ALPHA;
+        if (step > MAX_STEP) step = MAX_STEP;
+        if (step < -MAX_STEP) step = -MAX_STEP;
+        panRef.current = cur + step;
       }
 
-      const px = -panRef.current
-      if (containerRef.current) containerRef.current.style.transform = `translate3d(${px}px,0,0)`
-      if (crowdRef.current) crowdRef.current.style.transform = `translate3d(${px}px,0,0)`
-      if (crowdStandRef.current) crowdStandRef.current.style.transform = `translate3d(${px}px,0,0)`
+      const px = -panRef.current;
+      containerRef.current?.style.setProperty('transform', `translate3d(${px}px,0,0)`);
+      crowdRef.current?.style.setProperty('transform', `translate3d(${px}px,0,0)`);
+      crowdStandRef.current?.style.setProperty('transform', `translate3d(${px}px,0,0)`);
 
-      raf = requestAnimationFrame(loop)
+      raf = requestAnimationFrame(loop);
     }
 
     raf = requestAnimationFrame(loop)
@@ -235,7 +239,7 @@ export function Track({
       cancelAnimationFrame(raf)
       turtleRefs.current = []
     }
-  }, [selected])
+  }, [selected, finished])
 
   return (
     // 부모(#gameRoot)가 relative + 크기를 가지고 있다는 전제
@@ -297,8 +301,23 @@ export function Track({
               .map(({ idx }) => {
                 const positionsNow = useTurtleStore.getState().positions
                 const isRacing = (positionsNow[idx] ?? 0) > 0
-                const src = turtleImages[idx] ?? '/turtle-fallback.png'
-
+                
+                // ✅ 종료 후 이미지 변형(승/패) 적용
+                const rank = finishMap.get(idx)
+                // 기본 이미지
+                let src = turtleImages[idx] ?? '/turtle-fallback.png'
+                if (finished) {
+                  const n = idx + 1
+                  const victory = ['/victory' + n + '.png']
+                  const defeat    = ['/defeat' + n + '.png']
+                  if (rank === 'FIRST' || rank === 'SECOND' || rank === 'THIRD') {
+                    // 프로젝트에 어떤 파일명이 있는지 모르니 우선순위 두 개 시도
+                    src = victory.find(Boolean) as string
+                  } else {
+                    src = defeat.find(Boolean) as string
+                  }
+                }
+                
                 return (
                   /* 바깥 래퍼: X 이동만 담당 (CSS 변수로 전달) */
                   <div

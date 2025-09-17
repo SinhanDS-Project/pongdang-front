@@ -38,11 +38,12 @@ type PlayerInfo = {
 }
 
 type FinishRow = {
-  user_uid: number | string
-  selectedTurtle: number | string
-  rank: number | string
-  winAmount?: number | string
-  pointChange?: number | string
+  nickname: string;
+  pointChange: number;
+  rank: 'FIRST' | 'SECOND' | 'THIRD' | 'LOSE' | string;
+  selectedTurtle: string | number;
+  userId: number;
+  winAmount: number;
 }
 
 type FinishPayload = {
@@ -52,11 +53,6 @@ type FinishPayload = {
 
 const difficultyMap = { EASY: 4, NORMAL: 6, HARD: 8 } as const
 
-const toNum = (v: unknown, fallback = 0) => {
-  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN
-  return Number.isFinite(n) ? n : fallback
-}
-
 export default function TurtleRunPage() {
   const { id } = useParams<{ id: string }>() // 문자열
   const userId = useAuthStore((s) => s.user?.id) ?? null
@@ -64,6 +60,8 @@ export default function TurtleRunPage() {
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const [players, setPlayers] = useState<PlayerInfo[]>([]) // ← 기본값을 []로
   const [loading, setLoading] = useState(true)
+
+  const [finishResults, setFinishResults] = useState<{ idx: number; rank: string }[] | null>(null)
 
   // 결과 모달(현재 주석 처리된 UI라 내부 상태만 유지)
   const finishHandledRef = useRef(false)
@@ -126,9 +124,30 @@ export default function TurtleRunPage() {
     onFinish: (raw) => {
       if (finishHandledRef.current) return
       const data: FinishPayload = (raw as any)?.data ?? raw
-      const invalid = typeof data?.winner !== 'number' || !Array.isArray(data?.results) || data.results.length === 0
-      if (invalid) return
+      if (!Array.isArray(data?.results)) return;
 
+      const toIdx = (v: number | string): number => {
+        if(typeof v === 'number') return v
+        const n = Number(v)
+        if(Number.isFinite(n)) return n
+        // 색 문자열인 경우 COLOR_ORDER에서 인덱스 검색
+        const s = String(v).toLowerCase()
+        const i = COLOR_ORDER.findIndex((c:any) => String(c).toLowerCase() === s)
+        return i >= 0 ? i : -1
+      }
+
+      const rows = data.results
+      const mapped = rows.map((r) => ({
+        idx: toIdx(r.selectedTurtle),
+        rank: String(r.rank).toUpperCase(),
+        nickname: r.nickname,
+        winAmount: r.winAmount,
+        pointChange: r.pointChange,
+        userId: r.userId,
+      }))
+      .filter((x) => x.idx >= 0)
+
+      setFinishResults(mapped)
       // ... 여기서 결과 모달 열기 등 처리 (현재 UI 주석 상태)
       finishHandledRef.current = true
       // console.log('[race finish]', data)
@@ -194,6 +213,9 @@ export default function TurtleRunPage() {
           }}
           overlayShow={showCountdown}
           overlayCount={count}
+
+          // ✅ 종료 결과 전달 → Track이 정착/이미지 교체 처리
+          finishResults={finishResults ?? undefined}
         />
       </div>
     </div>
