@@ -16,14 +16,13 @@ const START_BLOCK_W = 38 // px
 const TRACK_LENGTH = 4000 // px
 const TOTAL_WIDTH = START_MARGIN + TRACK_LENGTH + START_BLOCK_W + 92 // px
 const FINISH_LINE_X = START_MARGIN + TRACK_LENGTH // px
-const END_MARGIN = START_BLOCK_W + 92 // px
 
 // 상단 퍼센트 레이아웃
 const CROWD_PCT = 16 // %
 const STAND_PCT = 2 // %
 const TRACK_PCT = 100 - (CROWD_PCT + STAND_PCT)
 
-const rankDepth = (rank: string) => rank === 'FIRST' ? 0.70 : rank === 'SECOND' ? 0.47 : rank === 'THIRD' ? 0.25 : 0.08
+const rankDepth = (rank: string) => rank === 'FIRST' ? 4160 : rank === 'SECOND' ? 4145 : rank === 'THIRD' ? 4130 : 0.01
 
 export function Track({
   difficulty,
@@ -135,7 +134,7 @@ export function Track({
           // ✅ 종료 후: 등수별 깊이로 결승선 뒤쪽 정착
           const rank = finishMap.get(i)!
           const depth = rankDepth(rank)
-          left = Math.round(FINISH_LINE_X + END_MARGIN * depth)
+          left = Math.round(depth)
         } else {
           const progressRaw = displayedNow[i] ?? 0
           const progress = Math.max(0, Math.min(100, progressRaw))
@@ -304,18 +303,12 @@ export function Track({
                 
                 // ✅ 종료 후 이미지 변형(승/패) 적용
                 const rank = finishMap.get(idx)
+                const isWinner = rank === 'FIRST' || rank === 'SECOND' || rank === 'THIRD' || positionsNow[idx] > 100;
                 // 기본 이미지
                 let src = turtleImages[idx] ?? '/turtle-fallback.png'
                 if (finished) {
                   const n = idx + 1
-                  const victory = ['/victory' + n + '.png']
-                  const defeat    = ['/defeat' + n + '.png']
-                  if (rank === 'FIRST' || rank === 'SECOND' || rank === 'THIRD') {
-                    // 프로젝트에 어떤 파일명이 있는지 모르니 우선순위 두 개 시도
-                    src = victory.find(Boolean) as string
-                  } else {
-                    src = defeat.find(Boolean) as string
-                  }
+                  src = isWinner ? `/victory${n}.png` : `/defeat${n}.png`;
                 }
                 
                 return (
@@ -350,7 +343,7 @@ export function Track({
         {/* FINISH */}
         <div
           className="absolute top-0 z-[40] flex h-full w-[38px] flex-col items-center justify-between rounded bg-[repeating-linear-gradient(90deg,#fff_0_19px,#d62c16_19px_38px)] shadow"
-          style={{ left: FINISH_LINE_X }}
+          style={{ left: FINISH_LINE_X - 38 }}
         >
           {['F', 'I', 'N', 'I', 'S', 'H'].map((c, i) => (
             <span key={i} className="text-[clamp(48px,5svh,90px)] font-extrabold text-white drop-shadow">
