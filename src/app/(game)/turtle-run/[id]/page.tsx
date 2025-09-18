@@ -1,16 +1,17 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState, startTransition } from 'react'
 
-import { tokenStore } from '@/lib/auth/token-store'
-import { api } from '@/lib/net/client-axios'
+import { Track } from '@components/turtle-run-page'
 
-import { useAuthStore } from '@/stores/auth-store'
+import { tokenStore } from '@lib/auth/token-store'
+import { api } from '@lib/net/client-axios'
+import { useTurtleSocket } from '@lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
+
+import { useAuthStore } from '@stores/auth-store'
 import { useTurtleStore, COLOR_ORDER } from '@stores/turtle-store'
-
-import { Track } from '@/components/turtle-run-page'
-import { useTurtleSocket } from '@/lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
+import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
 
 export type Winner = {
   rank: 1 | 2 | 3
@@ -63,6 +64,19 @@ export default function TurtleRunPage() {
 
   const [finishResults, setFinishResults] = useState<{ idx: number; rank: string }[] | null>(null)
 
+  const orderRank = (a: string, b: string) => {
+    const w = { FIRST: 1, SECOND: 2, THIRD: 3, LOSE: 99 }
+    return (w[a as keyof typeof w] ?? 99) - (w[b as keyof typeof w] ?? 99)
+  }
+
+  const toIdx = (v: number | string): number => {
+    if (typeof v === 'number') return v
+    const n = Number(v); if (Number.isFinite(n)) return n
+    const s = String(v).toLowerCase()
+    const i = COLOR_ORDER.findIndex((c: any) => String(c).toLowerCase() === s)
+    return i >= 0 ? i : -1
+  }
+
   // 결과 모달(현재 주석 처리된 UI라 내부 상태만 유지)
   const finishHandledRef = useRef(false)
 
@@ -71,6 +85,9 @@ export default function TurtleRunPage() {
   const setIsHost = useTurtleStore((s) => s.setIsHost)
   const setSelected = useTurtleStore((s) => s.setSelected)
   const getSelectedIndex = useTurtleStore((s) => s.getSelectedIndex)
+
+  const router = useRouter();
+  const REDIRECT_SECS = 5;
 
   // 1) 방 정보: REST
   useEffect(() => {
@@ -121,38 +138,26 @@ export default function TurtleRunPage() {
 
       // console.log('[players update]', list)
     },
-    onFinish: (raw) => {
-      if (finishHandledRef.current) return
-      const data: FinishPayload = (raw as any)?.data ?? raw
-      if (!Array.isArray(data?.results)) return;
+    onFinish: (pkt) => {
+      const finishRows: FinishRow[] =
+      Array.isArray(pkt?.data?.results) ? pkt.data.results :
+      Array.isArray(pkt?.results)       ? pkt.results       :
+      Array.isArray(pkt?.data)          ? pkt.data          :
+      Array.isArray(pkt)                ? pkt               :
+      []
 
-      const toIdx = (v: number | string): number => {
-        if(typeof v === 'number') return v
-        const n = Number(v)
-        if(Number.isFinite(n)) return n
-        // 색 문자열인 경우 COLOR_ORDER에서 인덱스 검색
-        const s = String(v).toLowerCase()
-        const i = COLOR_ORDER.findIndex((c:any) => String(c).toLowerCase() === s)
-        return i >= 0 ? i : -1
-      }
+    // Track용 표시는 유지
+    const resultsForTrack = finishRows
+      .map((r: any) => ({ idx: r.idx ?? toIdx(r.selectedColor ?? r.selectedTurtle), rank: r.rank }))
+      .filter((x: any) => x.idx >= 0)
+    setFinishResults(resultsForTrack)
 
-      const rows = data.results
-      const mapped = rows.map((r) => ({
-        idx: toIdx(r.selectedTurtle),
-        rank: String(r.rank).toUpperCase(),
-        nickname: r.nickname,
-        winAmount: r.winAmount,
-        pointChange: r.pointChange,
-        userId: r.userId,
-      }))
-      .filter((x) => x.idx >= 0)
-
-      setFinishResults(mapped)
-      // ... 여기서 결과 모달 열기 등 처리 (현재 UI 주석 상태)
-      finishHandledRef.current = true
-      // console.log('[race finish]', data)
-    },
-  })
+    // ✅ 모달에는 raw results만 넘김
+    setPodiumResults(finishRows)
+    setPodiumOpen(true)
+    setCountdownSec(REDIRECT_SECS)    // ⬅️ 카운트다운 시작 (기존 로직 유지)
+  },
+})
 
   // 3) 카운트다운 & 시작 SEND (연결/권한 체크 + 토큰 헤더 추가)
   const [showCountdown, setShowCountdown] = useState(true)
@@ -188,6 +193,51 @@ export default function TurtleRunPage() {
     return () => clearInterval(timer)
   }, [room, isHost, id, connected, send])
 
+  // 4) 결과 모달
+  const [podiumOpen, setPodiumOpen] = useState(false);
+  const [podiumResults, setPodiumResults] = useState<FinishRow[]>([]);
+  const [countdownSec, setCountdownSec] = useState(REDIRECT_SECS);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!podiumOpen) {
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+      return;
+    }
+    if (countdownRef.current) return;
+
+    countdownRef.current = setInterval(() => {
+      setCountdownSec(prev => (prev <= 1 ? 0 : prev - 1)); // ← 숫자만 업데이트
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    };
+  }, [podiumOpen]);
+
+  // 중복 실행 방지
+  const didNavigateRef = useRef(false);
+
+  useEffect(() => {
+    if (!podiumOpen) return;
+    if (countdownSec !== 0) return;
+    if (didNavigateRef.current) return;
+    didNavigateRef.current = true;
+
+    (async () => {
+      try {
+        // 방 상태 WAITING 전환 (실패 무시)
+        await api.post(`/api/gameroom/start/${id}`, { status: 'WAITING' }).catch(() => {});
+      } finally {
+        // 레이스 상태 초기화 후 라우팅
+        useTurtleStore.getState().resetRace();
+        startTransition(() => {
+          router.push(`/play/rooms/${id}`);
+        });
+      }
+    })();
+  }, [podiumOpen, countdownSec, id, router]);
+
   // ---- 렌더 전 보호: players는 더 이상 가드하지 않음
   if (loading || !room) return null
 
@@ -213,9 +263,16 @@ export default function TurtleRunPage() {
           }}
           overlayShow={showCountdown}
           overlayCount={count}
-
-          // ✅ 종료 결과 전달 → Track이 정착/이미지 교체 처리
           finishResults={finishResults ?? undefined}
+          />
+
+          <PodiumModal
+          open={podiumOpen}
+          onClose={() => setPodiumOpen(false)}
+          results={podiumResults}
+          title='거북이 시상식'
+          subtitle='축하합니다! 경기가 종료되었습니다.'
+          countdownSec={countdownSec}
         />
       </div>
     </div>

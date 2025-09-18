@@ -1,12 +1,11 @@
 'use client'
 
 import { tokenStore } from '@/lib/auth/token-store'
-import { useTurtleStore } from '@/stores/turtle-store'
+import { useTurtleStore, COLOR_ORDER } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SockJS from 'sockjs-client'
-import { api } from '../net/client-axios'
 
 export type WSMessage =
   | { type: 'race_update'; positions?: number[]; data?: number[] }
@@ -75,25 +74,13 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
               ? (pkt as any).data
               : null
 
-          if ((pkt as any).type === 'race_update' || positions) {
-            // Track 루프에서 setPositions + tickLerp 하게 하려고 여기서는 버퍼에만 저장
-            // const positionsPercent = (positions ?? []).map((p: number) => p * 100)
-            // raceStream 사용 x
+          if ((pkt as any).type === 'race_update') {
             useTurtleStore.getState().setPositions(positions)
-            console.log("positions[] : ", positions)
           }
 
           // 결승/결과
-          const looksLikeFinish = pkt?.type === 'race_finish'
-          if (looksLikeFinish) {
-            opts?.onFinish?.(pkt as any)
-            
-            setTimeout(() => {
-              router.push(`/play/rooms/${roomId}`)
-            }, 7000)
-            
-            // 게임 시작 API로 방 Status=WAITING 변경
-            api.post(`/api/gameroom/start/${roomId}`, { status: "WAITING" });
+           if ((pkt as any).type === 'race_finish') {
+            opts?.onFinish?.(pkt);
           }
         })
 
