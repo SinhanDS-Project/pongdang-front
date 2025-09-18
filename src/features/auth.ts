@@ -1,8 +1,6 @@
 import { tokenStore } from '@/lib/auth/token-store'
 import { api, apiPublic } from '@/lib/net/client-axios'
 
-import { useAuthStore } from '@/stores/auth-store'
-
 import type { User } from '@/types/auth'
 
 type LoginPayload = { email: string; password: string }

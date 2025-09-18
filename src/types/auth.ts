@@ -10,4 +10,7 @@ export type User = {
   asso_check: boolean // 약관 동의 여부
   linked_with_betting: boolean // 베팅포인트 연동 여부
   updated_at: string
+  pong_balance: number
+  dona_balance: number
+  role: string // ADMIN or USER
 }

@@ -2,60 +2,174 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
 
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
+
+/* -------------------- 타입/스키마 -------------------- */
 const CreateRoomSchema = z.object({
-  title: z.string().min(1, '방 이름을 입력해주세요.'),
-  game: z.enum(['TURTLE', 'MUGUNGHWA']),
-  level: z.enum(['HARD', 'NORMAL', 'EASY']),
+  title: z.string(),
+  game_level_id: z.number(),
 })
 
 export type CreateRoomValues = z.infer<typeof CreateRoomSchema>
 
+/** 백엔드 응답 타입 */
+type GameItem = {
+  id: number
+  name: string
+  game_img: string
+}
+
+type GameListRes = {
+  games: GameItem[]
+}
+
+type LevelItem = {
+  id: number
+  level: 'HARD' | 'NORMAL' | 'EASY' | string
+  entry_fee: number
+  game_id: number
+}
+
+type LevelListRes = {
+  levels: LevelItem[]
+}
+
+/** 이미지 URL 조합기 (환경변수에 맞춰 조정) */
+function getGameImageUrl(filename: string) {
+  const base = process.env.NEXT_PUBLIC_FILE_BASE_URL || ''
+
+  return `${base.replace(/\/$/, '')}/files/${filename}`
+}
+
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** 실제 생성 API를 붙일 위치 */
-  onCreate: (data: CreateRoomValues) => Promise<void> | void
 }
 
-export function CreateRoomDialog({ open, onOpenChange, onCreate }: Props) {
+export function CreateRoomDialog({ open, onOpenChange }: Props) {
   const form = useForm<CreateRoomValues>({
     resolver: zodResolver(CreateRoomSchema),
-    defaultValues: { title: '', game: 'TURTLE', level: 'NORMAL' },
+    defaultValues: { title: '', game_level_id: 0 },
     mode: 'onChange',
   })
+
+  const router = useRouter()
+
   const [submitting, setSubmitting] = useState(false)
 
+  // 게임/난이도 로딩 상태
+  const [gamesLoading, setGamesLoading] = useState(false)
+  const [levelsLoading, setLevelsLoading] = useState(false)
+
+  // 게임/난이도 데이터
+  const [games, setGames] = useState<GameItem[]>([])
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null)
+  const [levels, setLevels] = useState<LevelItem[]>([])
+
+  const [autoLevelNote, setAutoLevelNote] = useState<string | null>(null)
+
+  const selectedLevelId = form.watch('game_level_id')
+
+  /* -------------------- 모달 열릴 때 게임 목록 불러오기 -------------------- */
+  useEffect(() => {
+    if (!open) return
+
+    let alive = true
+    ;(async () => {
+      try {
+        setGamesLoading(true)
+        const { data } = await api.get<GameListRes>('/api/game/type?type=MULTI')
+        if (!alive) return
+        setGames(data?.games ?? [])
+      } catch (e) {
+        console.error('게임 목록 로드 실패', e)
+        setGames([])
+      } finally {
+        setGamesLoading(false)
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [open])
+
+  /* -------------------- 게임 클릭 → 난이도 목록 로드 -------------------- */
+  async function loadLevels(gameId: number) {
+    try {
+      setLevelsLoading(true)
+      setSelectedGameId(gameId)
+      form.setValue('game_level_id', 0, { shouldValidate: true }) // 초기화
+      setAutoLevelNote(null)
+
+      const { data } = await api.get<LevelListRes>(`/api/game/level/${gameId}`)
+      const lv = data?.levels ?? []
+      setLevels(lv)
+
+      // 난이도 1개면 자동 선택 + 안내 메시지 저장
+      if (lv.length === 1) {
+        form.setValue('game_level_id', lv[0].id, { shouldValidate: true })
+        setAutoLevelNote(
+          `이 게임은 난이도가 없습니다. ${
+            typeof lv[0].entry_fee !== 'undefined' ? ` (참가비 ${lv[0].entry_fee}퐁)` : ''
+          }.`,
+        )
+      }
+    } catch (e) {
+      console.error('난이도 로드 실패', e)
+      setLevels([])
+    } finally {
+      setLevelsLoading(false)
+    }
+  }
+
+  /* -------------------- 제출: 방 생성 -------------------- */
   async function submit(values: CreateRoomValues) {
+    if (!values.game_level_id) {
+      form.setError('game_level_id', { message: '난이도를 선택해주세요.' })
+      return
+    }
+
     setSubmitting(true)
     try {
-      await onCreate(values)
-      onOpenChange(false) // 성공 시 닫기
-      form.reset({ title: '', game: 'TURTLE', level: 'NORMAL' })
+      const { data } = await api.post('/api/gameroom', {
+        title: values.title,
+        game_level_id: values.game_level_id,
+      })
+
+      onOpenChange(false)
+      form.reset({ title: '', game_level_id: 0 })
+      router.push(`/play/rooms/${data?.id}`) // 방으로 이동
+    } catch (e) {
+      console.error('방 생성 실패', e)
+      // 필요 시 toast 처리
     } finally {
       setSubmitting(false)
     }
   }
 
-  const game = form.watch('game')
-  const level = form.watch('level')
+  const selectedLevel = useMemo(() => levels.find((lv) => lv.id === selectedLevelId) || null, [levels, selectedLevelId])
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        // 바깥 클릭/ESC 닫힘도 여기로 들어옴
         onOpenChange(v)
-        if (!v) form.reset({ title: '', game: 'TURTLE', level: 'NORMAL' }) // 닫힐 때 초기화
+        if (!v) {
+          form.reset({ title: '', game_level_id: 0 })
+          setSelectedGameId(null)
+          setLevels([])
+        }
       }}
     >
       <DialogContent className="max-w-lg p-0">
@@ -78,7 +192,6 @@ export function CreateRoomDialog({ open, onOpenChange, onCreate }: Props) {
                         <Input placeholder="방 이름" {...field} />
                       </div>
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -86,62 +199,100 @@ export function CreateRoomDialog({ open, onOpenChange, onCreate }: Props) {
               {/* 게임 선택 */}
               <div>
                 <div className="mb-2 text-base font-semibold">게임 선택</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => form.setValue('game', 'TURTLE', { shouldValidate: true })}
-                    className={cn(
-                      'rounded-xl border p-2 transition',
-                      game === 'TURTLE' ? 'border-secondary-royal ring-secondary-royal/30 ring-2' : 'border-muted',
-                    )}
-                    aria-pressed={game === 'TURTLE'}
-                  >
-                    <div className="relative h-40 w-full overflow-hidden rounded-lg">
-                      <Image src="/games/turtle.png" alt="거북이 달리기" fill className="object-cover" />
-                    </div>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => form.setValue('game', 'MUGUNGHWA', { shouldValidate: true })}
-                    className={cn(
-                      'rounded-xl border p-2 transition',
-                      game === 'MUGUNGHWA' ? 'border-secondary-royal ring-secondary-royal/30 ring-2' : 'border-muted',
-                    )}
-                    aria-pressed={game === 'MUGUNGHWA'}
-                  >
-                    <div className="relative h-40 w-full overflow-hidden rounded-lg">
-                      <Image src="/games/mugunghwa.png" alt="무궁화꽃이 피었습니다" fill className="object-cover" />
+                <div className="min-h-[220px]">
+                  {gamesLoading ? (
+                    <div className="text-muted-foreground text-sm">게임을 불러오는 중…</div>
+                  ) : games.length === 0 ? (
+                    <div className="text-muted-foreground text-sm">표시할 게임이 없습니다.</div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      {games.map((g) => {
+                        const active = selectedGameId === g.id
+                        return (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => loadLevels(g.id)}
+                            className={cn(
+                              'relative aspect-square overflow-hidden rounded-xl border transition',
+                              active ? 'border-secondary-royal ring-secondary-royal/30 ring-2' : 'border-muted',
+                            )}
+                            aria-pressed={active}
+                          >
+                            <Image
+                              src={getGameImageUrl(g.game_img)}
+                              alt={g.name}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                            />
+                          </button>
+                        )
+                      })}
                     </div>
-                  </button>
+                  )}
                 </div>
               </div>
 
-              {/* 난이도 */}
-              <div>
-                <div className="mb-3 text-base font-semibold">난이도</div>
-                <div className="flex items-center gap-3">
-                  <LevelChip
-                    label="상"
-                    active={level === 'HARD'}
-                    className="bg-game-hard"
-                    onClick={() => form.setValue('level', 'HARD', { shouldValidate: true })}
-                  />
-                  <LevelChip
-                    label="중"
-                    active={level === 'NORMAL'}
-                    className="bg-game-normal"
-                    onClick={() => form.setValue('level', 'NORMAL', { shouldValidate: true })}
-                  />
-                  <LevelChip
-                    label="하"
-                    active={level === 'EASY'}
-                    className="bg-game-easy"
-                    onClick={() => form.setValue('level', 'EASY', { shouldValidate: true })}
-                  />
+              {/* 난이도 선택 (게임 선택 후) */}
+              <div className="mt-4">
+                <div className="min-h-[150px]">
+                  {selectedGameId ? (
+                    <>
+                      <div className="mb-3 text-base font-semibold">난이도</div>
+
+                      {levelsLoading ? (
+                        <div className="text-muted-foreground text-sm">난이도를 불러오는 중…</div>
+                      ) : levels.length === 0 ? (
+                        <div className="text-muted-foreground text-sm">선택 가능한 난이도가 없습니다.</div>
+                      ) : levels.length === 1 ? (
+                        // ✅ 선택 UI 숨기고 FormMessage만 노출
+                        <div className="bg-muted text-muted-foreground mt-2 rounded-md p-3 text-xs">
+                          {autoLevelNote ?? '이 게임은 난이도가 1개입니다.'}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-3 gap-3">
+                            {levels.map((lv) => {
+                              const active = selectedLevelId === lv.id
+                              return (
+                                <button
+                                  key={lv.id}
+                                  type="button"
+                                  onClick={() => form.setValue('game_level_id', lv.id, { shouldValidate: true })}
+                                  className={cn(
+                                    'rounded-xl border p-3 text-left transition',
+                                    active ? 'border-secondary-royal ring-secondary-royal/30 ring-2' : 'border-muted',
+                                  )}
+                                  aria-pressed={active}
+                                >
+                                  <div className="text-sm font-bold">{labelize(lv.level)}</div>
+                                  {'entry_fee' in lv && typeof lv.entry_fee !== 'undefined' && (
+                                    <div className="text-muted-foreground mt-1 text-xs">참가비 {lv.entry_fee}퐁</div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+
+                          {/* 선택된 난이도 요약 */}
+                          {selectedLevel && (
+                            <div className="bg-muted text-muted-foreground mt-2 rounded-md p-3 text-xs">
+                              선택: {labelize(selectedLevel.level)}
+                              {typeof selectedLevel.entry_fee !== 'undefined' &&
+                                ` / 참가비 ${selectedLevel.entry_fee}퐁`}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    // 게임 미선택 상태에서도 높이 고정 유지
+                    <div className="text-muted-foreground text-sm">게임을 먼저 선택해주세요.</div>
+                  )}
                 </div>
               </div>
-
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={submitting} className="bg-secondary-royal hover:bg-secondary-sky">
                   {submitting ? '생성중…' : '방만들기'}
@@ -155,29 +306,16 @@ export function CreateRoomDialog({ open, onOpenChange, onCreate }: Props) {
   )
 }
 
-function LevelChip({
-  label,
-  active,
-  className,
-  onClick,
-}: {
-  label: string
-  active: boolean
-  className?: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-extrabold text-white',
-        className,
-        active ? 'ring-secondary-royal/50 ring-2 ring-offset-2' : 'opacity-70',
-      )}
-      aria-pressed={active}
-    >
-      {label}
-    </button>
-  )
+function labelize(level: string) {
+  // 레이블 치환(원하면 바꿔도 OK)
+  switch (level) {
+    case 'HARD':
+      return '상'
+    case 'NORMAL':
+      return '중'
+    case 'EASY':
+      return '하'
+    default:
+      return level
+  }
 }
