@@ -9,7 +9,7 @@ type Bubble = {
   top: string
   left: string
   size: number
-  amount: number //  0~5퐁
+  amount: number // 0~5퐁
 }
 
 export default function RandomPongPage() {
@@ -17,16 +17,14 @@ export default function RandomPongPage() {
   const [result, setResult] = useState<number | null>(null)
   const [message, setMessage] = useState('')
 
-  //  물방울 생성 (8개 고정)
+  // 물방울 생성 (8개 고정)
   const generateBubbles = (container: HTMLDivElement | null) => {
     if (!container) return
 
     const { clientWidth, clientHeight } = container
 
-    //  1~5퐁, 꽝 3개
+    // 1~5퐁, 꽝 3개
     const values = [1, 2, 3, 4, 5, 0, 0, 0]
-
-    // 배열을 랜덤하게 섞기
     const shuffled = values.sort(() => Math.random() - 0.5)
 
     const randomBubbles: Bubble[] = shuffled.map((amount, i) => {
@@ -39,7 +37,7 @@ export default function RandomPongPage() {
         top: `${topPx}px`,
         left: `${leftPx}px`,
         size,
-        amount, // 각 물방울에 값 지정
+        amount,
       }
     })
 
@@ -48,24 +46,26 @@ export default function RandomPongPage() {
     setMessage('💧 마음에 드는 물방울을 하나 골라보세요!')
   }
 
-  //  클릭 → 당첨 처리
+  // 클릭 → 당첨 처리
   const handleClick = async (bubble: Bubble) => {
-    if (bubble.amount === 0) {
-      setResult(0)
-      setMessage('😢 아쉽습니다! 꽝이에요.')
-      setBubbles((prev) => prev.filter((b) => b.id !== bubble.id))
-      return
-    }
-
     try {
+      // 무조건 서버에 시도 (당첨/꽝 관계없이)
       await api.put('/api/wallet/add', {
         amount: bubble.amount,
         wallet_type: 'PONG',
         event_type: 'BUBBLE',
       })
 
-      setResult(bubble.amount)
-      setMessage(`🎉 축하합니다! ${bubble.amount}퐁이 적립되었습니다.`)
+      // 서버에서 OK 주면 → 클라이언트 분기
+      if (bubble.amount === 0) {
+        setResult(0)
+        setMessage('😢 아쉽습니다! 꽝이에요.')
+      } else {
+        setResult(bubble.amount)
+        setMessage('🎉 축하합니다!')
+      }
+
+      // 클릭한 버블 제거
       setBubbles((prev) => prev.filter((b) => b.id !== bubble.id))
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -73,13 +73,12 @@ export default function RandomPongPage() {
         const errorCode = err.response?.data?.error
         const errorMessage = err.response?.data?.message
 
-        if (status === 409) {
-          // 서버에서 충돌(오늘 이미 참여한 이벤트)
-          setMessage(errorMessage ?? '⚠️ 오늘 이미 이벤트 참여가 완료되었습니다.')
-        } else if (errorCode === 'ALREADY_BUBBLE_FINISHED') {
-          setMessage(`⚠️ ${errorMessage}`)
+        if (errorCode === 'ALREADY_BUBBLE_FINISHED') {
+          setMessage(`⚠️ 오늘 이미 퐁 터뜨리기 이벤트 참여가 완료되었습니다.`)
+        } else if (status === 409) {
+          setMessage('⚠️ 오늘 이미 퐁 터뜨리기 이벤트 참여가 완료되었습니다.')
         } else {
-          setMessage('적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
+          setMessage(errorMessage ?? '적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
         }
       } else {
         setMessage('알 수 없는 오류가 발생했습니다.')
@@ -95,7 +94,7 @@ export default function RandomPongPage() {
       </h1>
       <p className="mb-6 text-center text-lg text-gray-600">물방울 속 퐁을 찾아보세요!</p>
 
-      {/* 물방울  영역 */}
+      {/* 물방울 영역 */}
       <div
         id="bubble-zone"
         className="relative h-[500px] w-full max-w-2xl overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-b from-white to-sky-50 shadow-lg"
@@ -127,10 +126,12 @@ export default function RandomPongPage() {
       </button>
 
       {/* 결과 */}
-      {message && <p className="mt-6 text-center text-xl font-semibold text-indigo-700">{message}</p>}
-      {result !== null && result > 0 && (
-        <div className="mt-4 rounded-xl border border-indigo-200 bg-white/90 px-6 py-4 text-center shadow-md">
-          <p className="text-2xl font-bold text-indigo-600">{result} 퐁 적립되었습니다!</p>
+      {message && (
+        <div className="mt-6 rounded-xl border border-indigo-200 bg-white/90 px-6 py-4 text-center shadow-md">
+          <p className="text-xl font-semibold text-indigo-700">{message}</p>
+          {result !== null && result > 0 && (
+            <p className="mt-2 text-2xl font-bold text-indigo-600">{result} 퐁 적립되었습니다!</p>
+          )}
         </div>
       )}
     </main>
