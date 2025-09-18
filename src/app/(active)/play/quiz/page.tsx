@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '@/lib/net/client-axios'
 import { AxiosError } from 'axios'
+import { motion } from 'framer-motion'
+import Image from 'next/image'
+import Fireworks from '@/components/quiz-page/Firework'
 
 /* ── API 타입 ───────────────────────── */
 type ApiQuizRaw = {
@@ -45,7 +48,43 @@ const normalizeQuiz = (q: ApiQuizRaw, idxFallback: number): MappedQuiz => {
   return { position, question, choices, answerIdx, explanation: q.explanation }
 }
 
-/* ── 컴포넌트 ───────────────────────── */
+/* ── 골든벨 컴포넌트 ───────────────────────── */
+function GoldenBell() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+      {/* 플래시 */}
+      <FlashOverlay />
+
+      {/* 폭죽 */}
+      <Fireworks />
+
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{
+          scale: [0, 1.2, 1],
+          rotate: [0, -35, 35, -20, 20, 0],
+          scaleY: [1, 0.9, 1.1, 1],
+        }}
+        transition={{ duration: 2, ease: 'easeInOut' }}
+      >
+        <Image src="/goldenbell.png" alt="골든벨" width={300} height={300} className="mx-auto drop-shadow-2xl" />
+        <p className="relative mt-6 animate-bounce text-5xl font-extrabold drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]">
+          <span className="text-white">🎉</span>
+          <span className="bg-gradient-to-r from-gray-100 via-white to-gray-200 bg-clip-text text-transparent">
+            골든벨 성공!
+          </span>
+          <span className="text-white">🎉</span>
+        </p>
+      </motion.div>
+    </div>
+  )
+}
+
+function FlashOverlay() {
+  return <div className="animate-flash pointer-events-none fixed inset-0 z-40 bg-yellow-300/40" />
+}
+
+/* ── 메인 컴포넌트 ───────────────────────── */
 export default function QuizPage() {
   const [quizzes, setQuizzes] = useState<MappedQuiz[]>([])
   const [step, setStep] = useState(0)
@@ -55,12 +94,13 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [showBell, setShowBell] = useState(false) //  골든벨 표시 상태
 
-  // 오늘의 퀴즈 생성 + 불러오기 (참여 여부는 아직 체크 X)
+  // 오늘의 퀴즈 생성 + 불러오기
   useEffect(() => {
     ;(async () => {
       try {
-        await api.post('/api/quiz') // 오늘 퀴즈 생성
+        await api.post('/api/quiz')
         const { data } = await api.get<ApiQuizRaw[]>('/api/quiz')
         const mapped = (Array.isArray(data) ? data : []).map((q, i) => normalizeQuiz(q, i))
         setQuizzes(mapped)
@@ -86,24 +126,14 @@ export default function QuizPage() {
     if (!current || selected === null) return
 
     try {
-      // ✅ 1번 문제 제출 시점에만 오늘 퀴즈 참여 여부 체크
-      if (step === 0) {
-        await api.post('/api/quiz/check')
-      }
-
       if (selected === current.answerIdx) {
         setCorrectCount((c) => c + 1)
       }
       setShowResult(true)
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
-        if (err.response?.status === 409 && err.response?.data?.error === 'ALREADY_TODAY_QUIZ_FINISHED') {
-          setFinished(true)
-          setMessage('⚠️ 오늘은 이미 퀴즈에 참여하셨습니다.')
-        } else {
-          console.error(err)
-          setMessage('퀴즈 진행 중 오류가 발생했습니다.')
-        }
+        console.error(err)
+        setMessage('퀴즈 진행 중 오류가 발생했습니다.')
       }
     }
   }
@@ -136,6 +166,15 @@ export default function QuizPage() {
       }
     }
   }
+
+  //  골든벨 자동 닫기
+  useEffect(() => {
+    if (finished && correctCount === quizzes.length) {
+      setShowBell(true)
+      const timer = setTimeout(() => setShowBell(false), 3500) // 3.5초 뒤 닫힘
+      return () => clearTimeout(timer)
+    }
+  }, [finished, correctCount])
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center p-6">
@@ -222,11 +261,23 @@ export default function QuizPage() {
           <p className="mb-2 text-xl font-bold">
             퀴즈 완료! 맞힌 개수: {correctCount} / {quizzes.length}
           </p>
-          <button onClick={savePong} className="mt-4 rounded bg-green-500 px-4 py-2 font-bold text-white">
-            퐁 받기
-          </button>
+
+          {correctCount === 0 ? (
+            // 다 틀렸을 때 메시지
+            <p className="mt-4 rounded px-4 py-2 text-lg font-semibold text-blue-600">
+              아쉽습니다 😢 내일 다시 도전하세요!
+            </p>
+          ) : (
+            // 맞힌 게 하나라도 있으면 퐁 받기 버튼
+            <button onClick={savePong} className="mt-4 rounded bg-green-500 px-4 py-2 font-bold text-white">
+              퐁 받기
+            </button>
+          )}
 
           {message && <p className="mt-3 text-lg font-semibold text-indigo-700">{message}</p>}
+
+          {/*  골든벨 조건 */}
+          {showBell && <GoldenBell />}
         </div>
       )}
     </main>
