@@ -5,7 +5,7 @@ export type Product = {
   price: number
   img: string
   description: string
-  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INVESTMENT' | 'OTT'
+  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INSURANCE' | 'INVESTMENT' | 'OTT'
 }
 
 // ── 백엔드 원본 ───────────────────────────────────────────
@@ -15,7 +15,7 @@ export type BackendProduct = {
   price: number
   img: string | null
   description: string | null
-  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INVESTMENT' | 'OTT'
+  product_type: 'GIFT' | 'CARD' | 'SHOP' | 'ACCOUNT' | 'INSURANCE' | 'INVESTMENT' | 'OTT'
 }
 
 // ── Spring Page 응답 ─────────────────────────────────────
@@ -31,7 +31,7 @@ export type SpringPage<T> = {
 }
 
 // ── 카테고리 상수 & 타입 ─────────────────────────────────
-export const PRODUCT_TYPE = ['ALL', 'GIFT', 'CARD', 'SHOP', 'ACCOUNT', 'INVESTMENT', 'OTT'] as const
+export const PRODUCT_TYPE = ['ALL', 'GIFT', 'CARD', 'SHOP', 'ACCOUNT', 'INSURANCE', 'INVESTMENT', 'OTT'] as const
 
 export type Category = (typeof PRODUCT_TYPE)[number]
 
