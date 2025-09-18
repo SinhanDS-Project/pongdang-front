@@ -35,21 +35,22 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
           <DialogTitle className="text-xl">{product.name}</DialogTitle>
           <DialogDescription className="sr-only">상품 상세 정보 및 결제</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-96 max-h-96 px-1 pb-4">
+
+        <ScrollArea className="h-80 max-h-96 px-4 pb-4">
           {/* 이미지 */}
-          <div className="relative m-4 aspect-[2/1]">
+          <div className="relative mb-4 aspect-[2/1]">
             <Image
               src={product.img || '/placeholder-banner.png'}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 100vw, 480px"
-              className="object-contain"
+              className="rounded-lg object-contain"
               priority
             />
           </div>
 
           {/* 본문 */}
-          <div className="space-y-3 px-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Badge variant="secondary" className="bg-secondary-light text-primary-white rounded-full px-3 py-1">
                 {product.product_type}
@@ -62,17 +63,18 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
 
             <Separator />
 
-            <div className="relative w-full rounded-lg">
+            <div className="relative aspect-[4/3] w-full rounded-lg">
               <Image
                 src={product.description}
                 alt={`${product.name} 설명 이미지`}
-                width={800} // 최대 가로 크기 지정
-                height={600} // 비율 유지되면서 자동 조정됨
+                width={800}
+                height={600}
                 className="h-auto w-full rounded-lg object-contain"
               />
             </div>
           </div>
         </ScrollArea>
+
         {/* 푸터 */}
         <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-2">
           <Button
