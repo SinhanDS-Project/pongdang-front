@@ -15,6 +15,7 @@ import SingleCoinIcon from './single_coin.svg'
 import SuccessIcon from './success.svg'
 import TitleCoinIcon from './title_coin.svg'
 import YellowTurtleIcon from './yellow_turtle.svg'
+import BoardIcon from './board.svg'
 
 export {
   BackCoinIcon,
@@ -34,7 +35,5 @@ export {
   SuccessIcon,
   TitleCoinIcon,
   YellowTurtleIcon,
+  BoardIcon,
 }
-import BoardIcon from './board.svg'
-
-export { GameIcon, HostIcon, PlayerIcon, PongIcon, BoardIcon }
