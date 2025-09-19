@@ -115,7 +115,7 @@ export function StepNickName() {
 
       setStep(4) // 완료 화면으로
     } catch (e: any) {
-      setServerError(e?.response?.data ?? '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.')
+      setServerError(e?.response?.data?.message ?? '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setSubmitting(false)
     }
