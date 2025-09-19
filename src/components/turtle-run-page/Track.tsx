@@ -22,7 +22,7 @@ const CROWD_PCT = 16 // %
 const STAND_PCT = 2 // %
 const TRACK_PCT = 100 - (CROWD_PCT + STAND_PCT)
 
-const rankDepth = (rank: string) => rank === 'FIRST' ? 4160 : rank === 'SECOND' ? 4145 : rank === 'THIRD' ? 4130 : 0.01
+const rankDepth = (rank: string) => rank === 'FIRST' ? 4160 : rank === 'SECOND' ? 4145 : rank === 'THIRD' ? 4130 : rank === 'LOSE' ? 4092 : 4092
 
 export function Track({
   difficulty,
@@ -327,8 +327,6 @@ export function Track({
                       <img
                         src={src}
                         alt={`turtle-${idx + 1}`}
-                        // width={64}
-                        // height={64}
                         className={`${styles.turtleImg} ${isRacing ? styles.racing : ''}`}
                         draggable={false}
                         onClick={() => onSelect(idx)}

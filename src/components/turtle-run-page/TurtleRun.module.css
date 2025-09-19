@@ -29,13 +29,13 @@
   transform: translate3d(var(--x, 0px), -50%, 0);
   will-change: transform;
   /* transition은 끄는 걸 권장 (tickLerp가 보간 담당) */
-  height: 64px;
-  width: 64px;
+  height: clamp(25px, 70%, 84px);
+  width: auto;
 }
 
 /* 이미지 비율 유지로 박스 안에 맞춤 */
 .turtleImg {
-  width: 100%;
+  width: auto;
   height: 100%;
   object-fit: contain;
   display: block;
