@@ -40,13 +40,13 @@ const NAVIGATIONMENU = [
     href: '/play',
     requireAuth: true,
     children: [
-      { href: '/play/throw', label: '퐁! 던지기' },
+      { href: '/play/coin', label: '퐁! 던지기' },
       { href: '/play/bomb', label: '터진다..퐁!' },
       { href: '/play/quiz', label: '도전! 금융 골든벨' },
       { href: '/play/rooms', label: '단체게임' },
     ],
   },
-  { href: '/donate', label: '기부하기', requireAuth: false },
+  { href: '/donation', label: '기부하기', requireAuth: false },
   { href: '/store', label: '퐁 스토어', requireAuth: true },
   {
     label: '게시판',
