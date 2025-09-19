@@ -245,10 +245,9 @@ export default function StorePage() {
       <LoadingModal open={loadingOpen} message="이메일로 상품을 발송중입니다." />
       <SuccessModal
         open={successOpen}
-        message="✅ 결제가 완료되었습니다."
+        message=" 이메일로 상품이 발송되었습니다. 메일함을 확인해주세요💝"
         onClose={() => {
           setSuccessOpen(false)
-          closeModal() //  성공 모달 닫을 때 ProductModal도 닫기
         }}
       />
     </div>

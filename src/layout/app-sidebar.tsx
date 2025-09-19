@@ -127,7 +127,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'#'}>
+                        <Link href={'/event/random-pong'}>
                           <span>랜덤 퐁 터져라!</span>
                         </Link>
                       </SidebarMenuSubButton>

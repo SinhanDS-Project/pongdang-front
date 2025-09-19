@@ -201,9 +201,9 @@ export default function ReportForm({
         <div className="space-y-3">
           <RadioOption
             name="invest_type"
-            value="극보수형"
-            checked={form.invest_type === '극보수형'}
-            onChange={() => onRadioChange('invest_type', '극보수형')}
+            value="안정형"
+            checked={form.invest_type === '안정형'}
+            onChange={() => onRadioChange('invest_type', '안정형')}
             label="나는 손실 위험 없이 안전하게 자금을 지키고 싶다."
           />
           <RadioOption
