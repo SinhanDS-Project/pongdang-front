@@ -93,6 +93,7 @@ export default function GameRoomPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [chatMsg, setChatMsg] = useState('')
   const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [starting, setStarting] = useState(false)
   const chatBoxRef = useRef<HTMLDivElement | null>(null)
 
   // ✅ STOMP client 재사용
@@ -106,7 +107,6 @@ export default function GameRoomPage() {
         setLoading(true)
         setError(null)
         const { data } = await api.get<RoomDetail>(`/api/gameroom/${id}`)
-        console.log('🚀 ~ GameRoomPage ~ data:', data)
         if (!alive) return
         setRoom(data)
       } catch (e: any) {
@@ -291,8 +291,25 @@ export default function GameRoomPage() {
   }
 
   // ✅ 게임 시작 → 서버 publish (서버에서 start broadcast)
-  function startGame() {
+  async function startGame() {
     if (!room || !clientRef.current || !isHostMe || !canStart) return
+
+    try {
+      setStarting(true)
+      await api.post(`/api/gameroom/start/${id}`, { status: 'PLAYING' })
+
+      const token = tokenStore.get()
+      clientRef.current.publish({
+        destination: `/app/gameroom/start/${id}`,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+    } catch (e: any) {
+      console.error('게임 시작 실패:', e)
+      alert(e?.response?.data?.message ?? '게임 시작에 실패했어요.')
+    } finally {
+      setStarting(false)
+    }
+
     const token = tokenStore.get()
     clientRef.current.publish({
       destination: `/app/gameroom/start/${id}`,
@@ -342,7 +359,7 @@ export default function GameRoomPage() {
         <div className="flex items-center gap-2">
           <div className="text-foreground/70">{room.title}</div>
         </div>
-        <Button onClick={() => router.back()} className="bg-secondary-royal hover:bg-secondary-sky">
+        <Button onClick={() => router.push('/play/rooms')} className="bg-secondary-royal hover:bg-secondary-sky">
           뒤로가기
         </Button>
       </div>
@@ -392,7 +409,7 @@ export default function GameRoomPage() {
                       </div>
                     ) : (
                       <div key={idx} className="flex items-center gap-1">
-                        <span className="font-bold">{m.sender === userNickname ? '나' : `#${m.sender}`}</span>:
+                        <span className="font-bold">{m.sender === userNickname ? '나' : `${m.sender}`}</span>:
                         <span className="break-words">{m.message}</span>
                       </div>
                     ),
@@ -423,12 +440,12 @@ export default function GameRoomPage() {
             {isHostMe ? (
               <Button
                 className="bg-secondary-royal hover:bg-secondary-navy h-14 w-full text-lg font-extrabold"
-                disabled={!canStart || me?.turtle_id === 'default'}
+                disabled={!canStart || me?.turtle_id === 'default' || starting}
                 onClick={startGame}
                 aria-disabled={!isHostMe}
                 title={!isHostMe ? '방장만 시작할 수 있습니다' : undefined}
               >
-                게임시작
+                {starting ? '시작 중…' : '게임시작'}
               </Button>
             ) : (
               <Button
