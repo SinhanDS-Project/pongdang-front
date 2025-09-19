@@ -120,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'/play/coin'}>
+                        <Link href={'/event/attendance'}>
                           <span>퐁당퐁당 출석체크</span>
                         </Link>
                       </SidebarMenuSubButton>
