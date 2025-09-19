@@ -35,3 +35,6 @@ export {
   TitleCoinIcon,
   YellowTurtleIcon,
 }
+import BoardIcon from './board.svg'
+
+export { GameIcon, HostIcon, PlayerIcon, PongIcon, BoardIcon }

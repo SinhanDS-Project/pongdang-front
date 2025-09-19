@@ -12,7 +12,6 @@ export async function login(payload: LoginPayload) {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true,
     })
-
     const access = res.data?.access_token
     const user = res.data?.user
 
