@@ -1,21 +1,17 @@
 // src/components/admin/products/ProductForm.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import useSWR, { mutate } from "swr"
 import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { fetcher } from "@lib/admin/swr"
-import { api } from "@lib/admin/axios"
-import type { Product } from "@/types/admin"
+import { api } from "@lib/net/client-axios"
 import { toast } from "@/components/ui/use-toast"
 import { ArrowLeft } from "lucide-react"
 import { PasteImageBoxMulti } from "@/components/admin-page/common/PasteImageBoxMulti"
-import { Textarea } from "@/components/ui/textarea"
 
 type FormState = {
   name: string
@@ -28,11 +24,6 @@ type FormState = {
 export function ProductForm() {
   const router = useRouter()
 
-  const { data: product } = useSWR<Product>(
-    fetcher,
-    { revalidateOnFocus: false }
-  )
-
   const [form, setForm] = useState<FormState>({
     name: "",
     price: "",
@@ -41,20 +32,7 @@ export function ProductForm() {
   })
 
   const [descMainFiles, setDescMainFiles] = useState<File[]>([]);
-  const [desc, setDesc] = useState("")
   const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    if (!product) return
-    setForm({
-      name: product.name ?? "",
-      price: product.price != null ? String(product.price) : "",
-      description: product.description ?? "",
-      // 서버 스펙에 맞춰 기본값/매핑
-      // product.type이 있다면 사용, 없다면 "GIFT"
-      type: (product as any)?.type ?? "GIFT",
-    })
-  }, [product])
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();

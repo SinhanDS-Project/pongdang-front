@@ -2,23 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import useSWR from "swr";
 import { Button } from "@components/ui/button";
 import { Badge } from "@components/ui/badge";
 import { Progress } from "@components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTrigger,
-} from "@components/ui/alert-dialog";
-import { fetcher } from "@lib/admin/swr";
 import { useAdminStore } from "@stores/admin";
 import type { Donation } from "@/types/admin";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit } from "lucide-react";
+import { api } from "@/lib/net/client-axios";
 
 const PAGE_SIZE = 40;
 
@@ -74,18 +65,42 @@ const statusByDates = (d: Donation) => {
 export function DonationTable() {
   const { search } = useAdminStore();
   const [page, setPage] = useState(0);
+  const [data, setData] = useState<Donation[] | Page<Donation> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
 
-  // ✅ 서버 페이징/검색 쿼리 안 붙임 (배열만 받아서 클라 페이징)
-  const { data, error, isLoading } = useSWR<Donation[] | Page<Donation>>
-    ("/api/admin/donation", fetcher, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
-
-  // 검색어 바뀌면 페이지를 0으로 리셋
   useEffect(() => {
-    setPage(0);
-  }, [search]);
+      let mounted = true;
+      (async () => {
+        try {
+          const { data } = await api.get<Donation[] | Page<Donation>>("/api/admin/donation");
+          if (!mounted) return;
+          setData(data);
+        } catch (e: any) {
+          if (!mounted) return;
+          setError(e?.message ?? 'axios error');
+          // 실패 시 플레이스홀더
+          setData(
+            Array.from({ length: 3 }).map((_, i) => ({
+              id: i + 1,
+              title: `Placeholder Banner ${i + 1}`,
+              purpose: '/placeholder-banner.png',
+              content: '#',
+              org: '#',
+              start_date: `2024-10-0${i + 1}`,
+              end_date: `2024-10-0${i + 1}`,
+              type: '#',
+              goal: 10000000,
+              current: 0,
+              img: '/placeholder-donation.png',
+            }))
+    );
+        }
+      })();
+      return () => {
+        mounted = false;
+      };
+    }, []);
 
   // 필터링
   const rows = useMemo<Donation[]>(() => {

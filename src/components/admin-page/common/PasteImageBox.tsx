@@ -43,7 +43,7 @@ export function PasteImageBox({
   text,
   setText,
   onTextPaste,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
   acceptMime,
   onFileRejected,
 }: Props) {

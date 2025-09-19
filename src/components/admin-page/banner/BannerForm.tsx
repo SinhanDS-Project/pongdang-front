@@ -10,8 +10,7 @@ import { Textarea } from "@components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardContent } from "@components/ui/card"
 import { toast } from "@components/ui/use-toast"
 import { PasteImageBox } from "@/components/admin-page/common/PasteImageBox"
-// import { buildMultipart, sanitizeString } from "@lib/multipart"
-import { api } from "@lib/admin/axios"
+import { api } from "@lib/net/client-axios"
 
 export function BannerForm() {
   const router = useRouter()
@@ -30,12 +29,16 @@ export function BannerForm() {
     }
     setSubmitting(true);
     try {
-      const fd = new FormData();
-      fd.append("title", title.trim());
-      fd.append("banner_link_url", bannerUrl.trim());
-      fd.append("description", (description ?? "").trim() || "-");
-      fd.append("file", file, file.name);
+      const dto = {
+        title: title.trim(),
+        banner_link_url: bannerUrl.trim(),
+        description: (description ?? "").trim() || "-",
+      }
 
+      const fd = new FormData();
+      fd.append("banner", new Blob([JSON.stringify(dto)], {type: "application/json" }), "banner.json");
+      fd.append("file", file, file.name);
+      
       await api.post("/api/admin/banner", fd);
 
       toast({ title: "성공", description: "배너가 등록되었습니다." });
