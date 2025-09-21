@@ -5,8 +5,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import SockJS from 'sockjs-client'
 
-import { tokenStore } from '@/lib/auth/token-store'
 import { api } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
 
 import { CreateRoomDialog, type CreateRoomValues } from '@/components/play-page/room/CreateRoomDialog'
 import { EmptyRoomCard } from '@/components/play-page/room/EmptyRoomCard'

@@ -19,9 +19,9 @@ import YellowTurtleIcon from '@public/yellow_turtle.png'
 
 import { HostIcon, PlayerIcon } from '@/icons'
 
-import { tokenStore } from '@/lib/auth/token-store' // ✅ 통일
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
+import { tokenStore } from '@/stores/token-store' // ✅ 통일
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'

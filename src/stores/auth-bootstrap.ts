@@ -1,12 +1,12 @@
 'use client'
 
-import { tokenStore } from '@/lib/auth/token-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { useEffect, useRef } from 'react'
 
 export function useAuthBootstrap() {
   const loadMe = useAuthStore((s) => s.loadMe)
   const mounted = useRef(false)
+import { tokenStore } from '@/stores/token-store'
 
   useEffect(() => {
     mounted.current = true
