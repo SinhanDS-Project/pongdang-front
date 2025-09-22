@@ -1,45 +1,32 @@
 'use client'
+import { useEffect } from 'react'
 
-import { useAuthStore } from '@/stores/auth-store'
-import { useEffect, useRef } from 'react'
+import { revalidateMe } from '@/hooks/use-me'
 
-export function useAuthBootstrap() {
-  const loadMe = useAuthStore((s) => s.loadMe)
-  const mounted = useRef(false)
 import { tokenStore } from '@/stores/token-store'
 
+export default function AuthBootstrapClient() {
   useEffect(() => {
-    mounted.current = true
-
-    // 토큰 초기화(로컬스토리지 → 메모리)
+    // 1) 토큰 로컬스토리지 → 메모리
     tokenStore.hydrateFromStorage()
 
-    // 최초 로드
-    loadMe()
+    // 2) 토큰 변화 감지 시에만 /me 재검증
+    const unsub = tokenStore.subscribe(() => {
+      revalidateMe()
+    })
 
-    // 같은 탭에서 토큰 바뀌면 재로딩
-    const unsubToken = tokenStore.subscribe(loadMe)
-
-    // 다른 탭에서 토큰 바뀌면 재로딩
+    // 3) 다른 탭에서 토큰 바뀌면 재검증
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'access_token') loadMe()
+      if (e.key === 'access_token') revalidateMe()
     }
     window.addEventListener('storage', onStorage)
 
-    // 탭 포커스 시 재검증(세션 만료 등)
-    const onFocus = () => loadMe()
-    window.addEventListener('focus', onFocus)
-
+    // ✅ 포커스 핸들러 제거 (리렌더 원인 삭제)
     return () => {
-      mounted.current = false
-      unsubToken()
+      unsub()
       window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', onFocus)
     }
-  }, [loadMe])
-}
+  }, [])
 
-export default function AuthBootstrapClient() {
-  useAuthBootstrap()
-  return null // 화면에 뭔가 그릴 필요 없음
+  return null
 }
