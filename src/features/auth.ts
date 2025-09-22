@@ -1,5 +1,5 @@
-import { tokenStore } from '@/lib/auth/token-store'
 import { api, apiPublic } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
 
 import type { User } from '@/types/auth'
 

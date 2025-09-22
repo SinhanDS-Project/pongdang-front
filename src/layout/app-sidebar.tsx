@@ -5,8 +5,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import * as React from 'react'
 
-import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -31,12 +29,26 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { revalidateMe, useMe } from '@/hooks/use-me'
+import { apiPublic } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile } = useSidebar()
-  const { logout } = useAuthStore()
 
-  const user = useCurrentUser()
+  const { user } = useMe()
+
+  const logout = async () => {
+    const access = tokenStore.get()
+    try {
+      await apiPublic.delete('/api/auth/logout', {
+        withCredentials: true,
+        headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+      })
+    } catch {}
+    tokenStore.clear()
+    await revalidateMe()
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>

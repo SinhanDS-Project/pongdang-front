@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -12,8 +11,9 @@ import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
 
 /* -------------------- 타입/스키마 -------------------- */
 const CreateRoomSchema = z.object({
@@ -45,25 +45,19 @@ type LevelListRes = {
   levels: LevelItem[]
 }
 
-/** 이미지 URL 조합기 (환경변수에 맞춰 조정) */
-function getGameImageUrl(filename: string) {
-  const base = process.env.NEXT_PUBLIC_FILE_BASE_URL || ''
-  return `${base.replace(/\/$/, '')}/files/${filename}`
-}
-
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function CreateRoomDialog({ open, onOpenChange }: Props) {
-  const router = useRouter()
-
   const form = useForm<CreateRoomValues>({
     resolver: zodResolver(CreateRoomSchema),
     defaultValues: { title: '', game_level_id: 0 },
     mode: 'onChange',
   })
+
+  const router = useRouter()
 
   const [submitting, setSubmitting] = useState(false)
 
@@ -76,12 +70,14 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null)
   const [levels, setLevels] = useState<LevelItem[]>([])
 
+  const [autoLevelNote, setAutoLevelNote] = useState<string | null>(null)
+
   const selectedLevelId = form.watch('game_level_id')
-  const selectedLevel = useMemo(() => levels.find((lv) => lv.id === selectedLevelId) || null, [levels, selectedLevelId])
 
   /* -------------------- 모달 열릴 때 게임 목록 불러오기 -------------------- */
   useEffect(() => {
     if (!open) return
+
     let alive = true
     ;(async () => {
       try {
@@ -106,23 +102,21 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
     try {
       setLevelsLoading(true)
       setSelectedGameId(gameId)
-      // 선택 초기화
-      form.setValue('game_level_id', 0, { shouldValidate: true })
-      form.clearErrors('game_level_id')
+      form.setValue('game_level_id', 0, { shouldValidate: true }) // 초기화
+      setAutoLevelNote(null)
 
       const { data } = await api.get<LevelListRes>(`/api/game/level/${gameId}`)
       const lv = data?.levels ?? []
       setLevels(lv)
 
-      // 난이도 1개면 자동 선택 + 메시지(FormMessage)만 노출
+      // 난이도 1개면 자동 선택 + 안내 메시지 저장
       if (lv.length === 1) {
         form.setValue('game_level_id', lv[0].id, { shouldValidate: true })
-        form.setError('game_level_id', {
-          type: 'manual',
-          message: `이 게임은 난이도 선택이 없습니다.${
+        setAutoLevelNote(
+          `이 게임은 난이도가 없습니다. ${
             typeof lv[0].entry_fee !== 'undefined' ? ` (참가비 ${lv[0].entry_fee}퐁)` : ''
-          }`,
-        })
+          }.`,
+        )
       }
     } catch (e) {
       console.error('난이도 로드 실패', e)
@@ -148,7 +142,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
 
       onOpenChange(false)
       form.reset({ title: '', game_level_id: 0 })
-      router.push(`/play/rooms/${data?.id}`) // ✅ redirect → push
+      router.push(`/play/rooms/${data?.id}`) // 방으로 이동
     } catch (e) {
       console.error('방 생성 실패', e)
       // 필요 시 toast 처리
@@ -156,6 +150,8 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
       setSubmitting(false)
     }
   }
+
+  const selectedLevel = useMemo(() => levels.find((lv) => lv.id === selectedLevelId) || null, [levels, selectedLevelId])
 
   return (
     <Dialog
@@ -166,7 +162,6 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
           form.reset({ title: '', game_level_id: 0 })
           setSelectedGameId(null)
           setLevels([])
-          form.clearErrors()
         }
       }}
     >
@@ -190,7 +185,6 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                         <Input placeholder="방 이름" {...field} />
                       </div>
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -199,7 +193,6 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
               <div>
                 <div className="mb-2 text-base font-semibold">게임 선택</div>
 
-                {/* ✅ 높이 고정으로 모달 점프 방지 */}
                 <div className="min-h-[220px]">
                   {gamesLoading ? (
                     <div className="text-muted-foreground text-sm">게임을 불러오는 중…</div>
@@ -221,7 +214,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                             aria-pressed={active}
                           >
                             <Image
-                              src={getGameImageUrl(g.game_img)}
+                              src={g.game_img}
                               alt={g.name}
                               fill
                               className="object-cover"
@@ -237,7 +230,6 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
 
               {/* 난이도 선택 (게임 선택 후) */}
               <div className="mt-4">
-                {/* ✅ 높이 고정으로 모달 점프 방지 */}
                 <div className="min-h-[150px]">
                   {selectedGameId ? (
                     <>
@@ -249,7 +241,9 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                         <div className="text-muted-foreground text-sm">선택 가능한 난이도가 없습니다.</div>
                       ) : levels.length === 1 ? (
                         // ✅ 선택 UI 숨기고 FormMessage만 노출
-                        <FormMessage>{form.formState.errors.game_level_id?.message}</FormMessage>
+                        <div className="bg-muted text-muted-foreground mt-2 rounded-md p-3 text-xs">
+                          {autoLevelNote ?? '이 게임은 난이도가 1개입니다.'}
+                        </div>
                       ) : (
                         <>
                           <div className="grid grid-cols-3 gap-3">
@@ -259,10 +253,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                                 <button
                                   key={lv.id}
                                   type="button"
-                                  onClick={() => {
-                                    form.clearErrors('game_level_id')
-                                    form.setValue('game_level_id', lv.id, { shouldValidate: true })
-                                  }}
+                                  onClick={() => form.setValue('game_level_id', lv.id, { shouldValidate: true })}
                                   className={cn(
                                     'rounded-xl border p-3 text-left transition',
                                     active ? 'border-secondary-royal ring-secondary-royal/30 ring-2' : 'border-muted',
@@ -295,7 +286,6 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                   )}
                 </div>
               </div>
-
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={submitting} className="bg-secondary-royal hover:bg-secondary-sky">
                   {submitting ? '생성중…' : '방만들기'}
@@ -310,6 +300,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
 }
 
 function labelize(level: string) {
+  // 레이블 치환(원하면 바꿔도 OK)
   switch (level) {
     case 'HARD':
       return '상'

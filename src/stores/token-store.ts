@@ -11,8 +11,13 @@ class TokenStore {
   }
 
   get() {
-    // 메모리 우선, 없으면 localStorage에서
-    return this.accessTokenMemory ?? localStorage.getItem(this.ACCESS_KEY)
+    if (this.accessTokenMemory) return this.accessTokenMemory
+    if (typeof window === 'undefined') return null
+    try {
+      return localStorage.getItem(this.ACCESS_KEY)
+    } catch {
+      return null
+    }
   }
 
   set(token: string) {

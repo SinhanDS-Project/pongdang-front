@@ -1,73 +1,32 @@
 'use client'
+import { useEffect } from 'react'
 
-import { tokenStore } from '@/lib/auth/token-store'
-import { api } from '@/lib/net/client-axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useEffect, useRef } from 'react'
+import { revalidateMe } from '@/hooks/use-me'
 
-async function ensureDailyQuiz() {
-  try {
-    // 존재 여부 확인
-    const { data } = await api.post<boolean>('/api/quiz')
+import { tokenStore } from '@/stores/token-store'
 
-    if (data === true) {
-      console.log('오늘 퀴즈가 이미 생성됨 ✅')
-      return
-    }
-
-    // false → 직접 생성 요청
-    const res = await api.post('/api/quiz', {})
-    console.log('오늘 퀴즈 새로 생성됨 ✨', res.data)
-  } catch (err) {
-    console.error('퀴즈 확인/생성 중 오류:', err)
-  }
-}
-
-export function useAuthBootstrap() {
-  const loadMe = useAuthStore((s) => s.loadMe)
-  const mounted = useRef(false)
-
+export default function AuthBootstrapClient() {
   useEffect(() => {
-    mounted.current = true
-
-    // 토큰 초기화(로컬스토리지 → 메모리)
+    // 1) 토큰 로컬스토리지 → 메모리
     tokenStore.hydrateFromStorage()
 
-    // 최초 로드
-    loadMe().then(() => ensureDailyQuiz())
-
-    // 같은 탭에서 토큰 바뀌면 재로딩
-    const unsubToken = tokenStore.subscribe(async () => {
-      await loadMe()
-      await ensureDailyQuiz()
+    // 2) 토큰 변화 감지 시에만 /me 재검증
+    const unsub = tokenStore.subscribe(() => {
+      revalidateMe()
     })
 
-    // 다른 탭에서 토큰 바뀌면 재로딩
-    const onStorage = async (e: StorageEvent) => {
-      if (e.key === 'access_token') {
-        await loadMe()
-        await ensureDailyQuiz()
-      }
+    // 3) 다른 탭에서 토큰 바뀌면 재검증
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'access_token') revalidateMe()
     }
     window.addEventListener('storage', onStorage)
 
-    // 탭 포커스 시 재검증
-    const onFocus = async () => {
-      await loadMe()
-      await ensureDailyQuiz()
-    }
-    window.addEventListener('focus', onFocus)
-
+    // ✅ 포커스 핸들러 제거 (리렌더 원인 삭제)
     return () => {
-      mounted.current = false
-      unsubToken()
+      unsub()
       window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', onFocus)
     }
-  }, [loadMe])
-}
+  }, [])
 
-export default function AuthBootstrapClient() {
-  useAuthBootstrap()
-  return null // 화면에 뭔가 그릴 필요 없음
+  return null
 }
