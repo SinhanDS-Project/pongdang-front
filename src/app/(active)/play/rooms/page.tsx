@@ -91,7 +91,7 @@ export default function PlayRoomsHome() {
 
     client.onConnect = () => {
       // 서버가 브로드캐스트하는 토픽 경로에 맞춰주세요.
-      const sub = client.subscribe('/topic/gameroom', (msg: IMessage) => {
+      client.subscribe('/topic/gameroom', (msg: IMessage) => {
         try {
           const body = JSON.parse(msg.body)
 

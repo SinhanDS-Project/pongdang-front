@@ -35,44 +35,45 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
           <DialogTitle className="text-xl">{product.name}</DialogTitle>
           <DialogDescription className="sr-only">상품 상세 정보 및 결제</DialogDescription>
         </DialogHeader>
-        {/* 이미지 */}
-        <div className="relative m-4 aspect-[2/1]">
-          <Image
-            src={product.img || '/placeholder-banner.png'}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 100vw, 480px"
-            className="object-cover"
-            priority
-          />
-        </div>
 
-        {/* 본문 */}
-        <div className="space-y-3 px-4">
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="bg-secondary-light text-primary-white rounded-full px-3 py-1">
-              {product.product_type}
-            </Badge>
-            <div className="text-secondary-royal flex items-center gap-2 text-lg font-semibold">
-              <PongIcon />
-              <span>{price.toLocaleString('ko-KR')} 퐁</span>
-            </div>
+        <ScrollArea className="h-80 max-h-96 px-4 pb-4">
+          {/* 이미지 */}
+          <div className="relative mb-4 aspect-[2/1]">
+            <Image
+              src={product.img || '/placeholder-banner.png'}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 480px"
+              className="rounded-lg object-contain"
+              priority
+            />
           </div>
 
-          <Separator />
+          {/* 본문 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Badge variant="secondary" className="bg-secondary-light text-primary-white rounded-full px-3 py-1">
+                {product.product_type}
+              </Badge>
+              <div className="text-secondary-royal flex items-center gap-2 text-lg font-semibold">
+                <PongIcon />
+                <span>{price.toLocaleString('ko-KR')} 퐁</span>
+              </div>
+            </div>
 
-          <ScrollArea className="h-48 max-h-52 px-1 pb-4">
+            <Separator />
+
             <div className="relative aspect-[4/3] w-full rounded-lg">
               <Image
                 src={product.description}
                 alt={`${product.name} 설명 이미지`}
-                fill
-                sizes="(max-width: 640px) 100vw, 480px"
-                className="object-cover"
+                width={800}
+                height={600}
+                className="h-auto w-full rounded-lg object-contain"
               />
             </div>
-          </ScrollArea>
-        </div>
+          </div>
+        </ScrollArea>
 
         {/* 푸터 */}
         <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-2">

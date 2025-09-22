@@ -16,7 +16,7 @@ function isAuthExempt(url?: string) {
 // ----- 인스턴스
 export const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true, // refresh에 HttpOnly 쿠키 필요
 })
 
