@@ -1,4 +1,4 @@
-// src/components/admin/common/PasteImageBox.tsx
+// src/components/admin-page/common/PasteImageBox.tsx
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -18,7 +18,7 @@ type Props = {
   initialUrl?: string | null
   enableDrop?: boolean
   /** 외부에서 이벤트 타깃을 지정하고 싶을 때 (없으면 내부 div 사용) */
-  containerRef?: React.RefObject<HTMLElement | null>
+  containerRef?: React.RefObject<HTMLDivElement>
 
   // 텍스트도 받기
   acceptText?: boolean
@@ -50,7 +50,7 @@ export function PasteImageBox({
   // JSX에 꽂는 ref는 HTMLDivElement로 고정 (non-null 단언)
   const divRef = useRef<HTMLDivElement>(null!)
   // 이벤트 타깃은 HTMLElement | null 로 두고, 외부/내부 중 하나를 사용
-  const targetRef = useRef<HTMLElement | null>(null)
+  const targetRef = useRef<HTMLDivElement>(null)
 
   const [preview, setPreview] = useState<string | null>(initialUrl)
 
