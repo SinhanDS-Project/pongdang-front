@@ -22,7 +22,7 @@ type Props = {
   onOpenChange: (v: boolean) => void
 }
 
-export function ProfileEditDialog({ open, onOpenChange }: Props) {
+export function ProfileEditModal({ open, onOpenChange }: Props) {
   const [panel, setPanel] = useState<Panel>('overview')
 
   // 닫히면 내부 상태 초기화
@@ -300,7 +300,7 @@ const PasswordSchema = z
   })
   .refine((v) => v.newPassword === v.newPasswordConfirm, {
     path: ['newPasswordConfirm'],
-    message: '비밀번호가 일치하지 않습니다.',
+    message: '',
   })
 
 type PasswordFormData = z.infer<typeof PasswordSchema>
@@ -527,3 +527,5 @@ function Withdraw({ onClose }: { onClose: () => void }) {
     </div>
   )
 }
+
+export default ProfileEditModal
