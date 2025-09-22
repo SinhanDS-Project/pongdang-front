@@ -8,12 +8,12 @@ import { PongPagination } from '@/components/PongPagination'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { useCurrentUser } from '@/stores/auth-store'
 import { api } from '@/lib/net/client-axios'
 
 import ProfileEditModal from '@/components/my-page/ProfileEditModal'
 import ChangePongModal from '@/components/my-page/ChangePongModal'
 import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
+import { useMe } from '@/hooks/use-me'
 
 /* ── 타입 ───────────────────────── */
 type TabKey = 'pong' | 'donate' | 'purchase' | 'chatlog'
@@ -53,7 +53,8 @@ type ChatLog = {
 }
 
 export default function MyPageContent() {
-  const user = useCurrentUser()
+  const { user, status } = useMe()
+  const userId: number | null = user ? user?.id : null
 
   const [openEdit, setOpenEdit] = useState(false)
   const [openChange, setOpenChange] = useState(false)
