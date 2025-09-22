@@ -1,6 +1,1 @@
 export { DiceCard } from './DiceCard'
-export { GameBoard } from './game-board'
-export { GameOverModal } from './game-over-modal'
-export { GamePanel } from './game-panel'
-export { PurchaseModal } from './purchase-modal'
-export { QuizModal } from './quiz-modal'
