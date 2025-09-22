@@ -165,3 +165,19 @@ export async function findPasswordRequestEmailCode(email: string) {
   )
   return data
 }
+
+export async function changeNickname(newNickname: string) {
+  const res = await api.put('/api/user/update', { new_nickname: newNickname })
+
+  return res
+}
+
+export async function changePassword(params: { oldPassword: string; newPassword: string }) {
+  const res = await api.put('/api/user/update', { password: params.oldPassword, new_password: params.newPassword })
+
+  return res
+}
+
+export async function unregisterAccount(): Promise<void> {
+  await api.delete('/api/auth/unregister')
+}
