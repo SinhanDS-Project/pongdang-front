@@ -1,1 +1,8 @@
 export { DiceCard } from './DiceCard'
+export { GameBoard } from './GameBoard'
+export { InfoDialog } from './InfoDialog'
+export { EmptySlotCard, PlayerCard } from './PlayerCard'
+export { PurchaseDialog } from './PurchaseDialog'
+export { QuizDialog } from './QuizDialog'
+export { ResultDialog } from './ResultDialog'
+export { TollDialog } from './TollDialog'
