@@ -1,12 +1,14 @@
 'use client'
+import { CheckCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { CheckCircle } from 'lucide-react'
-import { useState, useEffect } from 'react'
+
 import { api } from '@/lib/net/client-axios'
+
+import { useMe } from '@/hooks/use-me'
 
 type Panel = 'change' | 'success'
 
@@ -16,6 +18,7 @@ type Props = {
 }
 
 export function ChangePongModal({ open, onOpenChange }: Props) {
+  const { mutate } = useMe()
   const [panel, setPanel] = useState<Panel>('change')
   const [loading, setLoading] = useState(false)
   const [bettingPoint, setBettingPoint] = useState<number | null>(null)
@@ -27,7 +30,7 @@ export function ChangePongModal({ open, onOpenChange }: Props) {
     setPanel('change')
     onOpenChange(v)
     if (!v) {
-      await useAuthStore.getState().loadMe()
+      mutate()
       setBettingPoint(null)
       setAmount('')
       setError('')
