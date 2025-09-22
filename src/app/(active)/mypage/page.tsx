@@ -1,30 +1,56 @@
 'use client'
 
-import { ChangePongModal } from '@/components/my-page/ChangePongModal'
-import { ProfileEditDialog } from '@/components/my-page/ProfileEditModal'
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import { Droplet, Heart, Wallet } from 'lucide-react'
+
 import { PongPagination } from '@/components/PongPagination'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { useCurrentUser } from '@/stores/auth-store'
-import { Droplet, Heart, Wallet } from 'lucide-react'
-import Image from 'next/image'
-import { useMemo, useState } from 'react'
+import { api } from '@/lib/net/client-axios'
 
-type Balance = { normal: number; donate: number }
-type Row = { id: number; title: string; amount: number; diff?: number; date: string }
+import ProfileEditModal from '@/components/my-page/ProfileEditModal'
+import ChangePongModal from '@/components/my-page/ChangePongModal'
+import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
 
+/* ── 타입 ───────────────────────── */
 type TabKey = 'pong' | 'donate' | 'purchase' | 'chatlog'
 
-const mockBalance: Balance = { normal: 100, donate: 10 }
-const mockRows: Row[] = [
-  { id: 1, title: '해당 내역이 들어가는 곳입니다.', amount: 100, diff: +10, date: '2025.08.30' },
-  { id: 2, title: '해당 내역이 들어가는 곳입니다.', amount: 90, diff: +20, date: '2025.08.30' },
-  { id: 3, title: '해당 내역이 들어가는 곳입니다.', amount: 70, diff: -30, date: '2025.08.30' },
-  { id: 4, title: '해당 내역이 들어가는 곳입니다.', amount: 100, diff: +10, date: '2025.08.30' },
-  { id: 5, title: '해당 내역이 들어가는 곳입니다.', amount: 90, diff: -20, date: '2025.08.30' },
-  { id: 6, title: '해당 내역이 들어가는 곳입니다.', amount: 110, diff: +50, date: '2025.08.30' },
-]
+type PongHistory = {
+  id: number
+  user_id: number
+  pong_history_type: string
+  amount: number
+  created_at: string | null
+}
+
+type DonationHistory = {
+  id: number
+  amount: number
+  user_id: number
+  title: string
+  created_at: string
+}
+
+type PurchaseHistory = {
+  id: string
+  user_id: number
+  name: string
+  price: number
+  created_at: string
+}
+
+type ChatLog = {
+  id: number
+  title: string
+  question: string
+  response: string | null
+  chat_date: string
+  response_date: string | null
+  nickname: string
+}
 
 export default function MyPageContent() {
   const user = useCurrentUser()
@@ -34,19 +60,57 @@ export default function MyPageContent() {
 
   const [active, setActive] = useState<TabKey>('pong')
   const [page, setPage] = useState(1)
-  const pageSize = 6
+  const [totalPages, setTotalPages] = useState(1)
 
-  const paged = useMemo(() => {
-    const start = (page - 1) * pageSize
-    return mockRows.slice(start, start + pageSize)
-  }, [page])
+  const [pongRows, setPongRows] = useState<PongHistory[]>([])
+  const [donationRows, setDonationRows] = useState<DonationHistory[]>([])
+  const [purchaseRows, setPurchaseRows] = useState<PurchaseHistory[]>([])
+  const [chatLogs, setChatLogs] = useState<ChatLog[]>([])
+  const [selectedChatLog, setSelectedChatLog] = useState<ChatLog | null>(null)
 
-  const totalPages = Math.max(1, Math.ceil(mockRows.length / pageSize))
-
-  function formatDate(dateStr: string) {
-    const date = new Date(dateStr)
-    return date.toISOString().split('T')[0] // "2025-09-03"
+  const size = 10
+  const HISTORY_LABELS: Record<string, string> = {
+    GAME_P: '게임(일반)',
+    GAME_D: '게임(기부)',
+    PURCHASE: '구매',
+    DONATION_P: '기부(일반)',
+    DONATION_D: '기부(기부)',
+    ADD: '이벤트',
+    ENTRY: '게임 참가',
   }
+
+  //  API 호출
+  useEffect(() => {
+    let url = ''
+    if (active === 'pong') url = '/api/history/wallet'
+    if (active === 'donate') url = '/api/history/donation'
+    if (active === 'purchase') url = '/api/history/purchase'
+    if (active === 'chatlog') url = '/api/chatlog'
+
+    api
+      .get(url, { params: { page, size } })
+      .then((res) => {
+        if (active === 'pong') {
+          setPongRows(res.data.histories.content)
+          setTotalPages(res.data.histories.total_pages)
+        }
+        if (active === 'donate') {
+          setDonationRows(res.data.content)
+          setTotalPages(res.data.total_pages)
+        }
+        if (active === 'purchase') {
+          setPurchaseRows(res.data.content)
+          setTotalPages(res.data.total_pages)
+        }
+        if (active === 'chatlog') {
+          setChatLogs(res.data.logs.content)
+          setTotalPages(res.data.logs.total_pages ?? 1)
+        }
+      })
+      .catch((err) => {
+        console.error(`${active} 내역 불러오기 실패`, err)
+      })
+  }, [active, page])
 
   return (
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
@@ -57,7 +121,6 @@ export default function MyPageContent() {
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
             fill
-            sizes="(max-width: 640px) 100vw, 480px"
             className="object-cover"
           />
         </div>
@@ -68,16 +131,12 @@ export default function MyPageContent() {
               안녕하세요, <span className="text-secondary-royal">{user?.nickname}</span> 님
             </div>
             <div className="flex gap-x-4">
-              {user?.linked_with_betting && (
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={() => setOpenChange(true)}
-                  className="hover:shadow-badge text-primary-white hover:text-primary-white bg-secondary-royal hover:bg-secondary-navy border font-semibold"
-                >
+              {user?.linked_with_betting === true && (
+                <Button onClick={() => setOpenChange(true)} className="bg-secondary-royal font-semibold text-white">
                   포인트 전환하기
                 </Button>
               )}
+
               <Button
                 type="button"
                 variant="default"
@@ -88,30 +147,36 @@ export default function MyPageContent() {
               </Button>
             </div>
           </div>
+
+          {/* 보유 퐁 */}
           <div className="bg-secondary-light flex grow flex-col gap-y-2 rounded-xl p-4">
             <div className="text-primary-white flex items-center gap-x-2">
               <Wallet />
               <span className="text-2xl font-bold">나의 보유 퐁</span>
             </div>
             <div className="bg-primary-white flex grow gap-x-4 rounded-lg p-4">
+              {/* 일반 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Droplet className="text-secondary-royal" />
                   <span className="text-base font-bold">일반 퐁</span>
                 </div>
                 <div className="mr-4 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.pong_balance}</span>
+                  <span className="text-secondary-navy text-5xl">{user?.pong_balance?.toLocaleString() ?? 0}</span>
                   <span className="text-secondary-royal text-4xl">퐁</span>
                 </div>
               </div>
+
               <div className="h-full outline-1 outline-dashed"></div>
+
+              {/* 기부 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Heart className="text-secondary-red" />
                   <span className="text-base font-bold">기부 퐁</span>
                 </div>
                 <div className="mr-8 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.dona_balance}</span>
+                  <span className="text-secondary-navy text-5xl">{user?.dona_balance?.toLocaleString() ?? 0}</span>
                   <span className="text-secondary-red text-4xl">퐁</span>
                 </div>
               </div>
@@ -119,6 +184,8 @@ export default function MyPageContent() {
           </div>
         </div>
       </div>
+
+      {/* 탭 */}
       <div className="flex grow flex-col gap-0">
         <div className="flex gap-x-1">
           {[
@@ -126,76 +193,138 @@ export default function MyPageContent() {
             { key: 'donate', label: '기부 내역' },
             { key: 'purchase', label: '구매 내역' },
             { key: 'chatlog', label: '문의 내역' },
-          ].map((tap, idx) => {
-            const activeTab = active === (tap.key as TabKey)
-
-            return (
-              <button
-                key={idx}
-                onClick={() => setActive(tap.key as TabKey)}
-                className={cn(
-                  'text-primary-white w-32 rounded-t-lg py-2.5 text-center text-xl font-semibold',
-                  activeTab ? 'bg-secondary-sky' : 'bg-gray-300',
-                )}
-              >
-                {tap.label}
-              </button>
-            )
-          })}
+          ].map((tap) => (
+            <button
+              key={tap.key}
+              onClick={() => {
+                setActive(tap.key as TabKey)
+                setPage(1)
+              }}
+              className={cn(
+                'text-primary-white w-32 rounded-t-lg py-2.5 text-center text-xl font-semibold',
+                active === tap.key ? 'bg-secondary-sky' : 'bg-gray-300',
+              )}
+            >
+              {tap.label}
+            </button>
+          ))}
         </div>
+
+        {/* 테이블 */}
         <div className="bg-secondary-sky grow rounded-tr rounded-b p-2">
           <div className="bg-primary-white flex h-full w-full flex-col justify-between rounded-xs pb-4">
             <div className="flex grow items-center justify-center">
-              <Table className="sm:text-md overflow-hidden text-center text-sm">
-                <TableHeader>
-                  <TableRow></TableRow>
+              <Table className="sm:text-md w-full table-auto overflow-x-auto border-b-2 border-gray-400 text-center text-sm">
+                <TableHeader className="bg-white-100 sticky top-0 z-10">
+                  <TableRow>
+                    <TableCell className="w-16">No</TableCell>
+
+                    {active === 'pong' && (
+                      <>
+                        <TableCell className="min-w-[180px]">퐁 내역 타입</TableCell>
+                        <TableCell className="min-w-[120px]">퐁</TableCell>
+                        <TableCell className="min-w-[180px]">날짜</TableCell>
+                      </>
+                    )}
+
+                    {active === 'donate' && (
+                      <>
+                        <TableCell className="min-w-[240px]">제목</TableCell>
+                        <TableCell className="min-w-[120px]">퐁</TableCell>
+                        <TableCell className="min-w-[180px]">날짜</TableCell>
+                      </>
+                    )}
+
+                    {active === 'purchase' && (
+                      <>
+                        <TableCell className="min-w-[240px]">상품명</TableCell>
+                        <TableCell className="min-w-[120px]">퐁</TableCell>
+                        <TableCell className="min-w-[180px]">날짜</TableCell>
+                      </>
+                    )}
+
+                    {active === 'chatlog' && (
+                      <>
+                        <TableCell className="min-w-[240px]">제목</TableCell>
+                        <TableCell className="min-w-[180px]">날짜</TableCell>
+                      </>
+                    )}
+                  </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  <TableRow>
-                    <TableCell className="w-28 py-2 md:w-40">1</TableCell>
-                    <TableCell className="max-w-40 truncate">타이틀</TableCell>
-                    <TableCell className="text-muted-foreground hidden w-28 py-3 sm:table-cell md:w-40">날짜</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="w-28 py-2 md:w-40">2</TableCell>
-                    <TableCell className="max-w-40 truncate">타이틀</TableCell>
-                    <TableCell className="text-muted-foreground hidden w-28 py-3 sm:table-cell md:w-40">날짜</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="w-28 py-2 md:w-40">3</TableCell>
-                    <TableCell className="max-w-40 truncate">타이틀</TableCell>
-                    <TableCell className="text-muted-foreground hidden w-28 py-3 sm:table-cell md:w-40">날짜</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="w-28 py-2 md:w-40">4</TableCell>
-                    <TableCell className="max-w-40 truncate">타이틀</TableCell>
-                    <TableCell className="text-muted-foreground hidden w-28 py-3 sm:table-cell md:w-40">날짜</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="w-28 py-2 md:w-40">5</TableCell>
-                    <TableCell className="max-w-40 truncate">타이틀</TableCell>
-                    <TableCell className="text-muted-foreground hidden w-28 py-3 sm:table-cell md:w-40">날짜</TableCell>
-                  </TableRow>
+                  {/* ── 퐁 내역 ─────────────────────── */}
+                  {active === 'pong' &&
+                    pongRows.map((row, idx) => {
+                      const isPlus = ['GAME_P', 'GAME_D', 'ADD'].includes(row.pong_history_type)
+                      return (
+                        <TableRow key={row.id}>
+                          <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
+                          <TableCell>{HISTORY_LABELS[row.pong_history_type] ?? row.pong_history_type}</TableCell>
+                          <TableCell className={isPlus ? 'font-bold text-blue-600' : 'font-bold text-red-600'}>
+                            {isPlus ? '+' : '-'} {row.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
+                        </TableRow>
+                      )
+                    })}
+
+                  {/* ── 기부 내역 ─────────────────────── */}
+                  {active === 'donate' &&
+                    donationRows.map((row, idx) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
+                        <TableCell>{row.title}</TableCell>
+                        <TableCell>{row.amount.toLocaleString()}</TableCell>
+                        <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
+                      </TableRow>
+                    ))}
+
+                  {/* ── 구매 내역 ─────────────────────── */}
+                  {active === 'purchase' &&
+                    purchaseRows.map((row, idx) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
+                        <TableCell>{row.name}</TableCell>
+                        <TableCell>{row.price.toLocaleString()}</TableCell>
+                        <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
+                      </TableRow>
+                    ))}
+
+                  {/* ── 문의 내역 ─────────────────────── */}
+                  {active === 'chatlog' &&
+                    chatLogs.map((row, idx) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
+                        <TableCell>
+                          <button onClick={() => setSelectedChatLog(row)} className="text-black-600 hover:underline">
+                            {row.title}
+                          </button>
+                        </TableCell>
+                        <TableCell>{new Date(row.chat_date).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
-                <TableFooter>
-                  <TableRow></TableRow>
-                </TableFooter>
+
+                <TableFooter />
               </Table>
             </div>
+
             {/* 페이지네이션 */}
             <PongPagination
-              page={1}
-              totalPages={5}
+              page={page}
+              totalPages={totalPages}
               onChange={(newPage) => setPage(newPage)}
-              disabled={true}
               siblingCount={1}
               className="justify-center"
             />
           </div>
         </div>
       </div>
+
       <ChangePongModal open={openChange} onOpenChange={setOpenChange} />
-      <ProfileEditDialog open={openEdit} onOpenChange={setOpenEdit} />
+      <ProfileEditModal open={openEdit} onOpenChange={setOpenEdit} />
+      <ChatLogDetailModal open={!!selectedChatLog} onClose={() => setSelectedChatLog(null)} chatLog={selectedChatLog} />
     </div>
   )
 }
