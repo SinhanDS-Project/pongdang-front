@@ -1,7 +1,8 @@
 'use client'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { MessageCircle, Reply, AlertCircle } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { AlertCircle, MessageCircle, Reply } from 'lucide-react'
 
 type ChatLog = {
   id: number
@@ -19,45 +20,50 @@ type Props = {
   chatLog: ChatLog | null
 }
 
+function formatDate(date: string | Date) {
+  const parsedDate = typeof date === 'string' ? new Date(date) : date
+  return parsedDate.toISOString().split('T')[0] // "2025-09-03"
+}
+
 export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
   if (!chatLog) return null
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl rounded-xl p-6">
-        <DialogHeader>
-          <DialogTitle className="text-secondary-royal text-2xl font-bold">{chatLog.title}</DialogTitle>
+      <DialogContent className="max-w-lg rounded-2xl p-6 shadow-xl">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-2xl font-extrabold tracking-tight">{chatLog.title}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* 질문 */}
-          <div className="rounded-lg border bg-gray-50 p-4">
-            <div className="mb-2 flex items-center gap-2 font-semibold text-gray-700">
-              <MessageCircle className="text-secondary-navy h-5 w-5" />
-              질문
+        <div className="space-y-2.5">
+          <div className="bg-accent rounded border p-4">
+            <div className="mb-2 flex items-center justify-between gap-x-2">
+              <MessageCircle className="text-secondary-royal" />
+              <span className="text-xl font-bold">질문</span>
+              <div className="grow text-end">작성일: {formatDate(chatLog.chat_date)}</div>
             </div>
-            <p className="whitespace-pre-line text-gray-800">{chatLog.question}</p>
+            <Separator className="mb-4" />
+            <p className="whitespace-pre-line">{chatLog.question}</p>
           </div>
-
+          <Separator />
           {/* 답변 */}
-          <div className="rounded-lg border bg-gray-50 p-4">
-            <div className="mb-2 flex items-center gap-2 font-semibold text-gray-700">
-              <Reply className="h-5 w-5 text-green-600" />
-              답변
+          <div className="bg-accent rounded border p-4">
+            <div className="mb-2 flex items-center justify-between gap-x-2">
+              <Reply className="text-green-600" />
+              <span className="text-xl font-bold">답변</span>
+              {chatLog.response_date && (
+                <div className="grow text-end">답변일: {formatDate(chatLog.response_date)}</div>
+              )}
             </div>
+            <Separator className="mb-4" />
             {chatLog.response ? (
-              <p className="whitespace-pre-line text-gray-800">{chatLog.response}</p>
+              <p className="whitespace-pre-line">{chatLog.response}</p>
             ) : (
-              <div className="flex items-center gap-2 text-red-500">
-                <AlertCircle className="h-5 w-5" />❗ 답변이 아직 등록되지 않았습니다.
+              <div className="flex items-center gap-2">
+                <AlertCircle className="text-red-500" />
+                답변이 아직 등록되지 않았습니다.
               </div>
             )}
-          </div>
-
-          {/* 작성일/답변일 */}
-          <div className="flex flex-col gap-1 text-right text-sm text-gray-500">
-            <div>작성일: {new Date(chatLog.chat_date).toLocaleString()}</div>
-            {chatLog.response_date && <div>답변일: {new Date(chatLog.response_date).toLocaleString()}</div>}
           </div>
         </div>
       </DialogContent>
