@@ -275,6 +275,7 @@ body {
   .turtleRacing {
     animation: turtle-run 0.37s ease-in-out infinite;
   }
+}
 
 /* 폭죽 */
 @keyframes firework {
@@ -340,5 +341,4 @@ body {
   filter: blur(1px);
 
   animation: explode 1.5s ease-out forwards;
-}
 }
