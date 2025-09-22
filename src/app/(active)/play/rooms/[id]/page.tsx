@@ -19,15 +19,15 @@ import YellowTurtleIcon from '@public/yellow_turtle.png'
 
 import { HostIcon, PlayerIcon } from '@/icons'
 
-import { tokenStore } from '@/lib/auth/token-store' // ✅ 통일
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
+import { tokenStore } from '@/stores/token-store' // ✅ 통일
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
-import { useAuthStore } from '@/stores/auth-store'
+import { useMe } from '@/hooks/use-me'
 import { Client } from '@stomp/stompjs'
 
 type Player = {
@@ -106,7 +106,6 @@ export default function GameRoomPage() {
         setLoading(true)
         setError(null)
         const { data } = await api.get<RoomDetail>(`/api/gameroom/${id}`)
-        console.log('🚀 ~ GameRoomPage ~ data:', data)
         if (!alive) return
         setRoom(data)
       } catch (e: any) {
@@ -189,23 +188,16 @@ export default function GameRoomPage() {
         }
       })
 
-      // 입장 알림
       if (client.connected) {
-        client.publish({
-          destination: `/app/gameroom/enter/${id}`,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-      }
-
-      // ✅ 입장 시스템 채팅 (연결된 뒤, 한 번만)
-      if (client.connected && !sentJoinMsgRef.current) {
-        const nickname = useAuthStore.getState().user?.nickname ?? '알 수 없음'
-        client.publish({
-          destination: `/app/gameroom/chat/${id}`,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: JSON.stringify({ msg: `${nickname} 님이 입장했습니다.`, system: true }),
-        })
-        sentJoinMsgRef.current = true
+        client.publish({ destination: `/app/gameroom/enter/${id}` })
+        if (!sentJoinMsgRef.current) {
+          const nickname = user?.nickname ?? '알 수 없음'
+          client.publish({
+            destination: `/app/gameroom/chat/${id}`,
+            body: JSON.stringify({ msg: `${nickname} 님이 입장했습니다.`, system: true }),
+          })
+          sentJoinMsgRef.current = true
+        }
       }
     }
 
@@ -215,7 +207,7 @@ export default function GameRoomPage() {
     return () => {
       if (client.connected) {
         const t = tokenStore.get()
-        const nickname = useAuthStore.getState().user?.nickname ?? ''
+        const nickname = user?.nickname ?? ''
         client.publish({
           destination: `/app/gameroom/chat/${id}`,
           headers: t ? { Authorization: `Bearer ${t}` } : {},
@@ -229,7 +221,7 @@ export default function GameRoomPage() {
       client.deactivate()
       clientRef.current = null
     }
-  }, [id, router, room?.game_type, room?.game_name])
+  }, [id, room?.game_type])
 
   // 새 메시지 오면 스크롤 맨 아래로
   useEffect(() => {
@@ -241,10 +233,9 @@ export default function GameRoomPage() {
   const maxPlayers = room ? GAME_CONFIG[room.game_name] : 8
 
   const hostId = room?.host_id ?? null
-  const userId = useAuthStore((s) => s.user?.id)
-  const userNickname = useAuthStore((s) => s.user?.nickname)
-  const me = useMemo(() => players.find((p) => p.user_id === userId), [players, userId])
-  const isHostMe = !!(userId && hostId && userId === hostId)
+  const { user, status } = useMe()
+  const me = useMemo(() => players.find((p) => p.user_id === user?.id), [players, user?.id])
+  const isHostMe = !!(user?.id && hostId && user?.id === hostId)
 
   // 시작 가능 여부 계산 (호스트만 시작 가능 + 호스트는 ready 제외)
   const canStart = isHostMe && players.length >= 2 && players.filter((p) => p.user_id !== hostId).every((p) => p.ready)
@@ -254,13 +245,13 @@ export default function GameRoomPage() {
     const s = new Set<string>()
     for (const p of players) {
       if (!p.turtle_id) continue
-      if (p.user_id === userId) continue // 나는 예외
+      if (p.user_id === user?.id) continue // 나는 예외
       // 'random'은 중복 허용하려면 제외
       if (p.turtle_id === 'random') continue
       s.add(p.turtle_id)
     }
     return s
-  }, [players, userId])
+  }, [players, user?.id])
 
   const myChoice = me?.turtle_id ?? null
 
@@ -327,12 +318,12 @@ export default function GameRoomPage() {
 
     // 낙관적 업데이트
     setPlayers((prev) => {
-      const uid = useAuthStore.getState().user?.id
+      const uid = user?.id
       return prev.map((p) => (p.user_id === uid ? { ...p, turtle_id: turtleId } : p))
     })
   }
 
-  if (loading) return <div className="container mx-auto p-6">불러오는 중…</div>
+  if (loading || status === 'loading') return <div className="container mx-auto p-6">불러오는 중…</div>
   if (error || !room)
     return <div className="container mx-auto p-6 text-red-600">{error ?? '방을 찾을 수 없습니다.'}</div>
 
@@ -392,7 +383,7 @@ export default function GameRoomPage() {
                       </div>
                     ) : (
                       <div key={idx} className="flex items-center gap-1">
-                        <span className="font-bold">{m.sender === userNickname ? '나' : `#${m.sender}`}</span>:
+                        <span className="font-bold">{m.sender === user?.nickname ? '나' : `#${m.sender}`}</span>:
                         <span className="break-words">{m.message}</span>
                       </div>
                     ),
@@ -439,7 +430,7 @@ export default function GameRoomPage() {
                 )}
                 disabled={me?.turtle_id === 'default'}
               >
-                {me?.ready ? '준비 해제' : '준비하기'}
+                {me?.ready ? '준비해제' : '준비하기'}
               </Button>
             )}
 

@@ -8,6 +8,16 @@ import { serverFetchJSON } from '@/lib/net/server-fetch'
 export const revalidate = 60 // 페이지 캐시 재생성 주기 (초)
 
 export default async function MainHome() {
+   // 빌드 시점에 환경변수가 없으면 호출 스킵
+  const base =
+    process.env.NEXT_PUBLIC_API_BASE_URL   // 브라우저용 공개 URL
+    ?? process.env.API_BASE_URL            // 서버용 내부 URL (옵션)
+    ?? '';
+
+  if (!base) {
+    // 빌드/런타임에 주소가 없으면 최소 UI
+    return <div>기본 화면</div>;
+  }
   const [bannerResponse, storeResponse, noticeResponse] = await Promise.allSettled([
     serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', { auth: 'none' }),
     serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=1&size=4', { auth: 'none' }),
@@ -55,7 +65,7 @@ export default async function MainHome() {
   return (
     <div className="container mx-auto px-4 md:px-6 lg:px-8">
       <BannerCarousel banners={banners} />
-      <AlertBar message="작은 퐁 하나가 내일의 큰 혜택이 됩니다" />
+      <AlertBar />
       <CtaSection
         title="나에게 맞는 금융은 뭐가 있을까?"
         rows={
@@ -64,7 +74,7 @@ export default async function MainHome() {
             ['소비패턴', '절약', '보험', '연금', '주거/부동산'],
           ] as string[][]
         }
-        ctaHref="#"
+        ctaHref="/report"
         ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
       />
       <StoreSection items={storeItems} />

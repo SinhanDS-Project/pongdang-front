@@ -1,217 +1,338 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
-import { useMe, useDonationDetail } from '@/lib/swr';
-import DonateModal from '@/components/modals/DonateModal';
-import DonationConsentModal from '@/components/modals/DonationConsentModal';
-import type { DonationDetail } from '@/types/donation';
+import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { api } from '@/lib/net/client-axios'
+import type { AxiosError } from 'axios'
+import Image from 'next/image'
+import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { motion, AnimatePresence } from 'framer-motion'
 
-function toNum(v: unknown) {
-  if (typeof v === 'number') return v;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-function formatKRW(n: number) {
-  return `${n.toLocaleString('ko-KR')}원`;
-}
-function toPercent(current?: unknown, goal?: unknown) {
-  const c = toNum(current);
-  const g = toNum(goal);
-  if (g <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((c / g) * 100)));
-}
-function dday(end?: unknown) {
-  if (!end) return null;
-  const endDate = new Date(end as any);
-  if (isNaN(endDate.getTime())) return null;
-  const today = new Date();
-  const ms = endDate.setHours(0, 0, 0, 0) - today.setHours(0, 0, 0, 0);
-  const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
-  return days;
+/* ── 타입 정의 ───────────────────────── */
+type DonationDetail = {
+  id: number
+  title: string
+  content: string
+  goal: number
+  current: number | null
+  img?: string | null
+  purpose?: string
+  org?: string
+  start_date?: string
+  end_date?: string
+  type?: string
 }
 
+type WalletType = 'PONG' | 'DONA'
+
+type User = {
+  id: number
+  user_name: string
+  nickname: string
+  pong_balance: number
+  dona_balance: number
+}
+
+type ErrorResponse = {
+  message?: string
+  error?: string
+}
+
+const fmt = (v?: number | null) => (typeof v === 'number' && !isNaN(v) ? v.toLocaleString('ko-KR') : '0')
+
+/* ── 컴포넌트 ───────────────────────── */
 export default function DonationDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const numId = Number(id);
-  const { data, isLoading, error } = useDonationDetail(
-    Number.isFinite(numId) ? numId : null
-  );
+  const { id } = useParams<{ id: string }>()
+  const [donation, setDonation] = useState<DonationDetail | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const meRes = useMe();
-  const pongbal = meRes.data?.pong_balance ?? 0;
-  const donabal = meRes.data?.dona_balance ?? 0;
-  const [donateOpen, setDonateOpen] = useState(false);
-  const [consentOpen, setConsentOpen] = useState(false);
-  const [donateMode, setDonateMode] = useState<'pay' | 'balance'>('balance');
+  const [walletType, setWalletType] = useState<WalletType>('PONG')
+  const [amount, setAmount] = useState<number>(0)
+  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
+  // 폼 에러 메시지
+  const [formError, setFormError] = useState<string | null>(null)
 
-  if (isLoading) {
-    return (
-      <main className="mx-auto max-w-screen-lg px-4 py-10 space-y-6">
-        <div className="aspect-[16/9] rounded-2xl bg-gray-200 animate-pulse" />
-        <div className="h-8 w-2/3 bg-gray-200 rounded animate-pulse" />
-      </main>
-    );
+  // 모달 상태
+  const [termsOpen, setTermsOpen] = useState(false)
+  const [donateOpen, setDonateOpen] = useState(false)
+
+  // 기부 완료 축하 화면 상태
+  const [showCelebration, setShowCelebration] = useState(false)
+
+  /* ── 데이터 로딩 ───────────────────── */
+  useEffect(() => {
+    const fetchDonation = async () => {
+      try {
+        const { data } = await api.get<DonationDetail>(`/api/donation/${id}`)
+        setDonation(data)
+      } catch (err) {
+        const axiosErr = err as AxiosError<ErrorResponse>
+        if (axiosErr.response?.status === 404) {
+          setError('❌ 기부 정보가 존재하지 않습니다.')
+        } else {
+          setError(axiosErr.response?.data?.message || '⚠️ 기부 정보를 불러오는 중 오류가 발생했습니다.')
+        }
+      }
+    }
+
+    const fetchUser = async () => {
+      try {
+        const { data } = await api.get<User>('/api/user/me', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        })
+        setUser(data)
+      } catch {
+        // 로그인 안 된 경우 무시
+      }
+    }
+
+    fetchDonation()
+    fetchUser()
+  }, [id])
+
+  if (error) return <p className="p-6 text-center text-red-500">{error}</p>
+  if (!donation) return <p className="p-6 text-center">로딩 중…</p>
+
+  const goalPong = Math.floor(donation.goal / 100)
+  const currentPong = donation.current ?? 0
+
+  /* ── 기부 API 호출 ───────────────────── */
+  const handleDonate = async () => {
+    if (!amount || amount <= 0) {
+      setFormError('⚠️ 기부 퐁을 입력해주세요.')
+      return
+    }
+    setFormError(null)
+
+    try {
+      setLoading(true)
+      await api.post(
+        '/api/donation',
+        {
+          donation_info_id: donation.id,
+          amount,
+          wallet_type: walletType,
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } },
+      )
+      setDonateOpen(false) // 기부 모달 닫기
+      setShowCelebration(true) // 축하 화면 열기
+      setAmount(0)
+      setWalletType('PONG')
+    } catch (err) {
+      const axiosErr = err as AxiosError<ErrorResponse>
+      setFormError(axiosErr.response?.data?.message || '❌ 기부 실패')
+    } finally {
+      setLoading(false)
+    }
   }
-  if (error || !data) {
-    return (
-      <main className="mx-auto max-w-screen-lg px-4 py-10 space-y-6">
-        <Link href="/donation" className="text-sm text-gray-500 hover:text-gray-700">
-          ← 목록으로
-        </Link>
-        <p className="text-red-600">상세 정보를 불러오지 못했습니다.</p>
-      </main>
-    );
-  }
 
-  const item = data as unknown as DonationDetail;
-  const img = (item as any).img || '/images/placeholder-donation.jpg';
-  const title = (item as any).title ?? '';
-  const org = (item as any).org ?? '';
-  const goal = toNum((item as any).goal);
-  const current = toNum((item as any).current);
-  const percent = toPercent(current, goal);
-  const remain = Math.max(0, goal - current);
-  const days = dday((item as any).end_date);
-
+  /* ── UI ────────────────────────────── */
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 md:py-10 space-y-6 md:space-y-8">
-      <Link href="/donation" className="text-sm text-gray-500 hover:text-gray-700">
-        ← 목록으로
-      </Link>
-
-      {/* === HERO (배경 이미지 + 오버레이 + 진행바/금액) === */}
-      <section className="relative h-[240px] sm:h-[300px] md:h-[360px] rounded-2xl overflow-hidden">
-        <Image src={img} alt={title} fill className="object-cover" priority />
-        {/* dim */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
-        {/* D-day */}
-        {typeof days === 'number' && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2">
-            <span className="rounded-full bg-emerald-600/90 text-white text-xs font-semibold px-3 py-1">
-              {days < 0 ? '종료' : days === 0 ? '오늘 마감' : `D-${days}`}
-            </span>
-          </div>
-        )}
-        {/* 타이틀 */}
-        <h1 className="absolute left-6 right-6 top-1/2 -translate-y-1/2 text-white text-2xl md:text-3xl font-extrabold drop-shadow">
-          {title}
-        </h1>
-        {/* 진행 퍼센트 + 금액 */}
-        <div className="absolute left-0 right-0 bottom-14 px-6 flex items-center justify-between text-white text-sm font-semibold">
-          <span>{percent}%</span>
-          <span>{formatKRW(current)} 모금</span>
-        </div>
-        {/* 진행바 */}
-        <div className="absolute left-0 right-0 bottom-6 px-6">
-          <div className="h-2 w-full rounded-full bg-white/30 overflow-hidden">
-            <div
-              className="h-full bg-emerald-400"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-        </div>
-      </section>
-      {/* === 본문 + 사이드 === */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* 본문 */}
-        <article className="lg:col-span-8 space-y-5">
-          <div className="flex flex-wrap gap-2">
-            {/* 예시 태그 (데이터에 태그가 있으면 매핑하세요) */}
-            {(item as any).type && (
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 text-xs font-medium">
-                {(item as any).type}
-              </span>
-            )}
+    <>
+      <div className="flex w-full justify-center px-2 py-6 sm:px-4 md:px-6">
+        <div className="w-full max-w-4xl space-y-8">
+          {/* 이미지 + 제목 */}
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg shadow">
+            <Image src={donation.img || '/placeholder-banner.png'} alt={donation.title} fill className="object-cover" />
+            <div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-4 text-white">
+              <h1 className="text-2xl font-bold md:text-3xl">{donation.title}</h1>
+              {donation.org && <p className="mt-1 text-base opacity-90">{donation.org}</p>}
+            </div>
           </div>
 
-          <h2 className="text-xl font-bold">모금소개</h2>
-          {(item as any).purpose && (
-            <p className="text-neutral-700">{(item as any).purpose}</p>
+          {/* 모금 소개 */}
+          <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
+            <h2 className="text-xl font-semibold">📌 모금 소개</h2>
+            <p className="my-4 text-base leading-relaxed text-gray-800 md:my-6 md:text-lg">{donation.content}</p>
+          </section>
+
+          {/* 목적 */}
+          {donation.purpose && (
+            <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
+              <h2 className="text-xl font-semibold">🎯 목적</h2>
+              <p className="my-2 text-base text-gray-700 md:my-4 md:text-lg">{donation.purpose}</p>
+            </section>
           )}
-          {(item as any).content && (
-            <div className="prose max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:mx-auto [&_img]:object-contain">
-              {(item as any).content}
-            </div>
-          )}
-        </article>
 
-        {/* 사이드 */}
-        <aside className="lg:col-span-4 space-y-4">
-          {/* 모금단체 카드 */}
-          <div className="rounded-2xl border">
-            <div className="p-4 border-b">
-              <h3 className="text-sm font-bold">모금단체</h3>
-            </div>
-            <div className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-emerald-100" />
-              <div className="min-w-0">
-                <p className="font-medium truncate">{org || '모금단체'}</p>
-                <p className="text-xs text-neutral-500">검증된 단체</p>
-              </div>
-            </div>
-          </div>
+          {/* 모집 기간 */}
+          <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
+            <h2 className="text-xl font-semibold">📅 모집 기간</h2>
+            <p className="my-2 text-base text-gray-600 md:my-4 md:text-lg">
+              {donation.start_date?.slice(0, 10)} ~ {donation.end_date?.slice(0, 10)}
+            </p>
+          </section>
 
-          {/* 안내 박스 */}
-          <div className="rounded-2xl border p-4 space-y-3">
-            <p className="font-bold">지금 기부에 참여하세요!</p>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-emerald-700">
-                100% 전달
-              </span>
-              <span className="text-neutral-500">수수료 없이 전달돼요</span>
-            </div>
-            <button
-              className="w-full rounded-md bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 font-semibold"
-              onClick={() => setConsentOpen(true)}
+          <hr className="my-6 border-t border-gray-300" />
+
+          {/* 기부하기 섹션 */}
+          <section className="space-y-4 text-center">
+            <p className="text-gray-600">여러분의 소중한 기부가 큰 변화를 만듭니다.</p>
+
+            {/* 약관 모달 */}
+            <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="rounded-full bg-sky-500 px-12 py-4 text-lg font-extrabold text-white shadow-md transition-transform hover:scale-105 hover:bg-sky-600"
+                >
+                  ❤️ 지금 기부하기
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>기부 약관 동의</DialogTitle>
+                </DialogHeader>
+                <div className="max-h-[400px] space-y-4 overflow-y-auto text-sm text-gray-700">
+                  <p>기부금 영수증 발급 및 세액공제를 위해 개인정보 제공 동의가 필요합니다.</p>
+                  <p>
+                    1. 제공 받는 자 : 국세청 <br />
+                    2. 제공 항목 : 이름, 주민등록번호(암호화된 값), 기부 내역 <br />
+                    3. 이용 목적 : 기부금 영수증 발행 및 세액 공제 <br />
+                    4. 보유 및 이용기간 : 관련 법령에 따른 보관 기간
+                  </p>
+                </div>
+                <DialogFooter className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setTermsOpen(false)}>
+                    동의하지 않음
+                  </Button>
+                  <Button
+                    className="bg-sky-500 text-white hover:bg-sky-600"
+                    onClick={() => {
+                      setTermsOpen(false)
+                      setDonateOpen(true)
+                    }}
+                  >
+                    동의하고 계속
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* 기부 모달 */}
+            <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>기부 퐁 선택 & 입력</DialogTitle>
+                  <p className="mt-1 text-sm text-gray-500">어떤 퐁으로 기부할지 선택하고, 기부할 퐁을 입력하세요.</p>
+                </DialogHeader>
+
+                {/* 잔액 카드 */}
+                <div className="my-4 grid grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setWalletType('PONG')}
+                    className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
+                      walletType === 'PONG' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <h3 className="text-lg font-bold">일반퐁</h3>
+                    <p className="text-sm text-gray-600">일반 활동으로 적립된 퐁</p>
+                    <p className="mt-2 font-semibold text-sky-600">{user ? fmt(user.pong_balance) : 0} 보유</p>
+                  </div>
+
+                  <div
+                    onClick={() => setWalletType('DONA')}
+                    className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
+                      walletType === 'DONA' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <h3 className="text-lg font-bold">기부퐁</h3>
+                    <p className="text-sm text-gray-600">특별 활동으로 적립된 퐁</p>
+                    <p className="mt-2 font-semibold text-sky-600">{user ? fmt(user.dona_balance) : 0} 보유</p>
+                  </div>
+                </div>
+
+                {/* 금액 입력 */}
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder="기부 퐁을 입력하세요"
+                    value={amount || ''}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                  />
+                  {formError && <p className="text-sm text-red-500">{formError}</p>}
+                  {amount > 0 && user && (
+                    <p className="text-sm text-gray-500">
+                      예상 잔액 퐁:{' '}
+                      {walletType === 'PONG' ? fmt(user.pong_balance - amount) : fmt(user.dona_balance - amount)}
+                    </p>
+                  )}
+                </div>
+
+                {/* 진행 퍼센트 */}
+                <div className="mt-4">
+                  <p className="mb-1 text-sm text-gray-600">이번 기부 후 예상 진행률:</p>
+                  <Progress value={Math.min(100, Math.round(((currentPong + amount) / goalPong) * 100))} />
+                </div>
+
+                <DialogFooter className="mt-6 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setDonateOpen(false)}>
+                    취소
+                  </Button>
+                  <Button disabled={loading} className="bg-sky-500 text-white hover:bg-sky-600" onClick={handleDonate}>
+                    {loading ? '기부 중...' : '기부하기'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </section>
+        </div>
+      </div>
+
+      {/* 🎉 기부 감사 애니메이션 */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/70"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: [0, 1.2, 1], opacity: [0, 1, 1] }}
+              transition={{ duration: 0.8 }}
+              className="flex h-40 w-40 items-center justify-center rounded-full bg-yellow-400 shadow-2xl"
             >
-              지금 기부하기
-            </button>
-            <ul className="text-xs text-neutral-500 space-y-1">
-              <li>목표 금액: {formatKRW(goal)}</li>
-              <li>남은 금액: {formatKRW(remain)}</li>
-              <li>
-                기간:{' '}
-                {(item as any).start_date
-                  ? new Date((item as any).start_date).toLocaleDateString('ko-KR')
-                  : '-'}{' '}
-                ~{' '}
-                {(item as any).end_date
-                  ? new Date((item as any).end_date).toLocaleDateString('ko-KR')
-                  : '-'}
-              </li>
-            </ul>
-          </div>
-        </aside>
-      </section>
+              <span className="text-5xl">💙</span>
+            </motion.div>
 
-      <DonationConsentModal
-        open={consentOpen}
-        onClose={() => setConsentOpen(false)}
-        onProceed={(mode) => {
-          setDonateMode(mode);
-          setConsentOpen(false);
-          setDonateOpen(true);          // ✅ 동의 통과 후 금액 입력 모달
-        }}
-        defaultMode="balance"
-      />
+            <motion.h2
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, type: 'spring' }}
+              className="mt-6 text-center text-3xl font-extrabold text-white drop-shadow-lg"
+            >
+              기부 완료!
+            </motion.h2>
 
-      {/* 기부 모달 */}
-      <DonateModal
-        open={donateOpen}
-        onClose={() => setDonateOpen(false)}
-        infoId={(item as any).id}
-        title={title}
-        maxRemain={remain > 0 ? remain : undefined}
-        pong_balance={pongbal}
-        dona_balance={donabal}
-        onDone={() => {
-          setDonateOpen(false);
-        }}
-      />
-    </main>
-  );
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="mt-3 text-center text-lg text-gray-200"
+            >
+              소중한 퐁이 전달되었습니다 🙏 <br />
+              <span className="mt-1 block text-xl font-semibold text-white">감사합니다</span>
+            </motion.p>
+
+            <motion.button
+              onClick={() => setShowCelebration(false)}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 1 }}
+              className="mt-6 rounded-full bg-sky-500 px-8 py-3 font-semibold text-white shadow-lg hover:bg-sky-600"
+            >
+              확인
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
 }

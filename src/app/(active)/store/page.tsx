@@ -9,8 +9,8 @@ import SuccessModal from '@/components/store-page/SuccessModal'
 import { BackendProduct, Category, mapProducts, Product, PRODUCT_TYPE, SpringPage } from '@/components/store-page/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useMe } from '@/hooks/use-me'
 import { api } from '@/lib/net/client-axios'
-import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
 import type { AxiosError } from 'axios'
 import { Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -60,8 +60,7 @@ export default function StorePage() {
   const [successOpen, setSuccessOpen] = useState(false)
 
   // 유저 상태
-  const user = useCurrentUser()
-  const setUser = useAuthStore((s) => s.setUser)
+  const { user, mutate } = useMe()
 
   // 검색/카테고리 바뀌면 1페이지부터
   useEffect(() => setPage(1), [activeCat, debouncedQuery])
@@ -126,7 +125,7 @@ export default function StorePage() {
         await api.post('/api/store/purchase', payload)
 
         // 결제 성공 시 포인트 차감
-        setUser({ ...user, pong_balance: user.pong_balance - p.price })
+        mutate()
 
         // 로딩 모달 닫기 + 1.5초 후 성공 모달 열기
         setTimeout(() => {
@@ -143,7 +142,7 @@ export default function StorePage() {
         setPaying(false)
       }
     },
-    [user, setUser],
+    [user],
   )
 
   const handlePageChange = (p: number) => {
@@ -245,10 +244,9 @@ export default function StorePage() {
       <LoadingModal open={loadingOpen} message="이메일로 상품을 발송중입니다." />
       <SuccessModal
         open={successOpen}
-        message="✅ 결제가 완료되었습니다."
+        message=" 이메일로 상품이 발송되었습니다. 메일함을 확인해주세요💝"
         onClose={() => {
           setSuccessOpen(false)
-          closeModal() //  성공 모달 닫을 때 ProductModal도 닫기
         }}
       />
     </div>

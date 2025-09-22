@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
-import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
 
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -32,6 +31,11 @@ import {
 } from '@/components/ui/navigation-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
+import { revalidateMe, useMe } from '@/hooks/use-me'
+
+import { apiPublic } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
+
 // ===================== 메뉴 스키마 (description 제거, requireAuth 추가) =====================
 const NAVIGATIONMENU = [
   { href: '/info', label: '서비스 소개', requireAuth: false },
@@ -40,13 +44,13 @@ const NAVIGATIONMENU = [
     href: '/play',
     requireAuth: true,
     children: [
-      { href: '/play/throw', label: '퐁! 던지기' },
+      { href: '/play/coin', label: '퐁! 던지기' },
       { href: '/play/bomb', label: '터진다..퐁!' },
       { href: '/play/quiz', label: '도전! 금융 골든벨' },
       { href: '/play/rooms', label: '단체게임' },
     ],
   },
-  { href: '/donate', label: '기부하기', requireAuth: false },
+  { href: '/donation', label: '기부하기', requireAuth: false },
   { href: '/store', label: '퐁 스토어', requireAuth: true },
   {
     label: '게시판',
@@ -107,9 +111,7 @@ function GuardedLink({
 
 // ===================== 헤더 =====================
 export function AppHeader() {
-  const { logout } = useAuthStore()
-  const user = useCurrentUser()
-  const isAuthed = !!user
+  const { user } = useMe()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -127,6 +129,18 @@ export function AppHeader() {
     setLoginNoticeOpen(false)
     setPendingPath(null)
     router.push(`/signin?redirect=${encodeURIComponent(redirect)}`)
+  }
+
+  const logout = async () => {
+    const access = tokenStore.get()
+    try {
+      await apiPublic.delete('/api/auth/logout', {
+        withCredentials: true,
+        headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+      })
+    } catch {}
+    tokenStore.clear()
+    await revalidateMe()
   }
 
   return (
@@ -175,7 +189,7 @@ export function AppHeader() {
                                 <GuardedLink
                                   href={child.href}
                                   requireAuth={groupNeedsAuth}
-                                  isAuthed={isAuthed}
+                                  isAuthed={!!user}
                                   onBlocked={openLoginNotice}
                                   className="hover:bg-muted block rounded-md p-3 no-underline outline-hidden transition-colors focus:shadow-md"
                                 >
@@ -197,7 +211,7 @@ export function AppHeader() {
                       <GuardedLink
                         href={item.href}
                         requireAuth={item.requireAuth}
-                        isAuthed={isAuthed}
+                        isAuthed={!!user}
                         onBlocked={openLoginNotice}
                         className={cn(
                           'text-foreground/90 hover:text-foreground relative bg-transparent text-sm font-medium transition-colors hover:bg-transparent',
@@ -221,7 +235,7 @@ export function AppHeader() {
           </NavigationMenu>
 
           <div className="flex items-center gap-4">
-            {!isAuthed ? (
+            {!user ? (
               <Link href="/signin" className="hidden md:block" aria-label="로그인 페이지로 이동">
                 <Button variant="outline">로그인</Button>
               </Link>
@@ -235,7 +249,7 @@ export function AppHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem asChild>
-                    <Link href="/mypage">마이페이지</Link>
+                    <Link href="/profile">마이페이지</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout}>로그아웃</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -274,7 +288,7 @@ export function AppHeader() {
                                     key={c.href}
                                     href={c.href}
                                     requireAuth={item.requireAuth}
-                                    isAuthed={isAuthed}
+                                    isAuthed={!!user}
                                     onBlocked={openLoginNotice}
                                     className={cn(
                                       'hover:bg-muted block rounded-md px-3 py-2 text-sm',
@@ -294,7 +308,7 @@ export function AppHeader() {
                         key={item.href}
                         href={item.href}
                         requireAuth={item.requireAuth}
-                        isAuthed={isAuthed}
+                        isAuthed={!!user}
                         onBlocked={openLoginNotice}
                         className={cn(
                           'hover:bg-muted block rounded-md px-3 py-2 text-sm',
@@ -309,14 +323,14 @@ export function AppHeader() {
 
                 {/* 프로필/테마 (모바일 시트 하단) */}
                 <div className="mt-6 border-t pt-4">
-                  {!isAuthed ? (
+                  {!user ? (
                     <Link href="/signin" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
                       로그인
                     </Link>
                   ) : (
                     <div className="mt-3">
-                      <Link href="/mypage" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
-                        마이페이지
+                      <Link href="/profile" className="hover:bg-muted block rounded-md px-3 py-2 text-sm">
+                        프로필
                       </Link>
                       <button
                         onClick={logout}

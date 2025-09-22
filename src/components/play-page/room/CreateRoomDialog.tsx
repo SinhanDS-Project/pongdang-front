@@ -45,13 +45,6 @@ type LevelListRes = {
   levels: LevelItem[]
 }
 
-/** 이미지 URL 조합기 (환경변수에 맞춰 조정) */
-function getGameImageUrl(filename: string) {
-  const base = process.env.NEXT_PUBLIC_FILE_BASE_URL || ''
-
-  return `${base.replace(/\/$/, '')}/files/${filename}`
-}
-
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -221,7 +214,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                             aria-pressed={active}
                           >
                             <Image
-                              src={getGameImageUrl(g.game_img)}
+                              src={g.game_img}
                               alt={g.name}
                               fill
                               className="object-cover"

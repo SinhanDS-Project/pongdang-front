@@ -1,5 +1,5 @@
-import { tokenStore } from '@/lib/auth/token-store'
 import { api, apiPublic } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
 
 import type { User } from '@/types/auth'
 
@@ -12,7 +12,6 @@ export async function login(payload: LoginPayload) {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true,
     })
-
     const access = res.data?.access_token
     const user = res.data?.user
 

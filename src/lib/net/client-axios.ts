@@ -3,7 +3,7 @@
 // - 401이면 refresh(쿠키) → access 갱신 → "요청" 1회 재시도
 // - 동시 401 폭주 시 refresh 1회만 수행하고 나머지는 대기(구독/발행 패턴)
 
-import { tokenStore } from '@/lib/auth/token-store'
+import { tokenStore } from '@/stores/token-store'
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 
 // ----- 유틸: 인증 예외 경로(토큰 주입/리프레시 재귀 방지)
@@ -16,7 +16,7 @@ function isAuthExempt(url?: string) {
 // ----- 인스턴스
 export const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true, // refresh에 HttpOnly 쿠키 필요
 })
 
@@ -46,11 +46,7 @@ function publishRefreshDone(token: string | null) {
 
 async function doRefresh(): Promise<string | null> {
   try {
-    const res = await axios.post<{ access_token: string }>(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
-      {},
-      { withCredentials: true },
-    )
+    const res = await axios.post<{ access_token: string }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/refresh`)
     const access = res.data?.access_token
     if (access) {
       tokenStore.set(access) // 메모리+로컬스토리지 갱신
