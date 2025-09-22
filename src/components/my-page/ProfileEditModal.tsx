@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
-
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -13,6 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, CheckCircle, Eye, EyeOff, Loader2, UserIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
+import { useMe } from '@/hooks/use-me'
+import { tokenStore } from '@/stores/token-store'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -29,7 +29,7 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
   const handleOpenChange = async (v: boolean) => {
     setPanel('overview')
     onOpenChange(v)
-    await useAuthStore.getState().loadMe()
+    const { user, status } = useMe()
   }
 
   return (
@@ -79,7 +79,7 @@ function Overview({
   onEditPassword: () => void
   onWithdrawDone: () => void
 }) {
-  const user = useCurrentUser()
+  const { user, status } = useMe()
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -486,7 +486,7 @@ function Withdraw({ onClose }: { onClose: () => void }) {
     setSubmitting(true)
     try {
       await unregisterAccount()
-      useAuthStore.persist.clearStorage()
+      tokenStore.clear()
       onClose()
     } finally {
       setSubmitting(false)
