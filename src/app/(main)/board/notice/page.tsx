@@ -6,6 +6,7 @@ import type { Board } from '@/components/board-page/types'
 import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 type PageResp = {
   boards: {
@@ -63,7 +64,7 @@ export default function NoticePage() {
       {error && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
-
+      <BoardTabs activeCategory="NOTICE" />
       {loading ? (
         <div>불러오는 중…</div>
       ) : (
