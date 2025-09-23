@@ -11,7 +11,6 @@ async function ensureDailyQuiz() {
     const { data } = await api.post<boolean>('/api/quiz')
 
     if (data === true) {
-      console.log('오늘 퀴즈가 이미 생성됨 ✅')
       return
     }
 
