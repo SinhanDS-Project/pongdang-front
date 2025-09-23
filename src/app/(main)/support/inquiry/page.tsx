@@ -6,15 +6,6 @@ import { api } from '@/lib/net/client-axios'
 import ReactQuillEditor from '@/components/board-page/ReactQuill'
 import { useMe } from '@/hooks/use-me'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
