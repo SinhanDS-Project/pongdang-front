@@ -5,8 +5,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import * as React from 'react'
 
-import { useAuthStore, useCurrentUser } from '@/stores/auth-store'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -31,12 +29,26 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { revalidateMe, useMe } from '@/hooks/use-me'
+import { apiPublic } from '@/lib/net/client-axios'
+import { tokenStore } from '@/stores/token-store'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile } = useSidebar()
-  const { logout } = useAuthStore()
 
-  const user = useCurrentUser()
+  const { user } = useMe()
+
+  const logout = async () => {
+    const access = tokenStore.get()
+    try {
+      await apiPublic.delete('/api/auth/logout', {
+        withCredentials: true,
+        headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+      })
+    } catch {}
+    tokenStore.clear()
+    await revalidateMe()
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -57,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="mypage">
+                <Link href="/mypage">
                   <User />
                   <span>마이페이지</span>
                 </Link>
@@ -83,14 +95,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'play/bomb'}>
+                        <Link href={'/play/bomb'}>
                           <span>터진다..퐁!</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'play/quiz'}>
+                        <Link href={'/play/quiz'}>
                           <span>도전! 금융 골든벨</span>
                         </Link>
                       </SidebarMenuSubButton>

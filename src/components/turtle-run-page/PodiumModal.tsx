@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { useAuthStore } from '@stores/auth-store'
+
+import { useMe } from '@/hooks/use-me'
 
 type FinishRow = {
   userId: number
@@ -46,7 +47,10 @@ export function PodiumModal({
   countdownSec,
 }: Props) {
   // --- hooks (항상 최상단) ---
-  const myId = useAuthStore((s) => s.user?.id)
+  const { user, status } = useMe()
+  const userId: number | null = user ? user?.id : null
+
+  const myId: number | null = user ? user?.id : null
   const myRow = useMemo(
     () => results.find((r) => r.userId === myId),
     [results, myId]

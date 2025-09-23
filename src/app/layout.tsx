@@ -4,7 +4,7 @@ import '@styles/globals.css'
 
 import { ThemeProvider } from '@components/providers/theme-provider'
 
-import AuthBootstrapClient from '@/stores/auth-bootstrap'
+import { AuthBootstrapClient } from '@/stores/auth-bootstrap'
 
 export const metadata: Metadata = {
   title: '퐁당퐁당',

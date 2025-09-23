@@ -29,7 +29,6 @@ import { checkNicknameDup, register } from '@/features/auth'
 
 export function StepNickName() {
   const setStep = useSignupStore((s) => s.setStep)
-  const patch = useSignupStore((s) => s.patch)
 
   const nameSnap = useSignupStore((s) => s.name ?? '')
   const birthSnap = useSignupStore((s) => s.birth ?? '') // YYYY-MM-DD

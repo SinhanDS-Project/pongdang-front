@@ -317,7 +317,7 @@ export function StepIdentity() {
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>베팅포인트 회원 정보와 연결하시겠습니까?</AlertDialogTitle>
+            <AlertDialogTitle>신한 회원 정보와 연결하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
               {bpUser ? (
                 <div className="mt-2 space-y-1 text-sm">

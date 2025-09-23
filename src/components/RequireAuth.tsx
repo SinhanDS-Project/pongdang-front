@@ -1,11 +1,12 @@
 'use client'
 
-import { useAuthStatus } from '@/stores/auth-store'
-import { useRouter } from 'next/navigation'
+import { notFound, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+import { useMe } from '@/hooks/use-me'
+
 export function RequireAuth({ children }: { children: React.ReactNode }) {
-  const status = useAuthStatus()
+  const { status } = useMe()
   const router = useRouter()
 
   useEffect(() => {
@@ -22,7 +23,8 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (status === 'unauthenticated') return null
-
+  if (status === 'unauthenticated') {
+    notFound()
+  }
   return <>{children}</>
 }
