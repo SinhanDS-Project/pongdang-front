@@ -9,14 +9,8 @@ const tabs = [
   { href: '/board/event', label: '이벤트', category: 'EVENT' },
 ]
 
-type Props = {
-  activeCategory?: string
-}
-
-export default function BoardTabs({ activeCategory }: Props) {
+export default function BoardTabs({ activeCategory }: { activeCategory?: string }) {
   const pathname = usePathname()
-
-  // 상세보기 같은 경우 activeCategory 있으면 그걸 우선
   const effectiveCategory = activeCategory ?? (tabs.find((t) => pathname.startsWith(t.href))?.category || 'FREE')
 
   return (
