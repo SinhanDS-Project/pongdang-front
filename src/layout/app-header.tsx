@@ -68,7 +68,7 @@ const NAVIGATIONMENU = [
     requireAuth: false,
     children: [
       { href: '/support/faq', label: 'FAQ' },
-      { href: '/support/contact', label: '문의하기' },
+      { href: '/support/inquiry', label: '문의하기' },
     ],
   },
 ] as const

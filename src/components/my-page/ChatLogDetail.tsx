@@ -36,6 +36,7 @@ export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
         </DialogHeader>
 
         <div className="space-y-2.5">
+          {/* 질문 */}
           <div className="bg-accent rounded border p-4">
             <div className="mb-2 flex items-center justify-between gap-x-2">
               <MessageCircle className="text-secondary-royal" />
@@ -43,9 +44,16 @@ export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
               <div className="grow text-end">작성일: {formatDate(chatLog.chat_date)}</div>
             </div>
             <Separator className="mb-4" />
-            <p className="whitespace-pre-line">{chatLog.question}</p>
+            <article
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{
+                __html: chatLog.question || "<p class='text-sm text-gray-500'>내용이 없습니다.</p>",
+              }}
+            />
           </div>
+
           <Separator />
+
           {/* 답변 */}
           <div className="bg-accent rounded border p-4">
             <div className="mb-2 flex items-center justify-between gap-x-2">
@@ -57,10 +65,13 @@ export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
             </div>
             <Separator className="mb-4" />
             {chatLog.response ? (
-              <p className="whitespace-pre-line">{chatLog.response}</p>
+              <article
+                className="prose prose-sm max-w-none text-gray-700"
+                dangerouslySetInnerHTML={{ __html: chatLog.response }}
+              />
             ) : (
-              <div className="flex items-center gap-2">
-                <AlertCircle className="text-red-500" />
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertCircle />
                 답변이 아직 등록되지 않았습니다.
               </div>
             )}

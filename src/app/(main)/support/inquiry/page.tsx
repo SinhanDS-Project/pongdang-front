@@ -1,39 +1,50 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import { useMe } from '@/hooks/use-me'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
-export default function WritePage() {
+export default function InquiryPage() {
+  const { user } = useMe()
+
   const router = useRouter()
-  const sp = useSearchParams()
-  const cat = sp.get('cat')?.toUpperCase() || 'FREE'
-
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
-  // HTML 태그 제거 후 텍스트만 확인
-  const plainText = useMemo(() => content.replace(/<[^>]+>/g, '').trim(), [content])
-  const titleEmpty = title.trim().length === 0
+  // 로그인 안내 모달 상태
+  const [loginNoticeOpen, setLoginNoticeOpen] = useState(false)
 
-  // 최종 onSubmit
   const onSubmit = async () => {
-    if (titleEmpty) return alert('제목을 입력해주세요.')
-    if (!plainText) return alert('내용을 입력해주세요.')
+    if (!title.trim()) return alert('제목을 입력해주세요.')
+    if (!content.replace(/<[^>]+>/g, '').trim()) return alert('내용을 입력해주세요.')
 
     try {
-      await api.post('/api/board', {
+      await api.post('/api/chatlog', {
         title,
-        content,
-        category: cat, // URL에서 넘어온 cat 값 (예: FREE, NOTICE, EVENT 등)
+        question: content,
       })
-      alert('게시글이 등록되었습니다.')
-      router.push('/board')
+      alert('마이페이지 문의내역에서 답변을 확인해주세요🌟')
+      router.push('/support')
     } catch (e) {
       alert('등록 중 오류가 발생했습니다.')
     }
   }
+
+  useEffect(() => {
+    if (!user) setLoginNoticeOpen(true)
+  }, [user])
 
   return (
     <main className="mx-auto max-w-6xl">
@@ -41,7 +52,6 @@ export default function WritePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}
           <div className="rounded-2xl border bg-white p-4 sm:p-5">
-            {/* 제목 입력 */}
             <input
               type="text"
               placeholder="제목을 입력하세요"
@@ -49,10 +59,8 @@ export default function WritePage() {
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-xl border px-4 py-3 text-base transition outline-none focus:ring-2 focus:ring-[var(--color-secondary-sky)]"
             />
-
-            {/* 에디터 */}
             <div className="mt-5">
-              <ReactQuillEditor value={content} onChange={setContent} height={500} />
+              <ReactQuillEditor value={content} onChange={setContent} height={400} />
               <p className="mt-2 text-xs text-gray-500">최대 2048자까지 쓸 수 있습니다</p>
             </div>
           </div>
@@ -62,10 +70,10 @@ export default function WritePage() {
             <button
               type="button"
               onClick={onSubmit}
-              disabled={titleEmpty || !plainText}
+              disabled={!title.trim() || !content.replace(/<[^>]+>/g, '').trim()}
               className="w-full rounded-full bg-[var(--color-secondary-royal)] px-6 py-3 text-base font-bold text-white transition hover:bg-[var(--color-secondary-navy)] disabled:opacity-60 lg:w-[220px]"
             >
-              등록하기
+              문의 등록
             </button>
             <button
               type="button"
@@ -77,6 +85,23 @@ export default function WritePage() {
           </div>
         </div>
       </section>
+      <AlertDialog open={loginNoticeOpen} onOpenChange={setLoginNoticeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>해당 메뉴는 로그인 후 이용할 수 있습니다.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel onClick={() => router.push('/support/faq')}>FAQ로 가기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => router.push('/signin')}
+              className="bg-secondary-royal hover:bg-secondary-navy"
+            >
+              로그인하러 가기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }
