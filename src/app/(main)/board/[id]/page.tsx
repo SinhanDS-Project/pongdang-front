@@ -5,12 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import type { Board } from '@/components/board-page/types'
 import ReplySection from '@/components/board-page/ReplySection'
-
-// 사용자 타입
-type User = {
-  id: number
-  nickname: string
-}
+import { useMe } from '@/hooks/use-me'
 
 // 댓글 타입
 type Reply = {
@@ -24,9 +19,9 @@ type Reply = {
 export default function BoardDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
+  const { user: currentUser, status } = useMe()
 
   const [post, setPost] = useState<Board | null>(null)
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [liking, setLiking] = useState(false)
@@ -36,18 +31,6 @@ export default function BoardDetailPage() {
   const [replyError, setReplyError] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
-
-  // 현재 로그인 사용자 가져오기
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const { data } = await api.get<User>('/api/user/me')
-        setCurrentUser(data)
-      } catch {
-        setCurrentUser(null)
-      }
-    })()
-  }, [])
 
   // 게시글 가져오기
   useEffect(() => {
@@ -181,34 +164,33 @@ export default function BoardDetailPage() {
 
           {/* 오른쪽 버튼 */}
           <div className="flex flex-col items-end justify-end gap-3">
-            {isAuthor &&
-              post.category !== 'NOTICE' && ( // ✅ 카테고리 조건 추가
-                <>
-                  <button
-                    onClick={() => router.push(`/board/${id}/edit`)}
-                    className="w-full rounded-full bg-[var(--color-secondary-royal)] px-6 py-3 text-base font-bold text-white transition hover:bg-[var(--color-secondary-navy)] lg:w-[220px]"
-                  >
-                    수정하기
-                  </button>
+            {isAuthor && post.category !== 'NOTICE' && (
+              <>
+                <button
+                  onClick={() => router.push(`/board/${id}/edit`)}
+                  className="w-full rounded-full bg-[var(--color-secondary-royal)] px-6 py-3 text-base font-bold text-white transition hover:bg-[var(--color-secondary-navy)] lg:w-[220px]"
+                >
+                  수정하기
+                </button>
 
-                  <button
-                    onClick={async () => {
-                      if (confirm('정말 삭제하시겠습니까?')) {
-                        try {
-                          await api.delete(`/api/board/${id}`)
-                          alert('삭제되었습니다.')
-                          router.push('/board')
-                        } catch {
-                          alert('삭제 중 오류가 발생했습니다.')
-                        }
+                <button
+                  onClick={async () => {
+                    if (confirm('정말 삭제하시겠습니까?')) {
+                      try {
+                        await api.delete(`/api/board/${id}`)
+                        alert('삭제되었습니다.')
+                        router.push('/board')
+                      } catch {
+                        alert('삭제 중 오류가 발생했습니다.')
                       }
-                    }}
-                    className="w-full rounded-full bg-[var(--color-secondary-light)] px-6 py-3 text-base font-bold text-[var(--color-secondary-navy)] transition hover:bg-[var(--color-secondary-sky)] hover:text-white lg:w-[220px]"
-                  >
-                    삭제하기
-                  </button>
-                </>
-              )}
+                    }
+                  }}
+                  className="w-full rounded-full bg-[var(--color-secondary-light)] px-6 py-3 text-base font-bold text-[var(--color-secondary-navy)] transition hover:bg-[var(--color-secondary-sky)] hover:text-white lg:w-[220px]"
+                >
+                  삭제하기
+                </button>
+              </>
+            )}
 
             <button
               onClick={() => router.push('/board')}
