@@ -6,6 +6,7 @@ import { AxiosError } from 'axios'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Fireworks from '@/components/quiz-page/Firework'
+import { Button } from '@/components/ui/button'
 
 /* ── API 타입 ───────────────────────── */
 type ApiQuizRaw = {
@@ -40,11 +41,8 @@ const toNumber = (v: unknown, fallback = 0): number => {
 const normalizeQuiz = (q: ApiQuizRaw, idxFallback: number): MappedQuiz => {
   const position = toNumber(q.position, idxFallback + 1)
   const question = q.question ?? ''
-
   const choices = [q.choice1, q.choice2, q.choice3, q.choice4].filter((c): c is string => typeof c === 'string')
-
   const answerIdx = Math.max(0, Math.min(choices.length - 1, toNumber(q.answer_idx, 0)))
-
   return { position, question, choices, answerIdx, explanation: q.explanation }
 }
 
@@ -52,10 +50,7 @@ const normalizeQuiz = (q: ApiQuizRaw, idxFallback: number): MappedQuiz => {
 function GoldenBell() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      {/* 플래시 */}
       <FlashOverlay />
-
-      {/* 폭죽 */}
       <Fireworks />
 
       <motion.div
@@ -93,14 +88,22 @@ export default function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0)
   const [finished, setFinished] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(true) // 생성중 상태
   const [message, setMessage] = useState('')
-  const [showBell, setShowBell] = useState(false) //  골든벨 표시 상태
+  const [showBell, setShowBell] = useState(false)
+  const [rewarded, setRewarded] = useState(false) // 퐁 지급 여부 상태
 
-  // 오늘의 퀴즈 생성 + 불러오기
+  // 오늘의 퀴즈 조회
   useEffect(() => {
     ;(async () => {
       try {
+        setGenerating(true)
         await api.post('/api/quiz')
+
+        // 2초 생성중 모달 유지
+        await new Promise((res) => setTimeout(res, 2000))
+        setGenerating(false)
+
         const { data } = await api.get<ApiQuizRaw[]>('/api/quiz')
         const mapped = (Array.isArray(data) ? data : []).map((q, i) => normalizeQuiz(q, i))
         setQuizzes(mapped)
@@ -126,6 +129,21 @@ export default function QuizPage() {
     if (!current || selected === null) return
 
     try {
+      //  1번 문제 제출시 오늘 푼 기록 체크
+      if (step === 0) {
+        try {
+          await api.post('/api/quiz/check')
+        } catch (err) {
+          if (err instanceof AxiosError && err.response?.status === 409) {
+            setMessage('⚠️ 오늘은 이미 퀴즈에 참여하셨습니다.')
+            setFinished(true) // 더 진행 못하게 종료 처리
+            return
+          }
+          throw err // 다른 에러는 기존 로직으로
+        }
+      }
+
+      //  정답 체크
       if (selected === current.answerIdx) {
         setCorrectCount((c) => c + 1)
       }
@@ -154,10 +172,12 @@ export default function QuizPage() {
     try {
       await api.post('/api/quiz/submit', { correctCount })
       setMessage(`🎉 축하합니다! ${correctCount}퐁이 지급되었습니다.`)
+      setRewarded(true) //  지급 완료 상태로 전환
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         if (err.response?.data?.error === 'ALREADY_TODAY_QUIZ_FINISHED') {
           setMessage('⚠️ 오늘은 이미 퀴즈에 참여하셨습니다.')
+          setRewarded(true) // 이미 지급된 상태로 처리
         } else {
           setMessage('❌ 지급 요청에 실패했습니다. 잠시 후 다시 시도해주세요.')
         }
@@ -167,11 +187,11 @@ export default function QuizPage() {
     }
   }
 
-  //  골든벨 자동 닫기
+  // 골든벨 자동 닫기
   useEffect(() => {
     if (finished && correctCount === quizzes.length) {
       setShowBell(true)
-      const timer = setTimeout(() => setShowBell(false), 3500) // 3.5초 뒤 닫힘
+      const timer = setTimeout(() => setShowBell(false), 3500)
       return () => clearTimeout(timer)
     }
   }, [finished, correctCount])
@@ -180,13 +200,38 @@ export default function QuizPage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center p-6">
       <h1 className="mb-6 text-2xl font-bold">🔔 도전! 금융 골든벨 🔔</h1>
 
-      {loading ? (
-        <p>퀴즈 불러오는 중...</p>
+      {generating ? (
+        //  생성중 모달
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            className="rounded-2xl bg-white p-10 text-center shadow-2xl"
+          >
+            <motion.div
+              className="mb-6 text-6xl"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              🤖
+            </motion.div>
+            <p className="mb-3 animate-pulse text-2xl font-extrabold text-indigo-700">
+              AI가 오늘의 금융 퀴즈를 생성중입니다...
+            </p>
+            <p className="text-gray-500">잠시만 기다려주세요.</p>
+          </motion.div>
+        </div>
+      ) : loading ? (
+        //  로딩 상태
+        <p className="text-gray-600">퀴즈 불러오는 중...</p>
       ) : finished && quizzes.length === 0 ? (
+        //  퀴즈 없거나 에러 메시지
         <p>{message}</p>
       ) : quizzes.length === 0 ? (
         <p>퀴즈가 없습니다.</p>
       ) : !finished ? (
+        // 퀴즈 진행중
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           {/* 문제 */}
           <div className="mb-3 text-lg font-semibold">
@@ -257,26 +302,30 @@ export default function QuizPage() {
           )}
         </form>
       ) : (
+        //  퀴즈 끝
         <div className="text-center">
           <p className="mb-2 text-xl font-bold">
             퀴즈 완료! 맞힌 개수: {correctCount} / {quizzes.length}
           </p>
 
           {correctCount === 0 ? (
-            // 다 틀렸을 때 메시지
             <p className="mt-4 rounded px-4 py-2 text-lg font-semibold text-blue-600">
               아쉽습니다 😢 내일 다시 도전하세요!
             </p>
+          ) : rewarded ? (
+            <p className="mt-4 rounded bg-green-100 px-4 py-2 text-lg font-semibold text-green-700 shadow">
+              ✅ 이미 지급됨
+            </p>
           ) : (
-            // 맞힌 게 하나라도 있으면 퐁 받기 버튼
-            <button onClick={savePong} className="mt-4 rounded bg-green-500 px-4 py-2 font-bold text-white">
+            <button
+              onClick={savePong}
+              className="mt-4 rounded bg-green-500 px-4 py-2 font-bold text-white hover:bg-green-600"
+            >
               퐁 받기
             </button>
           )}
 
           {message && <p className="mt-3 text-lg font-semibold text-indigo-700">{message}</p>}
-
-          {/*  골든벨 조건 */}
           {showBell && <GoldenBell />}
         </div>
       )}
