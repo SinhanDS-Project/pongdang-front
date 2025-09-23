@@ -46,8 +46,7 @@ export function PodiumModal({
   countdownSec,
 }: Props) {
   // --- hooks (항상 최상단) ---
-  const { user, status } = useMe()
-  const userId: number | null = user ? user?.id : null
+  const { user } = useMe()
 
   const myId: number | null = user ? user?.id : null
   const myRow = useMemo(

@@ -1,7 +1,7 @@
 'use client'
 
 import { tokenStore } from '@/stores/token-store'
-import { useTurtleStore, COLOR_ORDER } from '@/stores/turtle-store'
+import { useTurtleStore } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'

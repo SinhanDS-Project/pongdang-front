@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, startTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Track } from '@components/turtle-run-page'
 
@@ -9,7 +9,7 @@ import { tokenStore } from '@stores/token-store'
 import { api } from '@lib/net/client-axios'
 import { useTurtleSocket } from '@lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
 
-import { useTurtleStore, COLOR_ORDER } from '@stores/turtle-store'
+import { useTurtleStore } from '@stores/turtle-store'
 import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
 import { useMe } from '@/hooks/use-me'
 
@@ -47,16 +47,11 @@ type FinishRow = {
   winAmount: number;
 }
 
-type FinishPayload = {
-  winner: number
-  results: FinishRow[]
-}
-
 const difficultyMap = { EASY: 4, NORMAL: 6, HARD: 8 } as const
 
 export default function TurtleRunPage() {
   const { id } = useParams<{ id: string }>() // 문자열
-  const { user, status } = useMe()
+  const { user } = useMe()
   const userId: number | null = user ? user?.id : null
 
   const [room, setRoom] = useState<RoomDetail | null>(null)
@@ -64,25 +59,8 @@ export default function TurtleRunPage() {
   const [loading, setLoading] = useState(true)
 
   const [finishResults, setFinishResults] = useState<{ idx: number; rank: string }[] | null>(null)
-  const [nextRoute, setNextRoute] = useState<string | null>(null);
-  // ⬇️ 새로 추가: 이동 목표 시각(ms)
+  // 이동 목표 시각(ms)
   const [redirectAt, setRedirectAt] = useState<number | null>(null);
-
-  const orderRank = (a: string, b: string) => {
-    const w = { FIRST: 1, SECOND: 2, THIRD: 3, LOSE: 99 }
-    return (w[a as keyof typeof w] ?? 99) - (w[b as keyof typeof w] ?? 99)
-  }
-
-  const toIdx = (v: number | string): number => {
-    if (typeof v === 'number') return v
-    const n = Number(v); if (Number.isFinite(n)) return n
-    const s = String(v).toLowerCase()
-    const i = COLOR_ORDER.findIndex((c: any) => String(c).toLowerCase() === s)
-    return i >= 0 ? i : -1
-  }
-
-  // 결과 모달(현재 주석 처리된 UI라 내부 상태만 유지)
-  const finishHandledRef = useRef(false)
 
   // 전역 store
   const isHost = useTurtleStore((s) => s.isHost)
@@ -104,8 +82,6 @@ export default function TurtleRunPage() {
         if (!alive) return
         setRoom(data)
         if (userId != null) setIsHost(data.host_id === userId)
-        // 디버깅용
-        // console.log('[room fetched]', data)
       } catch (e) {
         console.error('[room fetch error]', e)
       } finally {
@@ -136,11 +112,7 @@ export default function TurtleRunPage() {
       // 내 선택을 전역에 반영하고 싶다면 여기서
       const me = list.find((x) => x.user_id === userId)
       if (me) {
-        // color → index 변환이 필요하면 변환 후:
-        // setSelected(colorToIndex(me.turtle_id))
       }
-
-      // console.log('[players update]', list)
     },
     onFinish: (pkt) => {
       const finishRows: FinishRow[] =
@@ -166,7 +138,6 @@ export default function TurtleRunPage() {
     }))
     setFinishResults(resultsForTrack)
 
-    // 3) 연출용 좌표 오버라이드:
     // 4) 오버라이드 좌표 계산
     const targets = Array.from({ length: N }, (_, i) => {
       if (winners.includes(i)) {
@@ -211,9 +182,7 @@ export default function TurtleRunPage() {
             console.warn('[start] socket not connected yet, skip this tick')
           } else {
             const token = tokenStore.get()
-            // 서버 스펙: /app/turtle/start/{roomId}
             send(`/app/turtle/start/${id}`, undefined, token ? { Authorization: `Bearer ${token}` } : undefined)
-            // console.log('[start] sent')
           }
         }
         return 0

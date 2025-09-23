@@ -109,8 +109,6 @@ export const useTurtleStore = create<TurtleState>((set, get) => ({
     set({
       finishOverrideActive: true,
       finishOverride: arr,
-      // 표시값도 바로 반영하고 싶다면 아래 줄 주석 해제:
-      // displayed: arr,
     })
   },
 

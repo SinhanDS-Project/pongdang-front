@@ -101,20 +101,12 @@ export function Track({
     const loop = () => {
       if (!mounted) return
 
-      // --- 1) WS 메시지 소비 (있을 때만) ---
-      // 외부(소켓 수신부)에서 raceStream.lastPositions = number[] 로 넣어주면,
-      // 여기서 "한 프레임만" 읽고 비웁니다.
-      // 이 부분은 애니메이션의 연속성과는 별개로, 데이터 소스만 업데이트합니다.
-
-      // --- 삭제 ---
-
       // --- 2) 보간 로직은 "매 프레임" 실행 ---
       // hadNewMsgRef 체크를 제거하여 항상 보간을 수행하도록 합니다.
       const st = useTurtleStore.getState()
       st.tickLerp(0.12) // 부드러운 움직임을 위해 계속 호출
 
       // 보간 결과
-      // const displayedNow = st.displayed ?? []
       const N = turtles.length
       const selectedIdx = useTurtleStore.getState().getSelectedIndex(N)
       const pos = st.positions ?? []
@@ -322,7 +314,6 @@ export function Track({
                     style={{ top: '50%' }}
                   >
                     {/* X를 적용받는 래퍼 (transition도 여기에) */}
-                    {/* <div className={`turtleWrap ${selected === idx ? 'outline outline-2 outline-yellow-400' : ''}`}> */}
                       {/* 안쪽 요소: 애니메이션은 Y만 살짝 흔들기 */}
                       <img
                         src={src}
@@ -331,7 +322,6 @@ export function Track({
                         draggable={false}
                         onClick={() => onSelect(idx)}
                       />
-                    {/* </div> */}
                   </div>
                 )
               })}
