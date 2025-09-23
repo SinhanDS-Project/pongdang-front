@@ -1,7 +1,6 @@
 'use client'
 
 import { createPortal } from 'react-dom'
-import { Dialog } from '@headlessui/react'
 
 export default function ErrorModal({
   open,

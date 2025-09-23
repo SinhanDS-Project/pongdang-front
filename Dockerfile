@@ -6,6 +6,9 @@ COPY bun.lockb package.json ./
 RUN bun install --frozen-lockfile
 
 COPY . .
+
+# 빌드 시 production 환경 지정
+ENV NODE_ENV=production
 RUN bun run build
 
 # --- runtime ---

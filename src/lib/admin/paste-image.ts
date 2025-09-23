@@ -32,17 +32,16 @@ export function filesFromDropEvent(e: DragEvent): File[] {
  * 컨테이너(ref) 안에서 paste/drag&drop로 이미지 받기
  * ref가 없으면 window 전역에 붙여줄 수도 있지만, 폼마다 ref로 한정하는 걸 권장.
  */
-export function useOnPastedImage(
+export function useOnPastedImage<T extends HTMLElement = HTMLDivElement>(
   onImages: ImageFilesHandler,
-  opts?: { ref?: React.RefObject<HTMLDivElement>; enableDrop?: boolean }
+  opts?: { ref?: React.RefObject<T> | React.MutableRefObject<T | null>; enableDrop?: boolean }
 ) {
-  const fallbackRef = useRef<HTMLDivElement | null>(null)
-  const targetRef = opts?.ref ?? fallbackRef
+  const fallbackRef = useRef<T | null>(null)
+  const targetRef = (opts?.ref ?? fallbackRef) as React.MutableRefObject<T | null>
   const enableDrop = opts?.enableDrop ?? true
 
   useEffect(() => {
-    const el: HTMLDivElement | Window | null =
-      targetRef.current ?? (typeof window !== "undefined" ? window : null)
+    const el = (targetRef.current ?? (typeof window !== "undefined" ? window : null)) as T | Window | null
     if (!el) return
 
     const handlePaste = (e: ClipboardEvent) => {
