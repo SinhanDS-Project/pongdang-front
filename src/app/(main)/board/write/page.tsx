@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import dynamic from 'next/dynamic'
@@ -9,7 +9,7 @@ import 'react-quill-new/dist/quill.snow.css'
 // SSR 끄고 동적 import
 const ReactQuill = dynamic(() => import('react-quill-new').then((m) => m.default), { ssr: false })
 
-export default function Page() {
+function Body() {
   const router = useRouter()
   const sp = useSearchParams()
   const cat = sp.get('cat')?.toUpperCase() || 'FREE' // URL에서 cat 가져오고 기본은 FREE
@@ -136,5 +136,13 @@ export default function Page() {
         </div>
       </section>
     </main>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <Body />
+    </Suspense>
   )
 }
