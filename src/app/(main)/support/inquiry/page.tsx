@@ -1,14 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import { useMe } from '@/hooks/use-me'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function InquiryPage() {
+  const { user } = useMe()
+
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+
+  // 로그인 안내 모달 상태
+  const [loginNoticeOpen, setLoginNoticeOpen] = useState(false)
 
   const onSubmit = async () => {
     if (!title.trim()) return alert('제목을 입력해주세요.')
@@ -25,6 +50,10 @@ export default function InquiryPage() {
       alert('등록 중 오류가 발생했습니다.')
     }
   }
+
+  useEffect(() => {
+    if (!user) setLoginNoticeOpen(true)
+  }, [user])
 
   return (
     <main className="mx-auto max-w-6xl">
@@ -65,6 +94,23 @@ export default function InquiryPage() {
           </div>
         </div>
       </section>
+      <AlertDialog open={loginNoticeOpen} onOpenChange={setLoginNoticeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>해당 메뉴는 로그인 후 이용할 수 있습니다.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel onClick={() => router.push('/support/faq')}>FAQ로 가기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => router.push('/signin')}
+              className="bg-secondary-royal hover:bg-secondary-navy"
+            >
+              로그인하러 가기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }
