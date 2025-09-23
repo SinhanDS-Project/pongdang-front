@@ -9,7 +9,7 @@ import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
 import ProfileEditModal from '@/components/my-page/ProfileEditModal'
 import { PongPagination } from '@/components/PongPagination'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
@@ -238,6 +238,24 @@ export default function MyPageContent() {
               <div className="text-muted-foreground flex h-full items-center justify-center">불러오는 중…</div>
             ) : (
               <Table className="text-center text-sm sm:text-base">
+                {active !== 'chatlog' ? (
+                  <TableHeader>
+                    <TableRow className="text-xs">
+                      <TableHead className="hidden text-center sm:table-cell sm:w-20">NO</TableHead>
+                      <TableHead className="text-center">내용</TableHead>
+                      <TableHead className="text-center">내역</TableHead>
+                      <TableHead className="hidden text-center sm:table-cell sm:w-60">날짜</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                ) : (
+                  <TableHeader>
+                    <TableRow className="text-xs">
+                      <TableHead className="hidden text-center sm:table-cell sm:w-20">NO</TableHead>
+                      <TableHead className="text-center">내용</TableHead>
+                      <TableHead className="hidden text-center sm:table-cell sm:w-60">날짜</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                )}
                 {/* 헤더 + 바디 컴포넌트 */}
                 {active === 'pong' && <PongHistory history={pongRows} page={page} size={size} />}
                 {active === 'donate' && <DonationHistory history={donationRows} page={page} size={size} />}
