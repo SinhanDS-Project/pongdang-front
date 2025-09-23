@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
-
 import { BoardIcon } from '@/icons'
-
 import BoardTabs from '@/components/board-page/BoardTabs'
 
 export const metadata = { title: '게시판' }
@@ -34,7 +32,10 @@ export default function BoardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      {/* 공통 탭 */}
       <BoardTabs />
+
+      {/* 개별 페이지 */}
       {children}
     </div>
   )
