@@ -18,13 +18,16 @@ import {
 
 export default function InquiryPage() {
   const { user } = useMe()
-
   const router = useRouter()
+
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
   // 로그인 안내 모달 상태
   const [loginNoticeOpen, setLoginNoticeOpen] = useState(false)
+
+  // 등록 완료 모달 상태
+  const [submitNoticeOpen, setSubmitNoticeOpen] = useState(false)
 
   const onSubmit = async () => {
     if (!title.trim()) return alert('제목을 입력해주세요.')
@@ -35,8 +38,7 @@ export default function InquiryPage() {
         title,
         question: content,
       })
-      alert('마이페이지 문의내역에서 답변을 확인해주세요🌟')
-      router.push('/support')
+      setSubmitNoticeOpen(true)
     } catch (e) {
       alert('등록 중 오류가 발생했습니다.')
     }
@@ -85,6 +87,8 @@ export default function InquiryPage() {
           </div>
         </div>
       </section>
+
+      {/* 로그인 안내 모달 */}
       <AlertDialog open={loginNoticeOpen} onOpenChange={setLoginNoticeOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -99,6 +103,21 @@ export default function InquiryPage() {
             >
               로그인하러 가기
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 등록 완료 모달 */}
+      <AlertDialog open={submitNoticeOpen} onOpenChange={setSubmitNoticeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>문의가 등록되었습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              마이페이지의 <strong>문의내역</strong>에서 답변을 확인하실 수 있습니다 🌟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => router.push('/support')}>확인</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
