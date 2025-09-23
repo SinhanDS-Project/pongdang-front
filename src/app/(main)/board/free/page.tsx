@@ -7,6 +7,7 @@ import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 // API 응답 타입
 type PageResp = {
@@ -46,7 +47,7 @@ export default function FreePage() {
       setError(null)
       try {
         const { data } = await api.get<PageResp>('/api/board', {
-          params: { page, category: 'FREE', sort, size: pageSize }, // ✅ sort 포함
+          params: { page, category: 'FREE', sort, size: pageSize }, //  sort 포함
         })
         if (!alive) return
         setItems(data.boards?.content ?? [])
@@ -70,7 +71,7 @@ export default function FreePage() {
       {error && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
-
+      <BoardTabs activeCategory="FREE" />
       {loading ? (
         <div className="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">불러오는 중…</div>
       ) : (
@@ -80,7 +81,7 @@ export default function FreePage() {
           pageSize={pageSize}
           variant="FREE"
           basePath="/board/free"
-          onSortChange={setSort} // ✅ 정렬 콜백 연결
+          onSortChange={setSort}
           onWriteClick={() => router.push('/board/write')}
         />
       )}
