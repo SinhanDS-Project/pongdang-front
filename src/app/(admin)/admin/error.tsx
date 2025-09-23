@@ -12,11 +12,10 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  // 관리자 권한 관련 에러 메시지 감지
-  const isAuthError =
-    error.message?.toLowerCase().includes("unauthorized") ||
-    error.message?.toLowerCase().includes("forbidden") ||
-    error.message?.toLowerCase().includes("권한");
+  const msg = error.message?.toLowerCase() ?? "";
+
+  const isAuthError = msg.includes("unauthorized") || msg.includes("권한");
+  const isLoginError = msg.includes("로그인");
 
   return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -26,11 +25,17 @@ export default function Error({
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
           <CardTitle>
-            {isAuthError ? "접근 권한이 없습니다" : "오류가 발생했습니다"}
+            {isLoginError
+              ? "로그인이 필요합니다"
+              : isAuthError
+              ? "접근 권한이 없습니다"
+              : "오류가 발생했습니다"}
           </CardTitle>
           <CardDescription>
             {isAuthError
               ? "관리자 권한이 필요한 페이지입니다. 메인 화면으로 이동해주세요."
+              : isLoginError
+              ? "로그인 후 다시 시도해주세요."
               : "관리자 페이지를 불러오는 중 문제가 발생했습니다."}
           </CardDescription>
         </CardHeader>

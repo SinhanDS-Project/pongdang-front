@@ -18,18 +18,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      if (status === "unauthenticated") {
-        router.replace("/signin");
-      } else if (status === "authenticated" && user?.role !== "ADMIN") {
-        throw new Error("권한 없음");
-      }
-    }
-  }, [mounted, status, user, router]);
-
   if (!mounted || status === "loading") {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
+  if (status === "unauthenticated") {
+    // 로그인 안됨 → 로그인 페이지로 보냄
+    if (typeof window !== "undefined") {
+      window.location.href = "/signin";
+    }
+    return null;
+  }
+
+  if (status === "authenticated" && user?.role !== "ADMIN") {
+    // ✅ 여기서 throw → error.tsx로 잡힘
+    throw new Error("권한 없음");
   }
 
   return (
