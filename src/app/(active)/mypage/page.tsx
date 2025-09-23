@@ -1,32 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { Droplet, Heart, Wallet } from 'lucide-react'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
-import { PongPagination } from '@/components/PongPagination'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table'
-import { cn } from '@/lib/utils'
-import { api } from '@/lib/net/client-axios'
-
-import ProfileEditModal from '@/components/my-page/ProfileEditModal'
 import ChangePongModal from '@/components/my-page/ChangePongModal'
 import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
+import ProfileEditModal from '@/components/my-page/ProfileEditModal'
+import { PongPagination } from '@/components/PongPagination'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
+
+import { api } from '@/lib/net/client-axios'
+import { cn } from '@/lib/utils'
+
 import { useMe } from '@/hooks/use-me'
 
 /* ── 타입 ───────────────────────── */
 type TabKey = 'pong' | 'donate' | 'purchase' | 'chatlog'
 
-type PongHistory = {
+type PongHistoryType = {
   id: number
   user_id: number
   pong_history_type: string
   amount: number
-  created_at: string | null
+  created_at: string | Date
 }
 
-type DonationHistory = {
+type DonationHistoryType = {
   id: number
   amount: number
   user_id: number
@@ -34,7 +35,7 @@ type DonationHistory = {
   created_at: string
 }
 
-type PurchaseHistory = {
+type PurchaseHistoryType = {
   id: string
   user_id: number
   name: string
@@ -42,7 +43,7 @@ type PurchaseHistory = {
   created_at: string
 }
 
-type ChatLog = {
+type ChatLogType = {
   id: number
   title: string
   question: string
@@ -52,35 +53,39 @@ type ChatLog = {
   nickname: string
 }
 
-export default function MyPageContent() {
-  const { user, status } = useMe()
-  const userId: number | null = user ? user?.id : null
+const HISTORY_LABELS: Record<string, string> = {
+  GAME_P: '게임(일반)',
+  GAME_D: '게임(기부)',
+  PURCHASE: '구매',
+  DONATION_P: '기부(일반)',
+  DONATION_D: '기부(기부)',
+  ADD: '이벤트',
+  ENTRY: '게임 참가',
+}
 
-  const [openEdit, setOpenEdit] = useState(false)
-  const [openChange, setOpenChange] = useState(false)
+export default function MyPageContent() {
+  const { user } = useMe()
+
+  const [openEdit, setOpenEdit] = useState<boolean>(false)
+  const [openChange, setOpenChange] = useState<boolean>(false)
+
+  // 상태
+  const [isError, setIsError] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const [active, setActive] = useState<TabKey>('pong')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
-  const [pongRows, setPongRows] = useState<PongHistory[]>([])
-  const [donationRows, setDonationRows] = useState<DonationHistory[]>([])
-  const [purchaseRows, setPurchaseRows] = useState<PurchaseHistory[]>([])
-  const [chatLogs, setChatLogs] = useState<ChatLog[]>([])
-  const [selectedChatLog, setSelectedChatLog] = useState<ChatLog | null>(null)
+  const [pongRows, setPongRows] = useState<PongHistoryType[]>([])
+  const [donationRows, setDonationRows] = useState<DonationHistoryType[]>([])
+  const [purchaseRows, setPurchaseRows] = useState<PurchaseHistoryType[]>([])
+  const [chatLogs, setChatLogs] = useState<ChatLogType[]>([])
+  const [selectedChatLog, setSelectedChatLog] = useState<ChatLogType | null>(null)
 
   const size = 10
-  const HISTORY_LABELS: Record<string, string> = {
-    GAME_P: '게임(일반)',
-    GAME_D: '게임(기부)',
-    PURCHASE: '구매',
-    DONATION_P: '기부(일반)',
-    DONATION_D: '기부(기부)',
-    ADD: '이벤트',
-    ENTRY: '게임 참가',
-  }
 
-  //  API 호출
+  // API 호출
   useEffect(() => {
     let url = ''
     if (active === 'pong') url = '/api/history/wallet'
@@ -88,29 +93,40 @@ export default function MyPageContent() {
     if (active === 'purchase') url = '/api/history/purchase'
     if (active === 'chatlog') url = '/api/chatlog'
 
+    setIsLoading(true)
+    setIsError(false)
+
     api
       .get(url, { params: { page, size } })
       .then((res) => {
         if (active === 'pong') {
-          setPongRows(res.data.histories.content)
-          setTotalPages(res.data.histories.total_pages)
+          setPongRows(res.data.histories.content ?? [])
+          setTotalPages(res.data.histories.total_pages ?? 1)
         }
         if (active === 'donate') {
-          setDonationRows(res.data.content)
-          setTotalPages(res.data.total_pages)
+          setDonationRows(res.data.content ?? [])
+          setTotalPages(res.data.total_pages ?? 1)
         }
         if (active === 'purchase') {
-          setPurchaseRows(res.data.content)
-          setTotalPages(res.data.total_pages)
+          setPurchaseRows(res.data.content ?? [])
+          setTotalPages(res.data.total_pages ?? 1)
         }
         if (active === 'chatlog') {
-          setChatLogs(res.data.logs.content)
+          setChatLogs(res.data.logs.content ?? [])
           setTotalPages(res.data.logs.total_pages ?? 1)
         }
+        setIsError(false)
       })
       .catch((err) => {
         console.error(`${active} 내역 불러오기 실패`, err)
+        setIsError(true)
+        // 실패 시 기존 rows를 초기화해주는 것도 안정적
+        setPongRows([])
+        setDonationRows([])
+        setPurchaseRows([])
+        setChatLogs([])
       })
+      .finally(() => setIsLoading(false))
   }, [active, page])
 
   return (
@@ -213,103 +229,24 @@ export default function MyPageContent() {
 
         {/* 테이블 */}
         <div className="bg-secondary-sky grow rounded-tr rounded-b p-2">
-          <div className="bg-primary-white flex h-full w-full flex-col justify-between rounded-xs pb-4">
-            <div className="flex grow items-center justify-center">
-              <Table className="sm:text-md w-full table-auto overflow-x-auto border-b-2 border-gray-400 text-center text-sm">
-                <TableHeader className="bg-white-100 sticky top-0 z-10">
-                  <TableRow>
-                    <TableCell className="w-16">No</TableCell>
-
-                    {active === 'pong' && (
-                      <>
-                        <TableCell className="min-w-[180px]">퐁 내역 타입</TableCell>
-                        <TableCell className="min-w-[120px]">퐁</TableCell>
-                        <TableCell className="min-w-[180px]">날짜</TableCell>
-                      </>
-                    )}
-
-                    {active === 'donate' && (
-                      <>
-                        <TableCell className="min-w-[240px]">제목</TableCell>
-                        <TableCell className="min-w-[120px]">퐁</TableCell>
-                        <TableCell className="min-w-[180px]">날짜</TableCell>
-                      </>
-                    )}
-
-                    {active === 'purchase' && (
-                      <>
-                        <TableCell className="min-w-[240px]">상품명</TableCell>
-                        <TableCell className="min-w-[120px]">퐁</TableCell>
-                        <TableCell className="min-w-[180px]">날짜</TableCell>
-                      </>
-                    )}
-
-                    {active === 'chatlog' && (
-                      <>
-                        <TableCell className="min-w-[240px]">제목</TableCell>
-                        <TableCell className="min-w-[180px]">날짜</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {/* ── 퐁 내역 ─────────────────────── */}
-                  {active === 'pong' &&
-                    pongRows.map((row, idx) => {
-                      const isPlus = ['GAME_P', 'GAME_D', 'ADD'].includes(row.pong_history_type)
-                      return (
-                        <TableRow key={row.id}>
-                          <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
-                          <TableCell>{HISTORY_LABELS[row.pong_history_type] ?? row.pong_history_type}</TableCell>
-                          <TableCell className={isPlus ? 'font-bold text-blue-600' : 'font-bold text-red-600'}>
-                            {isPlus ? '+' : '-'} {row.amount.toLocaleString()}
-                          </TableCell>
-                          <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
-                        </TableRow>
-                      )
-                    })}
-
-                  {/* ── 기부 내역 ─────────────────────── */}
-                  {active === 'donate' &&
-                    donationRows.map((row, idx) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
-                        <TableCell>{row.title}</TableCell>
-                        <TableCell>{row.amount.toLocaleString()}</TableCell>
-                        <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
-                      </TableRow>
-                    ))}
-
-                  {/* ── 구매 내역 ─────────────────────── */}
-                  {active === 'purchase' &&
-                    purchaseRows.map((row, idx) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell>{row.price.toLocaleString()}</TableCell>
-                        <TableCell>{row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}</TableCell>
-                      </TableRow>
-                    ))}
-
-                  {/* ── 문의 내역 ─────────────────────── */}
-                  {active === 'chatlog' &&
-                    chatLogs.map((row, idx) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{(page - 1) * size + (idx + 1)}</TableCell>
-                        <TableCell>
-                          <button onClick={() => setSelectedChatLog(row)} className="text-black-600 hover:underline">
-                            {row.title}
-                          </button>
-                        </TableCell>
-                        <TableCell>{new Date(row.chat_date).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-
-                <TableFooter />
+          <div className="bg-primary-white flex h-full w-full flex-col justify-between rounded-xs px-2 pt-1 pb-4">
+            {isError ? (
+              <div className="text-muted-foreground flex h-full items-center justify-center">
+                정보를 불러오지 못했습니다.
+              </div>
+            ) : isLoading ? (
+              <div className="text-muted-foreground flex h-full items-center justify-center">불러오는 중…</div>
+            ) : (
+              <Table className="text-center text-sm sm:text-base">
+                {/* 헤더 + 바디 컴포넌트 */}
+                {active === 'pong' && <PongHistory history={pongRows} page={page} size={size} />}
+                {active === 'donate' && <DonationHistory history={donationRows} page={page} size={size} />}
+                {active === 'purchase' && <PurchaseHistory history={purchaseRows} page={page} size={size} />}
+                {active === 'chatlog' && (
+                  <ChatLog history={chatLogs} onOpen={setSelectedChatLog} page={page} size={size} />
+                )}
               </Table>
-            </div>
+            )}
 
             {/* 페이지네이션 */}
             <PongPagination
@@ -327,5 +264,96 @@ export default function MyPageContent() {
       <ProfileEditModal open={openEdit} onOpenChange={setOpenEdit} />
       <ChatLogDetailModal open={!!selectedChatLog} onClose={() => setSelectedChatLog(null)} chatLog={selectedChatLog} />
     </div>
+  )
+}
+
+function formatDate(date: string | Date) {
+  const parsedDate = typeof date === 'string' ? new Date(date) : date
+  return parsedDate.toISOString().split('T')[0] // "2025-09-03"
+}
+
+function PongHistory({ history, page, size }: { history: PongHistoryType[]; page: number; size: number }) {
+  return (
+    <TableBody>
+      {history.map((row, idx) => {
+        const isPlus = ['GAME_P', 'GAME_D', 'ADD'].includes(row.pong_history_type)
+
+        return (
+          <TableRow key={row.id}>
+            <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
+            <TableCell className="py-4">{HISTORY_LABELS[row.pong_history_type] ?? row.pong_history_type}</TableCell>
+            <TableCell className={cn('font-bold', isPlus ? 'text-blue-400' : 'text-red-400')}>
+              {isPlus ? '+' : '-'} {row.amount}
+            </TableCell>
+            <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
+          </TableRow>
+        )
+      })}
+    </TableBody>
+  )
+}
+
+function DonationHistory({ history, page, size }: { history: DonationHistoryType[]; page: number; size: number }) {
+  return (
+    <TableBody>
+      {history.map((row, idx) => {
+        return (
+          <TableRow key={row.id}>
+            <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
+            <TableCell>{row.title}</TableCell>
+            <TableCell className="flex items-center justify-center gap-x-1 py-4 text-red-400">
+              <Heart />
+              <span className="font-bold">{row.amount}</span>
+            </TableCell>
+            <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
+          </TableRow>
+        )
+      })}
+    </TableBody>
+  )
+}
+
+function PurchaseHistory({ history, page, size }: { history: PurchaseHistoryType[]; page: number; size: number }) {
+  return (
+    <TableBody>
+      {history.map((row, idx) => {
+        return (
+          <TableRow key={row.id}>
+            <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
+            <TableCell className="py-4">{row.name}</TableCell>
+            <TableCell className="font-bold">{row.price}</TableCell>
+            <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
+          </TableRow>
+        )
+      })}
+    </TableBody>
+  )
+}
+
+function ChatLog({
+  history,
+  onOpen,
+  page,
+  size,
+}: {
+  history: ChatLogType[]
+  onOpen: (data: ChatLogType) => void
+  page: number
+  size: number
+}) {
+  return (
+    <TableBody>
+      {history.map((row, idx) => {
+        return (
+          <TableRow key={row.id}>
+            <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
+            <TableCell onClick={() => onOpen(row)} className="cursor-pointer py-4 hover:font-bold hover:underline">
+              {row.title}
+            </TableCell>
+            <TableCell className="hidden sm:table-cell">{formatDate(row.chat_date)}</TableCell>
+          </TableRow>
+        )
+      })}
+    </TableBody>
   )
 }
