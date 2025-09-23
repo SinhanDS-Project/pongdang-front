@@ -1,4 +1,6 @@
 import BackCoinIcon from './back_coin.svg'
+import BoardIcon from './board.svg'
+import BombIcon from './bomb.svg'
 import CoinsIcon from './coins.svg'
 import DefaultCoinIcon from './default_coin.svg'
 import FailIcon from './fail.svg'
@@ -17,10 +19,11 @@ import SuccessIcon from './success.svg'
 import TitleCoinIcon from './title_coin.svg'
 import TrophyIcon from './trophy.svg'
 import YellowTurtleIcon from './yellow_turtle.svg'
-import BoardIcon from './board.svg'
 
 export {
   BackCoinIcon,
+  BoardIcon,
+  BombIcon,
   CoinsIcon,
   DefaultCoinIcon,
   FailIcon,
@@ -39,5 +42,4 @@ export {
   TitleCoinIcon,
   TrophyIcon,
   YellowTurtleIcon,
-  BoardIcon,
 }
