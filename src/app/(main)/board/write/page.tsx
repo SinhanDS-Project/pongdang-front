@@ -1,11 +1,17 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
-import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import dynamic from 'next/dynamic'
 
-export default function WritePage() {
+// ✅ ReactQuillEditor를 동적 import + SSR 비활성화
+const ReactQuillEditor = dynamic(() => import('@/components/board-page/ReactQuill'), {
+  ssr: false,
+})
+
+// 📝 실제 본문 (body 역할)
+function WriteBody() {
   const router = useRouter()
   const sp = useSearchParams()
   const cat = sp.get('cat')?.toUpperCase() || 'FREE'
@@ -26,7 +32,7 @@ export default function WritePage() {
       await api.post('/api/board', {
         title,
         content,
-        category: cat, // URL에서 넘어온 cat 값 (예: FREE, NOTICE, EVENT 등)
+        category: cat,
       })
       alert('게시글이 등록되었습니다.')
       router.push('/board')
@@ -41,7 +47,6 @@ export default function WritePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}
           <div className="rounded-2xl border bg-white p-4 sm:p-5">
-            {/* 제목 입력 */}
             <input
               type="text"
               placeholder="제목을 입력하세요"
@@ -49,8 +54,6 @@ export default function WritePage() {
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-xl border px-4 py-3 text-base transition outline-none focus:ring-2 focus:ring-[var(--color-secondary-sky)]"
             />
-
-            {/* 에디터 */}
             <div className="mt-5">
               <ReactQuillEditor value={content} onChange={setContent} height={500} />
               <p className="mt-2 text-xs text-gray-500">최대 2048자까지 쓸 수 있습니다</p>
@@ -78,5 +81,14 @@ export default function WritePage() {
         </div>
       </section>
     </main>
+  )
+}
+
+// 📄 페이지 컴포넌트 (Suspense로 WriteBody 감싸기)
+export default function Page() {
+  return (
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <WriteBody />
+    </Suspense>
   )
 }
