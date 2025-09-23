@@ -64,7 +64,7 @@ const NAVIGATIONMENU = [
     requireAuth: false,
     children: [
       { href: '/support/faq', label: 'FAQ' },
-      { href: '/support/contact', label: '문의하기' },
+      { href: '/support/inquiry', label: '문의하기' },
     ],
   },
 ] as const
@@ -235,7 +235,7 @@ export function AppHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">마이페이지</Link>
+                    <Link href="/mypage">마이페이지</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout}>로그아웃</DropdownMenuItem>
                 </DropdownMenuContent>
