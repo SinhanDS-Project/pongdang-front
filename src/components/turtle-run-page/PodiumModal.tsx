@@ -7,7 +7,6 @@ type FinishRow = {
   nickname: string
   rank: 'FIRST' | 'SECOND' | 'THIRD' | 'LOSE' | string
   winAmount?: number
-  pointChange?: number
 }
 
 type Props = {
@@ -116,7 +115,7 @@ export function PodiumModal({
                     isTop3 ? 'text-[#1E56FF]' : 'text-white/70',
                   ].join(' ')}
                 >
-                  {(r.winAmount ?? r.pointChange ?? 0)} 퐁
+                  {(r.winAmount ?? 0)} 퐁
                 </div>
               </div>
             )

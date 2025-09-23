@@ -1,6 +1,6 @@
 'use client'
 
-import { tokenStore } from '@/lib/auth/token-store'
+import { tokenStore } from '@/stores/token-store'
 import { useTurtleStore, COLOR_ORDER } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,7 @@ import SockJS from 'sockjs-client'
 export type WSMessage =
   | { type: 'race_update'; positions?: number[]; data?: number[] }
   | { type: 'race_finish'; data: { winner: number; results: any[] } }
+  | { type: 'prison'; data?: { type?: 'force_exit' | string; reason?: string; target_url?: string; }; }
   | Record<string, any>
 
 type UseTurtleSocketOpts = {
@@ -28,7 +29,27 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
   const clientRef = useRef<Client | null>(null)
   const [connected, setConnected] = useState(false)
   const router = useRouter()
+  const exitedRef = useRef(false);
 
+  // 3) 서버 강제 퇴장 공통 처리기
+  const handleServerKick = useCallback((payload?: { reason?: string; target_url?: string }) => {
+    if (exitedRef.current) return;
+    exitedRef.current = true;
+
+    // 패배 처리 등 스토어 정리 (원하시는 로직으로 대체)
+    try {
+      useTurtleStore.getState().resetRace?.();
+    } catch {}
+
+    // 라우팅 (명세의 target_url 우선)
+    const to = payload?.target_url || '/play/rooms';
+    try {
+      router.push(to);
+    } catch {
+      // 라우팅이 불가능한 언로드 타이밍이면 무시
+    }
+  }, [router]);
+  
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!roomId || !userId) return
@@ -81,6 +102,14 @@ export function useTurtleSocket(roomId: string, userId: number | null, opts?: Us
           // 결승/결과
            if ((pkt as any).type === 'race_finish') {
             opts?.onFinish?.(pkt);
+          }
+
+          // ✅ 서버 강제 퇴장
+          if ((pkt as any).type === 'prison' && (pkt as any)?.data?.type === 'force_exit') {
+            handleServerKick({
+              reason: (pkt as any).data?.reason,        // 필요시 쓰세요 (e.g. 토스트/로그)
+              target_url: (pkt as any).data?.target_url // 명세 예: "/game/rooms"
+            });
           }
         })
 

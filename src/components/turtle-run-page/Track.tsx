@@ -22,7 +22,7 @@ const CROWD_PCT = 16 // %
 const STAND_PCT = 2 // %
 const TRACK_PCT = 100 - (CROWD_PCT + STAND_PCT)
 
-const rankDepth = (rank: string) => rank === 'FIRST' ? 4160 : rank === 'SECOND' ? 4145 : rank === 'THIRD' ? 4130 : rank === 'LOSE' ? 4092 : 4092
+const rankDepth = (rank: string) => rank === 'VICTORY' ? FINISH_LINE_X + 100 : FINISH_LINE_X - 40
 
 export function Track({
   difficulty,
@@ -130,7 +130,7 @@ export function Track({
         if (!el || !el.isConnected || !el.parentElement) continue
         
         let left: number
-        if(finished && finishMap.has(i)) {
+        if(finished) {
           // ✅ 종료 후: 등수별 깊이로 결승선 뒤쪽 정착
           const rank = finishMap.get(i)!
           const depth = rankDepth(rank)
@@ -299,11 +299,11 @@ export function Track({
               .filter((t) => t.lane === lane)
               .map(({ idx }) => {
                 const positionsNow = useTurtleStore.getState().positions
-                const isRacing = (positionsNow[idx] ?? 0) > 0
+                const isRacing = !finished && (positionsNow[idx] ?? 0) > 0
                 
                 // ✅ 종료 후 이미지 변형(승/패) 적용
                 const rank = finishMap.get(idx)
-                const isWinner = rank === 'FIRST' || rank === 'SECOND' || rank === 'THIRD' || positionsNow[idx] > 100;
+                const isWinner = rank === 'VICTORY' || positionsNow[idx] >= 100;
                 // 기본 이미지
                 let src = turtleImages[idx] ?? '/turtle-fallback.png'
                 if (finished) {
