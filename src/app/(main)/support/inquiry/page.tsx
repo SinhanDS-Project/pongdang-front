@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
-import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import dynamic from 'next/dynamic'
 import { useMe } from '@/hooks/use-me'
 import {
   AlertDialog,
@@ -15,6 +15,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+
+// ✅ ReactQuillEditor를 동적 import + SSR 비활성화
+const ReactQuillEditor = dynamic(() => import('@/components/board-page/ReactQuill'), {
+  ssr: false,
+})
 
 export default function InquiryPage() {
   const { user } = useMe()
