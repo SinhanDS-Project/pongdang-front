@@ -1,6 +1,6 @@
 'use client'
 
-import { tokenStore } from '@/lib/auth/token-store'
+import { tokenStore } from '@stores/token-store'
 import { useTurtleStore, COLOR_ORDER } from '@/stores/turtle-store'
 import { Client, IMessage } from '@stomp/stompjs'
 import { useRouter } from 'next/navigation'

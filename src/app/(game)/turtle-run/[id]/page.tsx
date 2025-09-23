@@ -5,11 +5,11 @@ import { useEffect, useRef, useState, startTransition } from 'react'
 
 import { Track } from '@components/turtle-run-page'
 
-import { tokenStore } from '@lib/auth/token-store'
+import { tokenStore } from '@stores/token-store'
 import { api } from '@lib/net/client-axios'
 import { useTurtleSocket } from '@lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
 
-import { useAuthStore } from '@stores/auth-store'
+import { useMe } from '@/hooks/use-me'
 import { useTurtleStore, COLOR_ORDER } from '@stores/turtle-store'
 import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
 
@@ -56,7 +56,8 @@ const difficultyMap = { EASY: 4, NORMAL: 6, HARD: 8 } as const
 
 export default function TurtleRunPage() {
   const { id } = useParams<{ id: string }>() // 문자열
-  const userId = useAuthStore((s) => s.user?.id) ?? null
+  const { user } = useMe()
+  const userId = user && user.id
 
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const [players, setPlayers] = useState<PlayerInfo[]>([]) // ← 기본값을 []로
