@@ -19,7 +19,7 @@ export default function InquiryPage() {
         title,
         question: content,
       })
-      alert('문의가 등록되었습니다.')
+      alert('마이페이지 문의내역에서 답변을 확인해주세요🌟')
       router.push('/support')
     } catch (e) {
       alert('등록 중 오류가 발생했습니다.')
