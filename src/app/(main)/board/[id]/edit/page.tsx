@@ -14,7 +14,7 @@ export default function BoardEditPage() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // plain text 추출 (태그 제거 후)
+  // text 추출 (태그 제거 후)
   const plainText = useMemo(() => content.replace(/<[^>]+>/g, '').trim(), [content])
   const titleEmpty = title.trim().length === 0
 
@@ -66,7 +66,7 @@ export default function BoardEditPage() {
               className="w-full rounded-xl border px-4 py-3 text-base transition outline-none focus:ring-2 focus:ring-[var(--color-secondary-sky)]"
             />
 
-            {/* ✅ 에디터 (공통 컴포넌트 사용) */}
+            {/* 에디터 */}
             <div className="mt-5">
               <ReactQuillEditor value={content} onChange={setContent} height={500} />
               <p className="mt-2 text-xs text-gray-500">최대 2048자까지 쓸 수 있습니다</p>
