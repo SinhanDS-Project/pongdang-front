@@ -74,9 +74,9 @@ export default function RandomPongPage() {
         const errorMessage = err.response?.data?.message
 
         if (errorCode === 'ALREADY_BUBBLE_FINISHED') {
-          setMessage(`⚠️ 오늘 이미 퐁 터뜨리기 이벤트 참여가 완료되었습니다.`)
+          setMessage(`⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.`)
         } else if (status === 409) {
-          setMessage('⚠️ 오늘 이미 퐁 터뜨리기 이벤트 참여가 완료되었습니다.')
+          setMessage('⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.')
         } else {
           setMessage(errorMessage ?? '적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
         }
@@ -90,7 +90,7 @@ export default function RandomPongPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-white p-6">
       {/* 제목 */}
       <h1 className="mb-4 bg-gradient-to-r from-sky-500 to-indigo-400 bg-clip-text text-center text-5xl font-extrabold tracking-tight text-transparent drop-shadow-lg">
-        랜덤 퐁 터뜨리기
+        랜덤 퐁 터트리기
       </h1>
       <p className="mb-6 text-center text-lg text-gray-600">물방울 속 퐁을 찾아보세요!</p>
 
