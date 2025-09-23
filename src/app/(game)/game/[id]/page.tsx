@@ -8,7 +8,7 @@ type RoomDetail = {
 
 export const dynamic = 'force-dynamic' // ✅ 캐시 방지 (실시간 데이터용)
 
-export default async function GameEntryPage({ params }: { params: { id: string } }) {
+export default async function GameEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   let data: RoomDetail | null = null

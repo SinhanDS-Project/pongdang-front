@@ -9,7 +9,9 @@ import { tokenStore } from '@stores/token-store'
 import { api } from '@lib/net/client-axios'
 import { useTurtleSocket } from '@lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
 
+import { useMe } from '@/hooks/use-me'
 import { useTurtleStore } from '@stores/turtle-store'
+
 import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
 import { useMe } from '@/hooks/use-me'
 
@@ -52,7 +54,7 @@ const difficultyMap = { EASY: 4, NORMAL: 6, HARD: 8 } as const
 export default function TurtleRunPage() {
   const { id } = useParams<{ id: string }>() // 문자열
   const { user } = useMe()
-  const userId: number | null = user ? user?.id : null
+  const userId = user && user.id
 
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const [players, setPlayers] = useState<PlayerInfo[]>([]) // ← 기본값을 []로

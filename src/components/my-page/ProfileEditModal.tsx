@@ -1,18 +1,19 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Check, CheckCircle, Eye, EyeOff, Loader2, UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import z from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+
 import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, CheckCircle, Eye, EyeOff, Loader2, UserIcon } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import z from 'zod'
+
 import { useMe } from '@/hooks/use-me'
-import { tokenStore } from '@/stores/token-store'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -23,13 +24,15 @@ type Props = {
 }
 
 export function ProfileEditModal({ open, onOpenChange }: Props) {
+  const { mutate } = useMe()
+
   const [panel, setPanel] = useState<Panel>('overview')
 
   // 닫히면 내부 상태 초기화
   const handleOpenChange = async (v: boolean) => {
     setPanel('overview')
     onOpenChange(v)
-    const { user, status } = useMe()
+    mutate()
   }
 
   return (
@@ -79,7 +82,8 @@ function Overview({
   onEditPassword: () => void
   onWithdrawDone: () => void
 }) {
-  const { user, status } = useMe()
+  
+  const { user } = useMe()
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -486,7 +490,6 @@ function Withdraw({ onClose }: { onClose: () => void }) {
     setSubmitting(true)
     try {
       await unregisterAccount()
-      tokenStore.clear()
       onClose()
     } finally {
       setSubmitting(false)
