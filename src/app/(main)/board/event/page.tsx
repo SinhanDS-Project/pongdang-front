@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import EventCard from '@/components/board-page/event/EventCard'
+import EventCard from '@/components/board-page/EventCard'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 const EVENTS = [
   {
@@ -44,7 +45,7 @@ export default function EventPage() {
 
   return (
     <section className="space-y-4">
-      <h2 className="sr-only">이벤트 선택</h2>
+      <BoardTabs activeCategory="EVENT" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {EVENTS.map((e) => (
           <EventCard key={e.slug} e={e} onClick={() => setSelected(e)} />
