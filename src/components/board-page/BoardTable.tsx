@@ -21,16 +21,7 @@ function formatDate(input: string | Date) {
   return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('ko-KR')
 }
 
-export function BoardTable({
-  items,
-  page,
-  pageSize,
-  basePath = '/board',
-  variant,
-  sort,
-  onSortChange,
-  onWriteClick,
-}: Props) {
+export function BoardTable({ items, page, pageSize, variant, sort, onSortChange, onWriteClick }: Props) {
   const router = useRouter()
 
   return (
