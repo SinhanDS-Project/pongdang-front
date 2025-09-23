@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { BombIcon } from '@/icons'
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,10 @@ function makeBombSet(size = GRID * GRID, bombs = BOMB_COUNT) {
 
 export default function BoomPongGame() {
   const router = useRouter()
+
+  // 보상 모달
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMsg, setModalMsg] = useState<string>('')
 
   // 보드 상태
   const [bombs, setBombs] = useState<Set<number>>(() => makeBombSet())
@@ -63,13 +68,18 @@ export default function BoomPongGame() {
       try {
         if (status === 'win') {
           const res = await api.post<{ reward: number; message: string }>('/api/game/success')
-          alert(res.data?.message ?? '게임 성공! 보상이 지급되었습니다.')
+          setModalOpen(true)
+          setModalMsg(res.data?.message ?? '게임 성공! 보상이 지급되었습니다.')
         } else {
-          alert('다음 기회에 다시 도전해요!')
+          setModalOpen(true)
+
+          setModalMsg('다음 기회에 다시 도전해요!')
         }
       } catch (err) {
         console.error('보상 처리 실패', err)
-        alert('보상 처리 중 문제가 발생했어요. 나중에 다시 시도해주세요.')
+        setModalOpen(true)
+
+        setModalMsg('보상 처리 중 문제가 발생했어요. 나중에 다시 시도해주세요.')
       } finally {
         setIsFinished(true) // 종료 상태로 전환 → 버튼 “도전하기” 활성화
       }
@@ -145,9 +155,29 @@ export default function BoomPongGame() {
           disabled={!isFinished} // 진행 중에는 비활성화
           aria-label="퐁 피하기 도전"
         >
-          {isFinished ? '도전하기' : '도전 중..'}
+          {isFinished ? '시작하기' : '도전 중..'}
         </Button>
       </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-3xl">{status === 'win' ? '성공!' : '실패'}</DialogTitle>
+          </DialogHeader>
+          <div className="text-center text-lg font-medium">{modalMsg}</div>
+          <Button
+            size="lg"
+            className="hover:bg-secondary-sky bg-secondary-navy h-12 px-24 text-4xl font-extrabold"
+            onClick={() => {
+              setModalOpen(false)
+              setModalMsg('')
+            }}
+            aria-label="모달 닫기"
+          >
+            확인
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
