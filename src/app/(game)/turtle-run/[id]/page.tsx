@@ -13,7 +13,6 @@ import { useMe } from '@/hooks/use-me'
 import { useTurtleStore } from '@stores/turtle-store'
 
 import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
-import { useMe } from '@/hooks/use-me'
 
 export type Winner = {
   rank: 1 | 2 | 3
