@@ -78,8 +78,6 @@ export default function FaqPage() {
   /* ── 렌더링 ───────────────────────── */
   return (
     <main className="mx-auto max-w-3xl space-y-8 p-6">
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900">자주 묻는 질문 (FAQ)</h1>
-
       {faqLoading && <p className="text-gray-500">FAQ 불러오는 중…</p>}
       {faqError && <p className="text-sm text-red-600">{faqError}</p>}
 
@@ -93,14 +91,18 @@ export default function FaqPage() {
                 const detail = detailMap[it.id]
                 return (
                   <AccordionItem key={it.id} value={`faq-${it.id}`} onClick={() => loadDetail(it.id)} className="px-4">
-                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-left text-lg font-medium text-gray-800 hover:text-blue-600">
-                      <span>{it.title}</span>
+                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-lg font-medium text-gray-800 hover:text-blue-600">
+                      {/* 제목 */}
+                      <span className="truncate">{it.title}</span>
+
+                      {/* 날짜 */}
                       {it.createdAt && (
-                        <span className="ml-4 text-sm text-gray-400">
+                        <span className="ml-6 shrink-0 text-sm text-gray-400">
                           {new Date(it.createdAt).toLocaleDateString()}
                         </span>
                       )}
                     </AccordionTrigger>
+
                     <AccordionContent className="pb-4 pl-2 text-gray-600">
                       {detail?.loading && <p className="text-sm text-gray-500">내용 불러오는 중…</p>}
                       {detail?.error && (
