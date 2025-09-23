@@ -6,10 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 
+import { useMe } from '@/hooks/use-me'
 import { api } from '@/lib/net/client-axios'
-import { useMe } from '@/hooks/use-me'
-
-import { useMe } from '@/hooks/use-me'
 
 type Panel = 'change' | 'success'
 
