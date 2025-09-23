@@ -95,14 +95,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'play/bomb'}>
+                        <Link href={'/play/bomb'}>
                           <span>터진다..퐁!</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href={'play/quiz'}>
+                        <Link href={'/play/quiz'}>
                           <span>도전! 금융 골든벨</span>
                         </Link>
                       </SidebarMenuSubButton>
