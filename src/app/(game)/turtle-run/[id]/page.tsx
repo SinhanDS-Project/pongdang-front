@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, startTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Track } from '@components/turtle-run-page'
 
@@ -10,7 +10,8 @@ import { api } from '@lib/net/client-axios'
 import { useTurtleSocket } from '@lib/socket' // ← onPlayers, onFinish 둘 다 여기서 처리
 
 import { useMe } from '@/hooks/use-me'
-import { useTurtleStore, COLOR_ORDER } from '@stores/turtle-store'
+import { useTurtleStore } from '@stores/turtle-store'
+
 import { PodiumModal } from '@/components/turtle-run-page/PodiumModal'
 
 export type Winner = {
@@ -47,11 +48,6 @@ type FinishRow = {
   winAmount: number;
 }
 
-type FinishPayload = {
-  winner: number
-  results: FinishRow[]
-}
-
 const difficultyMap = { EASY: 4, NORMAL: 6, HARD: 8 } as const
 
 export default function TurtleRunPage() {
@@ -64,22 +60,8 @@ export default function TurtleRunPage() {
   const [loading, setLoading] = useState(true)
 
   const [finishResults, setFinishResults] = useState<{ idx: number; rank: string }[] | null>(null)
-
-  const orderRank = (a: string, b: string) => {
-    const w = { FIRST: 1, SECOND: 2, THIRD: 3, LOSE: 99 }
-    return (w[a as keyof typeof w] ?? 99) - (w[b as keyof typeof w] ?? 99)
-  }
-
-  const toIdx = (v: number | string): number => {
-    if (typeof v === 'number') return v
-    const n = Number(v); if (Number.isFinite(n)) return n
-    const s = String(v).toLowerCase()
-    const i = COLOR_ORDER.findIndex((c: any) => String(c).toLowerCase() === s)
-    return i >= 0 ? i : -1
-  }
-
-  // 결과 모달(현재 주석 처리된 UI라 내부 상태만 유지)
-  const finishHandledRef = useRef(false)
+  // 이동 목표 시각(ms)
+  const [redirectAt, setRedirectAt] = useState<number | null>(null);
 
   // 전역 store
   const isHost = useTurtleStore((s) => s.isHost)
@@ -101,8 +83,6 @@ export default function TurtleRunPage() {
         if (!alive) return
         setRoom(data)
         if (userId != null) setIsHost(data.host_id === userId)
-        // 디버깅용
-        // console.log('[room fetched]', data)
       } catch (e) {
         console.error('[room fetch error]', e)
       } finally {
@@ -133,11 +113,7 @@ export default function TurtleRunPage() {
       // 내 선택을 전역에 반영하고 싶다면 여기서
       const me = list.find((x) => x.user_id === userId)
       if (me) {
-        // color → index 변환이 필요하면 변환 후:
-        // setSelected(colorToIndex(me.turtle_id))
       }
-
-      // console.log('[players update]', list)
     },
     onFinish: (pkt) => {
       const finishRows: FinishRow[] =
@@ -147,11 +123,36 @@ export default function TurtleRunPage() {
       Array.isArray(pkt)                ? pkt               :
       []
 
-    // Track용 표시는 유지
-    const resultsForTrack = finishRows
-      .map((r: any) => ({ idx: r.idx ?? toIdx(r.selectedColor ?? r.selectedTurtle), rank: r.rank }))
-      .filter((x: any) => x.idx >= 0)
+    // 1) 마지막 보이는 진행률 가져오기 (displayed 우선, 없으면 positions)
+    const { positions, displayed, applyFinishOverride } = useTurtleStore.getState();
+    const latest = (displayed?.length ? displayed : positions) ?? [];
+    const N = latest.length;
+
+    const winners = latest
+    .map((v, i) => (v > 100 ? i : -1))
+    .filter(i => i >= 0)
+
+    // 2) Track 하이라이트용: 진행률로 승/패만 구분
+     const resultsForTrack = Array.from({ length: N }, (_, i) => ({
+      idx: i,
+      rank: winners.includes(i) ? 'VICTORY' : 'DEFEAT',
+    }))
     setFinishResults(resultsForTrack)
+
+    // 4) 오버라이드 좌표 계산
+    const targets = Array.from({ length: N }, (_, i) => {
+      if (winners.includes(i)) {
+        return 101 // ✅ 승리 거북이는 finish line +1
+      }
+      return latest[i] ?? 0 // ❌ 패배 거북이는 그대로 멈춤
+    })
+
+    applyFinishOverride(targets)
+
+
+    // ✅ 이동 목표 시각 고정 (지금으로부터 5초 후)
+    const deadline = Date.now() + REDIRECT_SECS * 1000;
+    setRedirectAt(deadline);
 
     // ✅ 모달에는 raw results만 넘김
     setPodiumResults(finishRows)
@@ -182,9 +183,7 @@ export default function TurtleRunPage() {
             console.warn('[start] socket not connected yet, skip this tick')
           } else {
             const token = tokenStore.get()
-            // 서버 스펙: /app/turtle/start/{roomId}
             send(`/app/turtle/start/${id}`, undefined, token ? { Authorization: `Bearer ${token}` } : undefined)
-            // console.log('[start] sent')
           }
         }
         return 0
@@ -198,46 +197,43 @@ export default function TurtleRunPage() {
   const [podiumOpen, setPodiumOpen] = useState(false);
   const [podiumResults, setPodiumResults] = useState<FinishRow[]>([]);
   const [countdownSec, setCountdownSec] = useState(REDIRECT_SECS);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (!podiumOpen) {
-      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
-      return;
-    }
-    if (countdownRef.current) return;
-
-    countdownRef.current = setInterval(() => {
-      setCountdownSec(prev => (prev <= 1 ? 0 : prev - 1)); // ← 숫자만 업데이트
-    }, 1000);
-
-    return () => {
-      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
-    };
-  }, [podiumOpen]);
+  const handlePodiumClose = () => {
+    setPodiumOpen(false)
+  }
 
   // 중복 실행 방지
   const didNavigateRef = useRef(false);
 
+  // ✅ redirectAt이 정해지면, 모달이 닫혀도 계속 감소
   useEffect(() => {
-    if (!podiumOpen) return;
-    if (countdownSec !== 0) return;
-    if (didNavigateRef.current) return;
-    didNavigateRef.current = true;
+    if (!redirectAt) return;
 
-    (async () => {
-      try {
-        // 방 상태 WAITING 전환 (실패 무시)
-        await api.post(`/api/gameroom/start/${id}`, { status: 'WAITING' }).catch(() => {});
-      } finally {
-        // 레이스 상태 초기화 후 라우팅
-        useTurtleStore.getState().resetRace();
-        startTransition(() => {
-          router.push(`/play/rooms/${id}`);
-        });
+    const tick = () => {
+      const remainMs = redirectAt - Date.now();
+      const remainSec = Math.max(0, Math.ceil(remainMs / 1000));
+      setCountdownSec(remainSec);
+
+      // ✅ 0초 도달 시 한 번만 네비게이션
+      if (remainSec === 0 && !didNavigateRef.current) {
+        didNavigateRef.current = true;
+        (async () => {
+          try {
+            await api.post(`/api/gameroom/start/${id}`, { status: 'WAITING' }).catch(() => {});
+          } finally {
+            useTurtleStore.getState().resetRace();
+            router.push(`/play/rooms/${id}`); // 필요 시 경로 변경
+          }
+        })();
       }
-    })();
-  }, [podiumOpen, countdownSec, id, router]);
+    };
+
+  // 250~500ms 정도로 부드럽게(굳이 1초 간격일 필요 없음)
+  const iv = setInterval(tick, 300);
+  tick(); // 즉시 1회
+
+  return () => clearInterval(iv);
+}, [redirectAt, id, router]);
 
   // ---- 렌더 전 보호: players는 더 이상 가드하지 않음
   if (loading || !room) return null
@@ -269,7 +265,7 @@ export default function TurtleRunPage() {
 
           <PodiumModal
           open={podiumOpen}
-          onClose={() => setPodiumOpen(false)}
+          onClose={handlePodiumClose}
           results={podiumResults}
           title='거북이 시상식'
           subtitle='축하합니다! 경기가 종료되었습니다.'

@@ -158,7 +158,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="donation">
+                <Link href="/donation">
                   <Gift />
                   <span>기부하기</span>
                 </Link>
