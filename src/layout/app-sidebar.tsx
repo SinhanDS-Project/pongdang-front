@@ -1,6 +1,17 @@
 'use client'
 
-import { ChevronRight, EllipsisVertical, Gamepad2, Gift, LogOut, ShoppingBag, Star, Swords, User } from 'lucide-react'
+import {
+  Bot,
+  ChevronRight,
+  EllipsisVertical,
+  Gamepad2,
+  Gift,
+  LogOut,
+  ShoppingBag,
+  Star,
+  Swords,
+  User,
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import * as React from 'react'
@@ -150,6 +161,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </Collapsible>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
+                <Link href="/report">
+                  <Bot />
+                  <span>AI 금융 리포트 생성</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
                 <Link href="/store">
                   <ShoppingBag />
                   <span>퐁 스토어</span>
@@ -177,7 +196,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                    <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -196,7 +215,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                      <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
                       <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
