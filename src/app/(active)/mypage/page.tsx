@@ -318,7 +318,7 @@ function DonationHistory({ history, page, size }: { history: DonationHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell>{row.title}</TableCell>
+            <TableCell className="truncate max-w-[200px]">{row.title}</TableCell>
             <TableCell className="flex items-center justify-center gap-x-1 py-4 text-red-400">
               <Heart />
               <span className="font-bold">{row.amount}</span>
@@ -338,7 +338,7 @@ function PurchaseHistory({ history, page, size }: { history: PurchaseHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell className="py-4">{row.name}</TableCell>
+            <TableCell className="py-4 truncate max-w-[200px]">{row.name}</TableCell>
             <TableCell className="font-bold">{row.price}</TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
           </TableRow>
@@ -365,7 +365,7 @@ function ChatLog({
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell onClick={() => onOpen(row)} className="cursor-pointer py-4 hover:font-bold hover:underline">
+            <TableCell onClick={() => onOpen(row)} className="cursor-pointer py-4 hover:font-bold hover:underline truncate max-w-[200px]">
               {row.title}
             </TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.chat_date)}</TableCell>
