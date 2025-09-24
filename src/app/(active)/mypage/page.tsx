@@ -287,7 +287,11 @@ export default function MyPageContent() {
 
 function formatDate(date: string | Date) {
   const parsedDate = typeof date === 'string' ? new Date(date) : date
-  return parsedDate.toISOString().split('T')[0] // "2025-09-03"
+  return parsedDate.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }) // "2025. 09. 25."
 }
 
 function PongHistory({ history, page, size }: { history: PongHistoryType[]; page: number; size: number }) {
