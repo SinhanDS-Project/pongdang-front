@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { api } from '@/lib/net/client-axios'
 import type { Board } from '@/components/board-page/types'
-import { NoticeTable } from '@/components/board-page/NoticeTable'
+import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 type PageResp = {
   boards: {
@@ -16,7 +16,6 @@ type PageResp = {
   }
 }
 
-// 에러 메시지 추출
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
     const ax = err as AxiosError<{ message?: string }>
@@ -41,13 +40,12 @@ export default function NoticePage() {
       setError(null)
       try {
         const { data } = await api.get<PageResp>('/api/board', {
-          params: { page, category: 'NOTICE', size: pageSize, sort: 'createdAt' },
+          params: { page, category: 'NOTICE', sort: 'createdAt', size: pageSize },
         })
         if (!alive) return
-
         setItems(data.boards?.content ?? [])
         setTotalPages(Math.max(1, data.boards?.total_pages ?? 1))
-      } catch (err: unknown) {
+      } catch (err) {
         if (!alive) return
         setError(getErrorMessage(err))
         setItems([])
@@ -66,18 +64,15 @@ export default function NoticePage() {
       {error && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
-
+      <BoardTabs activeCategory="NOTICE" />
       {loading ? (
-        <div className="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">불러오는 중…</div>
+        <div>불러오는 중…</div>
       ) : (
-        <NoticeTable items={items} page={page} pageSize={pageSize} basePath="/board/notice" title="공지사항" />
+        <BoardTable items={items} page={page} pageSize={pageSize} basePath="/board/notice" variant="NOTICE" />
       )}
 
-      <div className="mt-4 flex items-center justify-between">
-        <div />
-        <div className="flex flex-1 justify-center">
-          <PongPagination page={page} totalPages={totalPages} onChange={setPage} />
-        </div>
+      <div className="mt-4 flex justify-center">
+        <PongPagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </>
   )
