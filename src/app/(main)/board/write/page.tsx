@@ -27,7 +27,7 @@ export default function WritePage() {
       await api.post('/api/board', {
         title,
         content,
-        category: cat, // URL에서 넘어온 cat 값 (예: FREE, NOTICE, EVENT 등)
+        category: cat,
       })
       alert('게시글이 등록되었습니다.')
       router.push('/board')
