@@ -218,7 +218,7 @@ export default function MyPageContent() {
                 setPage(1)
               }}
               className={cn(
-                'text-primary-white w-32 rounded-t-lg py-2.5 text-center text-xl font-semibold',
+                'text-primary-white w-24 sm:w-28 md:w-32 rounded-t-lg py-2.5 text-center text-md sm:text-base md:text-lg lg:text-xl font-semibold',
                 active === tap.key ? 'bg-secondary-sky' : 'bg-gray-300',
               )}
             >
