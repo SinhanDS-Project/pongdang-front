@@ -9,6 +9,14 @@ import { AuthBootstrapClient } from '@/stores/auth-bootstrap'
 export const metadata: Metadata = {
   title: '퐁당퐁당',
   description: '출석 · 미니게임 · 포인트 · 기부',
+  icons: {
+    icon: [
+      { url: '/192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/256.png', sizes: '256x256', type: 'image/png' },
+      { url: '/512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', type: 'image/x-icon' },
+    ],
+  },
 }
 
 export default function RootLayout({
