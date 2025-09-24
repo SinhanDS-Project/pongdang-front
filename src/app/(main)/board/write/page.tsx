@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 export default function WritePage() {
   const router = useRouter()
@@ -37,6 +38,7 @@ export default function WritePage() {
 
   return (
     <main className="mx-auto max-w-6xl">
+      <BoardTabs activeCategory="FREE" />
       <section className="relative rounded-2xl border bg-gray-50 p-4 shadow-sm sm:p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}
