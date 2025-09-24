@@ -1,19 +1,23 @@
 import type { ReactNode } from 'react'
 import { BoardIcon } from '@/icons'
-import BoardTabs from '@/components/board-page/BoardTabs'
 
-export default function BoardLayout({ children, activeCategory }: { children: ReactNode; activeCategory?: string }) {
+export default function BoardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-8 pb-3">
-      <header className="mb-2">
-        <div className="gap- flex items-center">
-          <div className="relative mt-4 aspect-[35/31] w-40 shrink-0 sm:w-56 md:w-[242px] lg:w-80">
+    <div className="mx-auto max-w-5xl px-4 pt-6 pb-3">
+      <header className="mb-6">
+        {/* sm 이상에서는 row, 모바일에서는 col */}
+        <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-10">
+          {/* 아이콘: 모바일에서는 숨기고 sm 이상에서만 보임 */}
+          <div className="relative hidden shrink-0 sm:block sm:w-28 md:w-36 lg:w-44">
             <BoardIcon />
           </div>
 
-          <div className="text-left">
-            <h1 className="text-[60px] leading-none font-bold tracking-tight text-[#0045FF]">게시판</h1>
-            <p className="mt-5 hidden text-[32px] font-bold text-[#6AADEF] md:block">우리의 생각과 소식이 모이는 곳</p>
+          {/* 텍스트 */}
+          <div className="mt-2 text-center sm:mt-0 sm:ml-4 sm:text-left">
+            <h1 className="text-3xl font-bold tracking-tight text-[#0045FF] sm:text-5xl md:text-6xl">게시판</h1>
+            <p className="mt-1 hidden text-base font-semibold text-[#6AADEF] sm:block sm:text-lg md:mt-2 md:text-xl">
+              우리의 생각과 소식이 모이는 곳
+            </p>
           </div>
         </div>
       </header>
