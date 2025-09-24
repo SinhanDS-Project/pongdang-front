@@ -15,7 +15,8 @@ export default function BoardTabs({ activeCategory }: { activeCategory?: string 
 
   return (
     <nav className="mb-6">
-      <div className="relative flex border-b border-gray-200">
+      {/* PC/태블릿: 모든 탭 */}
+      <div className="relative hidden border-b border-gray-200 sm:flex">
         {tabs.map((t) => {
           const active = effectiveCategory === t.category
           return (
@@ -33,6 +34,23 @@ export default function BoardTabs({ activeCategory }: { activeCategory?: string 
             </Link>
           )
         })}
+      </div>
+
+      {/* 모바일: 현재 탭만 */}
+      <div className="relative flex border-b border-gray-200 sm:hidden">
+        {tabs
+          .filter((t) => t.category === effectiveCategory)
+          .map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              aria-current="page"
+              className="relative -mb-[1px] w-full pb-2 text-center text-[20px] font-bold text-black"
+            >
+              {t.label}
+              <span className="absolute inset-x-0 -bottom-[1px] h-[3px] rounded-full bg-black" />
+            </Link>
+          ))}
       </div>
     </nav>
   )
