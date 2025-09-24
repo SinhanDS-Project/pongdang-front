@@ -16,11 +16,9 @@ export default function AdminLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body>
+      <main>
         {children}
         {/* <Analytics /> */}
-      </body>
-    </html>
+      </main>
   )
 }

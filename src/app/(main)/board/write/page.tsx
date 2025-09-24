@@ -1,61 +1,29 @@
 'use client'
 
-import { useMemo, useCallback, useState, Suspense } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import dynamic from 'next/dynamic'
-import 'react-quill-new/dist/quill.snow.css'
 
-// SSR 끄고 동적 import
-const ReactQuill = dynamic(() => import('react-quill-new').then((m) => m.default), { ssr: false })
+// ✅ ReactQuillEditor를 동적 import + SSR 비활성화
+const ReactQuillEditor = dynamic(() => import('@/components/board-page/ReactQuill'), {
+  ssr: false,
+})
 
-function Body() {
+// 📝 실제 본문 (body 역할)
+function WriteBody() {
   const router = useRouter()
   const sp = useSearchParams()
-  const cat = sp.get('cat')?.toUpperCase() || 'FREE' // URL에서 cat 가져오고 기본은 FREE
+  const cat = sp.get('cat')?.toUpperCase() || 'FREE'
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
-  const formats = useMemo(
-    () => [
-      'size',
-      'color',
-      'background',
-      'bold',
-      'italic',
-      'underline',
-      'strike',
-      'blockquote',
-      'list',
-      'indent',
-      'image',
-    ],
-    [],
-  )
-
-  const modules = useMemo(
-    () => ({
-      toolbar: {
-        container: [
-          [{ size: ['small', false, 'large', 'huge'] }],
-          [{ color: [] }, { background: [] }],
-          ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-          [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
-          ['image'],
-        ],
-      },
-    }),
-    [],
-  )
-
-  const onChangeEditorValue = useCallback((v: string) => setContent(v), [])
-
-  // 내용은 최소 한 글자 필요(HTML 태그 제거 후)
+  // HTML 태그 제거 후 텍스트만 확인
   const plainText = useMemo(() => content.replace(/<[^>]+>/g, '').trim(), [content])
   const titleEmpty = title.trim().length === 0
 
-  // ✅ 최종 onSubmit
+  // 최종 onSubmit
   const onSubmit = async () => {
     if (titleEmpty) return alert('제목을 입력해주세요.')
     if (!plainText) return alert('내용을 입력해주세요.')
@@ -64,7 +32,7 @@ function Body() {
       await api.post('/api/board', {
         title,
         content,
-        category: cat, // URL에서 넘어온 cat 값 (예: FREE, NOTICE, EVENT 등)
+        category: cat,
       })
       alert('게시글이 등록되었습니다.')
       router.push('/board')
@@ -79,7 +47,6 @@ function Body() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}
           <div className="rounded-2xl border bg-white p-4 sm:p-5">
-            {/* 제목 입력 */}
             <input
               type="text"
               placeholder="제목을 입력하세요"
@@ -87,30 +54,8 @@ function Body() {
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-xl border px-4 py-3 text-base transition outline-none focus:ring-2 focus:ring-[var(--color-secondary-sky)]"
             />
-
-            {/* 에디터 */}
             <div className="mt-5">
-              <div className="quill-wrap overflow-hidden rounded-xl border border-gray-200" style={{ height: 500 }}>
-                <ReactQuill
-                  theme="snow"
-                  value={content}
-                  formats={formats}
-                  modules={modules}
-                  onChange={onChangeEditorValue}
-                  style={{ height: '100%' }}
-                />
-              </div>
-
-              <style jsx global>{`
-                .quill-wrap .ql-container {
-                  height: calc(100% - 42px);
-                }
-                .quill-wrap .ql-editor {
-                  height: 100%;
-                  overflow-y: auto;
-                }
-              `}</style>
-
+              <ReactQuillEditor value={content} onChange={setContent} height={500} />
               <p className="mt-2 text-xs text-gray-500">최대 2048자까지 쓸 수 있습니다</p>
             </div>
           </div>
@@ -139,10 +84,11 @@ function Body() {
   )
 }
 
+// 📄 페이지 컴포넌트 (Suspense로 WriteBody 감싸기)
 export default function Page() {
   return (
-    <Suspense fallback={null}>
-      <Body />
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <WriteBody />
     </Suspense>
   )
 }

@@ -46,6 +46,12 @@ interface TurtleState {
    */
   tickLerp: (alpha?: number) => void
 
+  // ✅ 결과 연출용 오버라이드
+  finishOverrideActive: boolean
+  finishOverride: number[] | null
+  applyFinishOverride: (xs: number[]) => void
+  clearFinishOverride: () => void
+
   /** 레이스 관련 상태 초기화 */
   resetRace: () => void
 }
@@ -61,24 +67,23 @@ export const useTurtleStore = create<TurtleState>((set, get) => ({
   positions: [],
   displayed: [],
 
+  // ✅ 오버라이드 초기값
+  finishOverrideActive: false,
+  finishOverride: null,
+
   setPositions: (nextIn) => {
-    // 안전 클램프 + 복사
     const next = nextIn.map(clamp01_100)
 
     const { displayed } = get()
-    // displayed 길이를 next와 맞춤
     let newDisplayed: number[]
     if (displayed.length === next.length) {
       newDisplayed = displayed
     } else if (displayed.length === 0) {
-      // 첫 수신이면 0에서 시작 (또는 next를 바로 복사하고 싶다면 next로 설정)
       newDisplayed = new Array(next.length).fill(0)
     } else if (displayed.length < next.length) {
-      // 더 길어졌으면 부족한 부분은 마지막 값(또는 0)으로 채우기
       const last = displayed[displayed.length - 1] ?? 0
       newDisplayed = displayed.concat(new Array(next.length - displayed.length).fill(last))
     } else {
-      // 줄어들었으면 자르기
       newDisplayed = displayed.slice(0, next.length)
     }
 
@@ -98,11 +103,30 @@ export const useTurtleStore = create<TurtleState>((set, get) => ({
     set({ displayed: out })
   },
 
-  resetRace: () => {
-    set({ positions: [], displayed: [] })
+  // ✅ 결과 연출용 좌표 강제 적용
+  applyFinishOverride: (xs) => {
+    const arr = Array.isArray(xs) ? xs.map(clamp01_100) : []
+    set({
+      finishOverrideActive: true,
+      finishOverride: arr,
+    })
   },
 
-   /** 서버 selectedTurtle(string) → number|null (난이도/마릿수 total 기준) */
+  // ✅ 오버라이드 해제
+  clearFinishOverride: () => {
+    set({ finishOverrideActive: false, finishOverride: null })
+  },
+
+  resetRace: () => {
+    set({
+      positions: [],
+      displayed: [],
+      // ✅ 리셋 시 오버라이드도 함께 초기화
+      finishOverrideActive: false,
+      finishOverride: null,
+    })
+  },
+
   getSelectedIndex: (total: number) => {
     const key = get().selectedTurtle
     if (!key) return null
