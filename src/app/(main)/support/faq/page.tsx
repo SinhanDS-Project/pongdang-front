@@ -77,7 +77,7 @@ export default function FaqPage() {
 
   /* ── 렌더링 ───────────────────────── */
   return (
-    <main className="mx-auto max-w-3xl space-y-8 p-6">
+    <main className="mx-auto max-w-4xl space-y-8 p-6">
       {faqLoading && <p className="text-gray-500">FAQ 불러오는 중…</p>}
       {faqError && <p className="text-sm text-red-600">{faqError}</p>}
 
@@ -87,20 +87,12 @@ export default function FaqPage() {
             <p className="text-sm text-gray-500">등록된 FAQ가 없습니다.</p>
           ) : (
             <Accordion type="single" collapsible className="w-full divide-y rounded-lg border bg-white shadow-sm">
-              {faqItems.map((it) => {
+              {faqItems.map((it, idx) => {
                 const detail = detailMap[it.id]
                 return (
                   <AccordionItem key={it.id} value={`faq-${it.id}`} onClick={() => loadDetail(it.id)} className="px-4">
-                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-lg font-medium text-gray-800 hover:text-blue-600">
-                      {/* 제목 */}
-                      <span className="truncate">{it.title}</span>
-
-                      {/* 날짜 */}
-                      {it.createdAt && (
-                        <span className="ml-6 shrink-0 text-sm text-gray-400">
-                          {new Date(it.createdAt).toLocaleDateString()}
-                        </span>
-                      )}
+                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-lg font-medium text-gray-800 no-underline hover:bg-gray-100 hover:text-gray-800 hover:no-underline focus:ring-0 focus:outline-none">
+                      <span className="truncate">{`Q${idx + 1}. ${it.title}`}</span>
                     </AccordionTrigger>
 
                     <AccordionContent className="pb-4 pl-2 text-gray-600">
