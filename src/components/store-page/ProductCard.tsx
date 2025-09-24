@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PongIcon } from '@/icons'
 import Image from 'next/image'
 import { useCallback } from 'react'
-import { Product } from './types'
+import { Product } from '../../types/store'
 
 export default function ProductCard({ product, onClick }: { product: Product; onClick?: (p: Product) => void }) {
   const fmt = useCallback((v: number) => v.toLocaleString('ko-KR'), [])
