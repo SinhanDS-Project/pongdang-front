@@ -244,7 +244,6 @@ body {
   }
 }
 
-
 /* ─────────────────────────────────────────
    5.5) Turtle run custom utilities
    - bg-crowd: 관중 배경
@@ -278,7 +277,7 @@ body {
   }
 }
 
-/* 폭죽 */
+/* 폭죽 (골든벨) */
 @keyframes firework {
   0% {
     transform: scale(0);
@@ -342,4 +341,23 @@ body {
   filter: blur(1px);
 
   animation: explode 1.5s ease-out forwards;
+}
+
+/* 물방울 터트리기 */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.animate-pop {
+  animation: pop 0.6s ease forwards;
 }
