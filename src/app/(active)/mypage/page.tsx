@@ -15,6 +15,7 @@ import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
 
 import { useMe } from '@/hooks/use-me'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 /* ── 타입 ───────────────────────── */
 type TabKey = 'pong' | 'donate' | 'purchase' | 'chatlog'
@@ -129,11 +130,13 @@ export default function MyPageContent() {
       .finally(() => setIsLoading(false))
   }, [active, page])
 
+  const isMobile = useIsMobile()
+
   return (
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
       {/* 상단 영역 */}
-      <div className="grid grid-cols-4 gap-x-8">
-        <div className="bg-placeholder relative aspect-square w-full overflow-hidden rounded-full">
+      <div className={cn("gap-4", isMobile ? "flex flex-col" : "grid grid-cols-4 gap-x-8")}>
+        <div className={cn("bg-placeholder relative aspect-square overflow-hidden rounded-full", isMobile ? "w-24 mx-auto" : "w-full mx-0")}>
           <Image
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
@@ -142,8 +145,8 @@ export default function MyPageContent() {
           />
         </div>
 
-        <div className="col-span-3 flex flex-col gap-y-4">
-          <div className="flex w-full items-center justify-between gap-2 text-3xl font-extrabold">
+        <div className={cn("flex flex-col gap-y-4", !isMobile && "col-span-3")}>
+          <div className={cn("font-extrabold", isMobile ? "flex flex-col items-center gap-3 text-center text-xl" : "flex flex-row items-center justify-between text-left text-3xl")}>
             <div className="text-foreground">
               안녕하세요, <span className="text-secondary-royal">{user?.nickname}</span> 님
             </div>
@@ -169,18 +172,18 @@ export default function MyPageContent() {
           <div className="bg-secondary-light flex grow flex-col gap-y-2 rounded-xl p-4">
             <div className="text-primary-white flex items-center gap-x-2">
               <Wallet />
-              <span className="text-2xl font-bold">나의 보유 퐁</span>
+              <span className={cn("font-bold", isMobile ? "text-xl" : "text-2xl")}>나의 보유 퐁</span>
             </div>
             <div className="bg-primary-white flex grow gap-x-4 rounded-lg p-4">
               {/* 일반 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Droplet className="text-secondary-royal" />
-                  <span className="text-base font-bold">일반 퐁</span>
+                  <span className={cn("font-bold", isMobile ? "text-sm" : "text-base")}>일반 퐁</span>
                 </div>
                 <div className="mr-4 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.pong_balance?.toLocaleString() ?? 0}</span>
-                  <span className="text-secondary-royal text-4xl">퐁</span>
+                  <span className={cn("text-secondary-navy", isMobile ? "text-2xl" : "text-5xl")}>{user?.pong_balance?.toLocaleString() ?? 0}</span>
+                  <span className={cn("text-secondary-royal", isMobile ? "text-xl" : "text-4xl")}>퐁</span>
                 </div>
               </div>
 
@@ -190,11 +193,11 @@ export default function MyPageContent() {
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Heart className="text-secondary-red" />
-                  <span className="text-base font-bold">기부 퐁</span>
+                  <span className={cn("font-bold", isMobile ? "text-sm" : "text-base")}>기부 퐁</span>
                 </div>
                 <div className="mr-8 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.dona_balance?.toLocaleString() ?? 0}</span>
-                  <span className="text-secondary-red text-4xl">퐁</span>
+                  <span className={cn("text-secondary-navy", isMobile ? "text-2xl" : "text-5xl")}>{user?.dona_balance?.toLocaleString() ?? 0}</span>
+                  <span className={cn("text-secondary-red", isMobile ? "text-xl" : "text-4xl")}>퐁</span>
                 </div>
               </div>
             </div>
