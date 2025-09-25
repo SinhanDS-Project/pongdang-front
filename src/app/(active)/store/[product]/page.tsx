@@ -14,6 +14,7 @@ import { api } from '@/lib/net/client-axios'
 import type { AxiosError } from 'axios'
 import { Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 
 // ── 디바운스 ───────────────────────────────
 function useDebounce<T>(value: T, delay = 500): T {
@@ -61,6 +62,20 @@ export default function StorePage() {
 
   // 유저 상태
   const { user, mutate } = useMe()
+  const { product } = useParams<{ product: string }>()
+
+  useEffect(() => {
+    if (product) {
+      // TODO: 실제 API 호출로 상품 정보 가져오기
+      const fetchProduct = async () => {
+        const res = await api.get(`/api/store/product/${product}`)
+        setSelected(res.data)
+      }
+      fetchProduct()
+    } else {
+      setSelected(null)
+    }
+  }, [product])
 
   // 검색/카테고리 바뀌면 1페이지부터
   useEffect(() => setPage(1), [activeCat, debouncedQuery])

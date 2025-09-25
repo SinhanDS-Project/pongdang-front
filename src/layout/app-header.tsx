@@ -36,7 +36,7 @@ import { revalidateMe, useMe } from '@/hooks/use-me'
 import { apiPublic } from '@/lib/net/client-axios'
 import { tokenStore } from '@/stores/token-store'
 
-// ===================== 메뉴 스키마 (description 제거, requireAuth 추가) =====================
+// ===================== 메뉴 스키마 =====================
 const NAVIGATIONMENU = [
   { href: '/info', label: '서비스 소개', requireAuth: false },
   {
@@ -87,7 +87,6 @@ function GuardedLink({
   isAuthed: boolean
   onBlocked: (href: string) => void
 }) {
-  // 로그인 필요 & 비로그인 → 버튼 렌더
   if (requireAuth && !isAuthed) {
     return (
       <button
@@ -101,7 +100,6 @@ function GuardedLink({
     )
   }
 
-  // 접근 허용 → Link
   return (
     <Link href={href} className={className} prefetch={false} {...rest}>
       {children}
@@ -115,7 +113,6 @@ export function AppHeader() {
   const pathname = usePathname()
   const router = useRouter()
 
-  // 로그인 안내 모달 상태
   const [loginNoticeOpen, setLoginNoticeOpen] = useState(false)
   const [pendingPath, setPendingPath] = useState<string | null>(null)
 
@@ -159,7 +156,6 @@ export function AppHeader() {
                 const isActive = pathname === item.href
 
                 if ('children' in item) {
-                  // ✅ 부모는 Trigger, 자식은 Content 안에서 GuardedLink
                   const groupNeedsAuth = !!item.requireAuth
                   return (
                     <NavigationMenuItem key={item.label} className="text-sm">
@@ -177,12 +173,18 @@ export function AppHeader() {
                             isActive && 'w-full',
                           )}
                         />
-                        <Link href={item.href}>{item.label}</Link>
+                        {/* ✅ GuardedLink를 button 대신 span으로 감싸도록 처리 */}
+                        {item.requireAuth && !user ? (
+                          <span onClick={() => openLoginNotice(item.href)} className="cursor-pointer">
+                            {item.label}
+                          </span>
+                        ) : (
+                          <Link href={item.href}>{item.label}</Link>
+                        )}
                       </NavigationMenuTrigger>
 
                       <NavigationMenuContent>
                         <ul className="grid w-60 gap-0.5 p-1">
-                          {/* (선택) 전체 보기 링크를 맨 위에 두고 싶다면 여기에 GuardedLink 추가 가능 */}
                           {item.children.map((child) => (
                             <li key={child.href}>
                               <NavigationMenuLink asChild>
@@ -204,7 +206,6 @@ export function AppHeader() {
                   )
                 }
 
-                // ✅ 자식 없는 단일 항목은 기존처럼 Link 사용
                 return (
                   <NavigationMenuItem key={item.href}>
                     <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
@@ -277,7 +278,15 @@ export function AppHeader() {
                       <Accordion type="single" collapsible key={item.label} className="rounded-md">
                         <AccordionItem value={item.label}>
                           <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                            {item.label}
+                            {/* ✅ 모바일 부모 메뉴도 GuardedLink 적용 */}
+                            <GuardedLink
+                              href={item.href}
+                              requireAuth={item.requireAuth}
+                              isAuthed={!!user}
+                              onBlocked={openLoginNotice}
+                            >
+                              {item.label}
+                            </GuardedLink>
                           </AccordionTrigger>
                           <AccordionContent>
                             <div className="space-y-1">
