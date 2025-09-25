@@ -65,7 +65,7 @@ export default function StorePage() {
   // 검색/카테고리 바뀌면 1페이지부터
   useEffect(() => setPage(1), [activeCat, debouncedQuery])
 
-  // 서버 호출
+  // ── 서버 호출 ─────────────────────────
   useEffect(() => {
     const run = async () => {
       setLoading(true)
@@ -79,7 +79,8 @@ export default function StorePage() {
           params.keyword = kw
         } else if (activeCat !== 'ALL') {
           url = '/api/store/product/category'
-          params.type = activeCat
+          // UBSCRIBE → OTT 로 변환
+          params.type = activeCat === 'SUB' ? 'OTT' : activeCat
         }
 
         const { data } = await api.get<SpringPage<BackendProduct>>(url, { params })
