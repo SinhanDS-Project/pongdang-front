@@ -46,30 +46,38 @@ function publishRefreshDone(token: string | null) {
 
 async function doRefresh(): Promise<string | null> {
   try {
-    const res = await axios.post<{ access_token: string }>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/refresh`)
+    console.log('[refresh] requesting /api/auth/refresh')
+    const res = await api.post<{ access_token: string }>('/api/auth/refresh')
     const access = res.data?.access_token
+    console.log('[refresh] ok:', Boolean(access))
     if (access) {
-      tokenStore.set(access) // 메모리+로컬스토리지 갱신
+      tokenStore.set(access)
       return access
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    console.log('[refresh] error:', e?.response?.status, e?.response?.data)
   }
   tokenStore.clear()
   return null
 }
-
 // ---------------------------------------------------------------------------
 // 인터셉터 장착 함수(재사용 가능)
 // ---------------------------------------------------------------------------
 function attachInterceptors(instance: AxiosInstance) {
   // 요청: 액세스 토큰 주입
   instance.interceptors.request.use((config) => {
-    if (isAuthExempt(config.url)) return config
+    if (isAuthExempt(config.url)) {
+      console.log('[axios][request] exempt:', config.url)
+
+      return config
+    }
     const access = tokenStore.get()
     if (access) {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${access}`
+      console.log('[axios][request]', config.method, config.url, 'Authorization attached')
+    } else {
+      console.log('[axios][request]', config.method, config.url, 'NO ACCESS TOKEN')
     }
     return config
   })

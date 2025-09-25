@@ -24,6 +24,10 @@ export function useMe() {
     },
   )
 
+  if (typeof window !== 'undefined') {
+    console.log('[useMe] key:', tokenStore.get(), '| data:', !!data, '| error:', !!error)
+  }
+
   return {
     user: data ?? null,
     status: !tokenStore.get() ? 'unauthenticated' : error ? 'unauthenticated' : data ? 'authenticated' : 'loading',
