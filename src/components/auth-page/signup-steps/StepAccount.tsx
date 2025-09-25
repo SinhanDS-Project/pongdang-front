@@ -31,7 +31,7 @@ export function StepAccount() {
   const [requesting, setRequesting] = useState(false)
   const [verifying, setVerifying] = useState(false)
 
-  const { seconds, cooldown, running, canResend, start, startCooldown } = useVerifyTimer(180)
+  const { seconds, cooldown, running, canResend, start, startCooldown, reset } = useVerifyTimer(180)
 
   const form = useForm<Step2>({
     resolver: zodResolver(step2Schema),
@@ -57,6 +57,7 @@ export function StepAccount() {
   // 이메일 인증 버튼 활성화 여부
   const emailLocked = form.watch('emailLockedFromBetting') === true
   const email = form.watch('email')
+  const emailVerified = form.watch('emailVerified') === true
 
   const canSend = useMemo(() => /\S+@\S+\.\S+/.test(email ?? ''), [email])
 
@@ -100,6 +101,7 @@ export function StepAccount() {
       setVerifying(true)
       await verifyEmailCode(currentEmail, code)
       form.setValue('emailVerified', true, { shouldValidate: true })
+      reset()
     } catch (e: any) {
       setServerError(e?.response?.data?.message ?? '인증코드 검증 실패')
       form.setValue('emailVerified', false, { shouldValidate: true })
@@ -159,10 +161,12 @@ export function StepAccount() {
                       type="button"
                       variant="secondary"
                       onClick={onSendEmailCode}
-                      disabled={!canResend || !canSend || requesting}
+                      disabled={emailLocked || emailVerified || !canResend || !canSend || requesting}
                       className="min-w-28"
                     >
-                      {requesting ? (
+                      {emailVerified ? (
+                        '인증완료' // ✅ 라벨 변경(선택)
+                      ) : requesting ? (
                         '전송중…'
                       ) : canResend ? (
                         <>

@@ -50,7 +50,7 @@ const NAVIGATIONMENU = [
       { href: '/play/rooms', label: '단체게임' },
     ],
   },
-  { href: '/donation', label: '기부하기', requireAuth: false },
+  { href: '/donation', label: '기부하기', requireAuth: true },
   { href: '/store', label: '퐁 스토어', requireAuth: true },
   {
     label: '게시판',
@@ -243,7 +243,7 @@ export function AppHeader() {
               <DropdownMenu>
                 <DropdownMenuTrigger className="hidden rounded-full ring-0 outline-none md:block">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                    <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
