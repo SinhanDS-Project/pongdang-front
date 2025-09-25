@@ -8,10 +8,6 @@ class TokenStore {
     const v = localStorage.getItem(this.ACCESS_KEY)
     this.accessTokenMemory = v
 
-    // FIXME:
-    console.log('🚀 ~ TokenStore ~ hydrateFromStorage ~ this.accessTokenMemory:', this.accessTokenMemory)
-    console.log('[tokenStore] hydrateFromStorage:', v ? 'token loaded' : 'no token')
-
     return v
   }
 
@@ -29,18 +25,12 @@ class TokenStore {
     this.accessTokenMemory = token
     localStorage.setItem(this.ACCESS_KEY, token)
 
-    //FIXME:
-    console.log('[tokenStore] set:', token?.slice(0, 15) + '...')
-
     this.emit()
   }
 
   clear() {
     this.accessTokenMemory = null
     localStorage.removeItem(this.ACCESS_KEY)
-
-    //FIXME:
-    console.log('[tokenStore] clear')
 
     this.emit()
   }

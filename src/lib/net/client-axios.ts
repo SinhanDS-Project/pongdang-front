@@ -46,16 +46,14 @@ function publishRefreshDone(token: string | null) {
 
 async function doRefresh(): Promise<string | null> {
   try {
-    console.log('[refresh] requesting /api/auth/refresh')
     const res = await api.post<{ access_token: string }>('/api/auth/refresh')
     const access = res.data?.access_token
-    console.log('[refresh] ok:', Boolean(access))
+
     if (access) {
       tokenStore.set(access)
       return access
     }
   } catch (e: any) {
-    console.log('[refresh] error:', e?.response?.status, e?.response?.data)
   }
   tokenStore.clear()
   return null
@@ -66,18 +64,13 @@ async function doRefresh(): Promise<string | null> {
 function attachInterceptors(instance: AxiosInstance) {
   // 요청: 액세스 토큰 주입
   instance.interceptors.request.use((config) => {
-    if (isAuthExempt(config.url)) {
-      console.log('[axios][request] exempt:', config.url)
-
-      return config
-    }
+    if (isAuthExempt(config.url)) return config
+    
     const access = tokenStore.get()
     if (access) {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${access}`
-      console.log('[axios][request]', config.method, config.url, 'Authorization attached')
     } else {
-      console.log('[axios][request]', config.method, config.url, 'NO ACCESS TOKEN')
     }
     return config
   })
