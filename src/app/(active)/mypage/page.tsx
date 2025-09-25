@@ -130,13 +130,14 @@ export default function MyPageContent() {
       .finally(() => setIsLoading(false))
   }, [active, page])
 
-  const isMobile = useIsMobile()
+  const { isMobile, isTablet, isPc }  = useIsMobile()
 
   return (
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
       {/* 상단 영역 */}
-      <div className={cn("gap-4", isMobile ? "flex flex-col" : "grid grid-cols-4 gap-x-8")}>
-        <div className={cn("bg-placeholder relative aspect-square overflow-hidden rounded-full", isMobile ? "w-24 mx-auto" : "w-full mx-0")}>
+      <div className={cn("gap-4", isMobile && "flex flex-col", isTablet && "flex flex-col gap-x-6", isPc && "grid grid-cols-4 gap-x-8")}>
+        <div className={cn("bg-placeholder relative aspect-square overflow-hidden rounded-full", isMobile && "w-24 mx-auto",
+          isTablet && "min-w-32 w-56 mx-auto", isPc && "w-full mx-0")}>
           <Image
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
@@ -145,8 +146,9 @@ export default function MyPageContent() {
           />
         </div>
 
-        <div className={cn("flex flex-col gap-y-4", !isMobile && "col-span-3")}>
-          <div className={cn("font-extrabold", isMobile ? "flex flex-col items-center gap-3 text-center text-xl" : "flex flex-row items-center justify-between text-left text-3xl")}>
+        <div className={cn("flex flex-col gap-y-4", isTablet && "col-span-3", isPc && "col-span-3")}>
+          <div className={cn("font-extrabold", isMobile && "flex flex-col items-center gap-3 text-center text-xl",
+            isTablet && "flex flex-row items-center justify-between text-2xl", isPc && "flex flex-row items-center justify-between text-left text-3xl")}>
             <div className="text-foreground">
               안녕하세요, <span className="text-secondary-royal">{user?.nickname}</span> 님
             </div>
@@ -163,7 +165,7 @@ export default function MyPageContent() {
                 onClick={() => setOpenEdit(true)}
                 className="hover:shadow-badge text-primary-black hover:text-primary-white border bg-white font-semibold hover:bg-gray-300"
               >
-                나의 정보확인하기
+                나의 정보 확인하기
               </Button>
             </div>
           </div>
@@ -172,18 +174,18 @@ export default function MyPageContent() {
           <div className="bg-secondary-light flex grow flex-col gap-y-2 rounded-xl p-4">
             <div className="text-primary-white flex items-center gap-x-2">
               <Wallet />
-              <span className={cn("font-bold", isMobile ? "text-xl" : "text-2xl")}>나의 보유 퐁</span>
+              <span className={cn("font-bold", isMobile && "text-xl", isTablet && "text-2xl", isPc && "text-3xl")}>나의 보유 퐁</span>
             </div>
             <div className="bg-primary-white flex grow gap-x-4 rounded-lg p-4">
               {/* 일반 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Droplet className="text-secondary-royal" />
-                  <span className={cn("font-bold", isMobile ? "text-sm" : "text-base")}>일반 퐁</span>
+                  <span className={cn("font-bold", isMobile && "text-sm", isTablet && "text-base", isPc && "text-lg")}>일반 퐁</span>
                 </div>
                 <div className="mr-4 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className={cn("text-secondary-navy", isMobile ? "text-2xl" : "text-5xl")}>{user?.pong_balance?.toLocaleString() ?? 0}</span>
-                  <span className={cn("text-secondary-royal", isMobile ? "text-xl" : "text-4xl")}>퐁</span>
+                  <span className={cn("text-secondary-navy", isMobile && "text-2xl", isTablet && "text-4xl", isPc && "text-5xl")}>{user?.pong_balance?.toLocaleString() ?? 0}</span>
+                  <span className={cn("text-secondary-royal", isMobile && "text-xl", isTablet && "text-3xl", isPc && "text-4xl")}>퐁</span>
                 </div>
               </div>
 
@@ -193,11 +195,11 @@ export default function MyPageContent() {
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Heart className="text-secondary-red" />
-                  <span className={cn("font-bold", isMobile ? "text-sm" : "text-base")}>기부 퐁</span>
+                  <span className={cn("font-bold", isMobile && "text-sm", isTablet && "text-base", isPc && "text-base")}>기부 퐁</span>
                 </div>
                 <div className="mr-8 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className={cn("text-secondary-navy", isMobile ? "text-2xl" : "text-5xl")}>{user?.dona_balance?.toLocaleString() ?? 0}</span>
-                  <span className={cn("text-secondary-red", isMobile ? "text-xl" : "text-4xl")}>퐁</span>
+                  <span className={cn("text-secondary-navy", isMobile && "text-2xl", isTablet && "text-4xl", isPc && "text-5xl")}>{user?.dona_balance?.toLocaleString() ?? 0}</span>
+                  <span className={cn("text-secondary-red", isMobile && "text-xl", isTablet && "text-3xl", isPc && "text-4xl")}>퐁</span>
                 </div>
               </div>
             </div>
