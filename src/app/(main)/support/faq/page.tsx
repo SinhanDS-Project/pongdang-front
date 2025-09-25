@@ -77,7 +77,7 @@ export default function FaqPage() {
 
   /* ── 렌더링 ───────────────────────── */
   return (
-    <main className="mx-auto max-w-4xl space-y-8 p-6">
+    <main className="space-y-12">
       {faqLoading && <p className="text-gray-500">FAQ 불러오는 중…</p>}
       {faqError && <p className="text-sm text-red-600">{faqError}</p>}
 
@@ -86,12 +86,12 @@ export default function FaqPage() {
           {faqItems.length === 0 ? (
             <p className="text-sm text-gray-500">등록된 FAQ가 없습니다.</p>
           ) : (
-            <Accordion type="single" collapsible className="w-full divide-y rounded-lg border bg-white shadow-sm">
+            <Accordion type="single" collapsible className="w-full divide-y rounded-lg">
               {faqItems.map((it, idx) => {
                 const detail = detailMap[it.id]
                 return (
-                  <AccordionItem key={it.id} value={`faq-${it.id}`} onClick={() => loadDetail(it.id)} className="px-4">
-                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-lg font-medium text-gray-800 no-underline hover:bg-gray-100 hover:text-gray-800 hover:no-underline focus:ring-0 focus:outline-none">
+                  <AccordionItem key={it.id} value={`faq-${it.id}`} onClick={() => loadDetail(it.id)}>
+                    <AccordionTrigger className="flex w-full items-center justify-between py-4 text-lg font-extrabold no-underline hover:no-underline focus:ring-0 focus:outline-none">
                       <span className="truncate">{`Q${idx + 1}. ${it.title}`}</span>
                     </AccordionTrigger>
 
@@ -113,9 +113,9 @@ export default function FaqPage() {
                       )}
                       {!detail?.loading && !detail?.error && (
                         <article
-                          className="prose prose-sm max-w-none leading-relaxed text-gray-700"
+                          className="mt-4 max-w-none text-base leading-relaxed font-medium text-gray-700"
                           dangerouslySetInnerHTML={{
-                            __html: detail?.html || "<p class='text-sm text-gray-500'>내용이 없습니다.</p>",
+                            __html: detail?.html || "<p class=' text-base text-gray-500'>내용이 없습니다.</p>",
                           }}
                         />
                       )}
