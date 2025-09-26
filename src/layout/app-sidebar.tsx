@@ -34,7 +34,7 @@ import { apiPublic } from '@/lib/net/client-axios'
 import { tokenStore } from '@/stores/token-store'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isMobile } = useSidebar()
+  const { isMobileOrTablet } = useSidebar()
 
   const { user } = useMe()
 
@@ -189,7 +189,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
+                side={isMobileOrTablet ? 'bottom' : 'right'}
                 align="end"
                 sideOffset={4}
               >
