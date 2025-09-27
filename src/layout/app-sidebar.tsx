@@ -196,7 +196,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
+                    <AvatarImage src={user?.profile_img || '/placeholder-banner.png'} alt="@shadcn" />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
