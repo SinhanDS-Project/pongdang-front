@@ -23,7 +23,7 @@ export type Step1 = z.infer<typeof step1Schema>
  */
 export const step2Schema = z.object({
   current_saving: z.number(),
-  loan: z.boolean().optional(), // true: 대출 있음 / false: 없음
+  loan: z.enum(['있음', '없음']).optional(), // true: 대출 있음 / false: 없음
 })
 
 export type Step2 = z.infer<typeof step2Schema>
@@ -33,7 +33,7 @@ export type Step2 = z.infer<typeof step2Schema>
  * Step 3: 목표 저축액 & 투자 성향
  * - saving_goal: 목표 저축액
  * - invest_type: 투자 성향 ('안정형'|'중립형'|'공격형')
- * - goal_term: 
+ * - goal_term:
  */
 export const step3Schema = z.object({
   saving_goal: z.number().min(0, '목표 저축액은 0 이상이어야 합니다.'),
