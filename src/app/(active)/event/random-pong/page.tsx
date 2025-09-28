@@ -3,42 +3,41 @@
 import { useState } from 'react'
 import { api } from '@/lib/net/client-axios'
 import axios from 'axios'
+import { Jua } from 'next/font/google'
+import { AnimatePresence, motion } from 'framer-motion'
+
+const jua = Jua({
+  subsets: ['latin'],
+  weight: ['400'],
+})
 
 type Bubble = {
   id: number
   top: string
   left: string
   size: number
-  amount: number // 0~5퐁
+  amount: number
+  revealed?: boolean
 }
 
 export default function RandomPongPage() {
   const [bubbles, setBubbles] = useState<Bubble[]>([])
   const [result, setResult] = useState<number | null>(null)
   const [message, setMessage] = useState('')
+  const [showCelebration, setShowCelebration] = useState(false) // 🎉 모달 상태
 
-  // 물방울 생성 (8개 고정)
+  // 물방울 생성
   const generateBubbles = (container: HTMLDivElement | null) => {
     if (!container) return
-
     const { clientWidth, clientHeight } = container
-
-    // 1~5퐁, 꽝 3개
     const values = [1, 2, 3, 4, 5, 0, 0, 0]
     const shuffled = values.sort(() => Math.random() - 0.5)
 
     const randomBubbles: Bubble[] = shuffled.map((amount, i) => {
-      const size = Math.floor(Math.random() * 60) + 50
+      const size = Math.floor(Math.random() * 60) + 80
       const topPx = Math.random() * (clientHeight - size)
       const leftPx = Math.random() * (clientWidth - size)
-
-      return {
-        id: i,
-        top: `${topPx}px`,
-        left: `${leftPx}px`,
-        size,
-        amount,
-      }
+      return { id: i, top: `${topPx}px`, left: `${leftPx}px`, size, amount, revealed: false }
     })
 
     setBubbles(randomBubbles)
@@ -46,37 +45,37 @@ export default function RandomPongPage() {
     setMessage('💧 마음에 드는 물방울을 하나 골라보세요!')
   }
 
-  // 클릭 → 당첨 처리
+  // 클릭 시 처리
   const handleClick = async (bubble: Bubble) => {
     try {
-      // 무조건 서버에 시도 (당첨/꽝 관계없이)
+      // 🎯 꽝이라도 무조건 API 호출 (참여 여부 서버에서 체크)
       await api.put('/api/wallet/add', {
         amount: bubble.amount,
         wallet_type: 'PONG',
         event_type: 'BUBBLE',
       })
 
-      // 서버에서 OK 주면 → 클라이언트 분기
-      if (bubble.amount === 0) {
-        setResult(0)
-        setMessage('😢 아쉽습니다! 꽝이에요.')
-      } else {
-        setResult(bubble.amount)
-        setMessage('🎉 축하합니다!')
-      }
+      // ✅ 성공했으면 결과 반영
+      setResult(bubble.amount)
+      setMessage(bubble.amount === 0 ? '😢 아쉽습니다! 꽝이에요.' : '🎉 축하합니다!')
+      setBubbles((prev) => prev.map((b) => ({ ...b, revealed: true })))
 
-      // 클릭한 버블 제거
-      setBubbles((prev) => prev.filter((b) => b.id !== bubble.id))
+      if (bubble.amount > 0) {
+        setShowCelebration(true)
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status
         const errorCode = err.response?.data?.error
         const errorMessage = err.response?.data?.message
 
-        if (errorCode === 'ALREADY_BUBBLE_FINISHED') {
-          setMessage(`⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.`)
-        } else if (status === 409) {
+        if (status === 409 && errorCode === 'ALREADY_BUBBLE_FINISHED') {
+          // ✅ 이미 참여했을 때
+          setResult(null)
           setMessage('⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.')
+          setBubbles([]) // 물방울 초기화
+        } else if (status === 401) {
+          setMessage('🔑 로그인 후 이용해주세요.')
         } else {
           setMessage(errorMessage ?? '적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
         }
@@ -87,53 +86,111 @@ export default function RandomPongPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white p-6">
-      {/* 제목 */}
-      <h1 className="mb-4 bg-gradient-to-r from-sky-500 to-indigo-400 bg-clip-text text-center text-5xl font-extrabold tracking-tight text-transparent drop-shadow-lg">
-        랜덤 퐁 터트리기
-      </h1>
-      <p className="mb-6 text-center text-lg text-gray-600">물방울 속 퐁을 찾아보세요!</p>
+    <main className="flex min-h-screen flex-col items-center justify-start bg-sky-50 p-6">
+      <div className="mt-8 flex flex-col items-center">
+        {/* 제목 */}
+        <h1
+          className={`mb-8 text-center text-6xl font-extrabold tracking-tight text-sky-600 drop-shadow ${jua.className}`}
+        >
+          💧랜덤 퐁 터트리기💧
+        </h1>
+
+        {/* 시작 버튼 */}
+        <button
+          onClick={() => generateBubbles(document.getElementById('bubble-zone') as HTMLDivElement)}
+          className="group relative mb-8 overflow-hidden rounded-full bg-sky-500 px-12 py-4 text-xl font-bold text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+        >
+          <span className="absolute inset-0 bg-sky-400 opacity-0 transition-opacity duration-500 group-hover:opacity-40"></span>
+          <span className="relative z-10 flex items-center gap-2">
+            <span>랜덤 물방울 뿌리기</span>
+          </span>
+        </button>
+      </div>
 
       {/* 물방울 영역 */}
       <div
         id="bubble-zone"
-        className="relative h-[500px] w-full max-w-2xl overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-b from-white to-sky-50 shadow-lg"
+        className="relative h-[500px] w-full max-w-2xl overflow-hidden rounded-3xl border bg-white shadow-xl"
       >
         {bubbles.map((bubble) => (
-          <button
+          <div
             key={bubble.id}
-            onClick={() => handleClick(bubble)}
-            className="absolute rounded-full shadow-lg transition hover:scale-110 hover:brightness-110"
+            className={`absolute flex items-center justify-center rounded-full shadow-md transition-all ${
+              bubble.revealed ? 'pointer-events-none' : 'hover:scale-110 active:scale-95'
+            }`}
             style={{
               top: bubble.top,
               left: bubble.left,
               width: bubble.size,
               height: bubble.size,
-              background: 'radial-gradient(circle at 30% 30%, #ffffffaa, #60a5fa)',
+              background: bubble.revealed ? 'transparent' : 'radial-gradient(circle at 30% 30%, #ffffffdd, #60a5fa)',
             }}
+            onClick={() => !bubble.revealed && handleClick(bubble)}
           >
-            <span className="pointer-events-none absolute top-1 left-2 h-1/3 w-1/3 rounded-full bg-white/50 blur-md"></span>
-          </button>
+            {!bubble.revealed && (
+              <span className="pointer-events-none absolute top-1 left-2 h-1/3 w-1/3 rounded-full bg-white/60 blur-md"></span>
+            )}
+            {bubble.revealed && (
+              <span className="animate-pop z-10 text-xl font-bold text-sky-700">
+                {bubble.amount === 0 ? '꽝' : `${bubble.amount} 퐁`}
+              </span>
+            )}
+          </div>
         ))}
       </div>
 
-      {/* 버튼 */}
-      <button
-        onClick={() => generateBubbles(document.getElementById('bubble-zone') as HTMLDivElement)}
-        className="mt-8 rounded-full bg-gradient-to-r from-sky-400 to-indigo-400 px-8 py-3 text-lg font-bold text-white shadow-md transition hover:scale-105 hover:from-sky-600 hover:to-indigo-600"
-      >
-        💧 랜덤 물방울 뿌리기
-      </button>
-
-      {/* 결과 */}
-      {message && (
-        <div className="mt-6 rounded-xl border border-indigo-200 bg-white/90 px-6 py-4 text-center shadow-md">
-          <p className="text-xl font-semibold text-indigo-700">{message}</p>
-          {result !== null && result > 0 && (
-            <p className="mt-2 text-2xl font-bold text-indigo-600">{result} 퐁 적립되었습니다!</p>
-          )}
+      {/* 결과 메시지 */}
+      {message && result === 0 && (
+        <div className="mt-8 w-full max-w-md rounded-2xl border bg-white px-6 py-5 text-center shadow-md">
+          <p className="text-xl font-semibold text-sky-700">{message}</p>
         </div>
       )}
+
+      {message && result === null && (
+        <div className="mt-8 w-full max-w-md rounded-2xl border bg-white px-6 py-5 text-center shadow-md">
+          <p className="text-xl font-semibold text-sky-700">{message}</p>
+        </div>
+      )}
+
+      {/* 퐁 적립 축하 모달 */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/70"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: [0, 1.2, 1], opacity: [0, 1, 1] }}
+              transition={{ duration: 0.8 }}
+              className="flex h-40 w-40 items-center justify-center rounded-full bg-blue-500 shadow-2xl"
+            >
+              <span className="text-5xl">🤍</span>
+            </motion.div>
+
+            <motion.h2
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, type: 'spring' }}
+              className="mt-6 text-center text-3xl font-extrabold text-white drop-shadow-lg"
+            >
+              {result} 퐁 적립 완료! 🎉
+            </motion.h2>
+
+            <motion.button
+              onClick={() => setShowCelebration(false)}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 1 }}
+              className="mt-6 rounded-full bg-sky-500 px-8 py-3 font-semibold text-white shadow-lg hover:bg-sky-600"
+            >
+              확인
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }
