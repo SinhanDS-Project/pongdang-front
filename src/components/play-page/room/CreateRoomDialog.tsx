@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useMe } from '@/hooks/use-me'
 import { useRouter } from 'next/navigation'
 
 /* -------------------- 타입/스키마 -------------------- */
@@ -51,6 +52,8 @@ type Props = {
 }
 
 export function CreateRoomDialog({ open, onOpenChange }: Props) {
+  const { user } = useMe()
+
   const form = useForm<CreateRoomValues>({
     resolver: zodResolver(CreateRoomSchema),
     defaultValues: { title: '', game_level_id: 0 },
@@ -71,6 +74,8 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
   const [levels, setLevels] = useState<LevelItem[]>([])
 
   const [autoLevelNote, setAutoLevelNote] = useState<string | null>(null)
+
+  const [errorMsg, setErrorMsg] = useState<string>('')
 
   const selectedLevelId = form.watch('game_level_id')
 
@@ -133,6 +138,13 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
       return
     }
 
+    const selectedLevel = levels.find((level) => level.id === values.game_level_id)
+
+    if (selectedLevel && selectedLevel.entry_fee > (user?.pong_balance ?? 0)) {
+      setErrorMsg('퐁이 부족합니다. 보유 퐁을 확인하세요.')
+      return
+    }
+
     setSubmitting(true)
     try {
       const { data } = await api.post('/api/gameroom', {
@@ -162,6 +174,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
           form.reset({ title: '', game_level_id: 0 })
           setSelectedGameId(null)
           setLevels([])
+          setErrorMsg('')
         }
       }}
     >
@@ -286,6 +299,7 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
                   )}
                 </div>
               </div>
+              <div className="h-4 text-end text-xs text-red-600">{errorMsg}</div>
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={submitting} className="bg-secondary-royal hover:bg-secondary-sky">
                   {submitting ? '생성중…' : '방만들기'}
