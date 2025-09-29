@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
+import { useRouter } from 'next/navigation'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -82,7 +83,6 @@ function Overview({
   onEditPassword: () => void
   onWithdrawDone: () => void
 }) {
-  
   const { user } = useMe()
 
   return (
@@ -484,13 +484,17 @@ function Success({ onClose }: { onClose: () => void }) {
 }
 
 function Withdraw({ onClose }: { onClose: () => void }) {
+  const route = useRouter()
   const [submitting, setSubmitting] = useState(false)
 
   const onClick = async () => {
     setSubmitting(true)
     try {
       await unregisterAccount()
+
       onClose()
+
+      route.replace('/')
     } finally {
       setSubmitting(false)
     }

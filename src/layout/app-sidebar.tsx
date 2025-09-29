@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import * as React from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -45,6 +45,8 @@ import { apiPublic } from '@/lib/net/client-axios'
 import { tokenStore } from '@/stores/token-store'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const route = useRouter()
+
   const { isMobile } = useSidebar()
 
   const { user } = useMe()
@@ -56,6 +58,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         withCredentials: true,
         headers: access ? { Authorization: `Bearer ${access}` } : undefined,
       })
+
+      route.replace('/')
     } catch {}
     tokenStore.clear()
     await revalidateMe()
