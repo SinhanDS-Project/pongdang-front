@@ -2,21 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/net/client-axios'
-import type { Board } from '@/components/board-page/types'
+import type { Board } from '@/types/board'
+import type { PageResp } from '@/types/board'
 import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
 import BoardTabs from '@/components/board-page/BoardTabs'
+import { useMe } from '@/hooks/use-me'
 
-// API 응답 타입
-type PageResp = {
-  boards: {
-    content: Board[]
-    total_pages: number
-    number: number
-  }
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
@@ -35,10 +39,14 @@ export default function FreePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  //  정렬 상태
+  // 정렬 상태
   const [sort, setSort] = useState<'createdAt' | 'viewCount' | 'likeCount'>('createdAt')
 
   const router = useRouter()
+  const { user } = useMe()
+
+  // 모달 열림 상태
+  const [openLoginModal, setOpenLoginModal] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -47,7 +55,7 @@ export default function FreePage() {
       setError(null)
       try {
         const { data } = await api.get<PageResp>('/api/board', {
-          params: { page, category: 'FREE', sort, size: pageSize }, //  sort 포함
+          params: { page, category: 'FREE', sort, size: pageSize },
         })
         if (!alive) return
         setItems(data.boards?.content ?? [])
@@ -82,7 +90,13 @@ export default function FreePage() {
           variant="FREE"
           basePath="/board/free"
           onSortChange={setSort}
-          onWriteClick={() => router.push('/board/write')}
+          onWriteClick={() => {
+            if (!user) {
+              setOpenLoginModal(true)
+              return
+            }
+            router.push('/board/write')
+          }}
         />
       )}
 
@@ -92,6 +106,29 @@ export default function FreePage() {
           <PongPagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
       </div>
+
+      {/* 글쓰기 -  로그인 필요 모달 */}
+      <AlertDialog open={openLoginModal} onOpenChange={setOpenLoginModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              글쓰기를 하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소하기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                router.push('/signin')
+              }}
+              className="bg-secondary-royal hover:bg-secondary-navy"
+            >
+              로그인하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

@@ -9,6 +9,8 @@ export type Board = {
   like_count: number
   view_count: number
   user_id: number
+  reply_count: number
+  profile_image: string
 }
 
 export type Reply = {
@@ -17,4 +19,14 @@ export type Reply = {
   created_at: string
   writer: string
   user_id: number
+  profile_image: string
+}
+
+// API 응답 타입
+export type PageResp = {
+  boards: {
+    content: Board[]
+    total_pages: number
+    number: number
+  }
 }
