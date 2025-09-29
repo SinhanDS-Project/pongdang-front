@@ -1,10 +1,10 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import Image from 'next/image'
 import { Progress } from '@/components/ui/progress'
-import { useCallback } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
 
 export type DonationInfo = {
   id: number
@@ -35,32 +35,30 @@ export default function DonationCard({ donation }: DonationCardProps) {
 
   return (
     <Card
-      className="hover:shadow-badge block cursor-pointer overflow-hidden rounded-xl transition-shadow"
+      className="hover:shadow-badge block rounded-xl p-2.5 transition-shadow"
       onClick={() => router.push(`/donation/${donation.id}`)}
     >
-      {/* 이미지 */}
-      <div className="relative aspect-[4/3] w-full">
-        <Image
-          src={imgSrc}
-          alt={donation.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-      </div>
+      <CardContent className="flex flex-col gap-y-2 p-0">
+        {/* 이미지 */}
+        <div className="bg-placeholder relative aspect-[4/3] w-full overflow-hidden rounded">
+          <Image
+            src={imgSrc}
+            alt={donation.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </div>
+        <div className="line-clamp-1 text-base font-semibold sm:text-lg">{donation.title}</div>
 
-      {/* 본문 */}
-      <CardContent className="flex flex-col gap-y-2 p-3">
-        <div className="line-clamp-1 text-base font-semibold">{donation.title}</div>
-
-        <div className="flex items-center justify-between text-xs font-medium text-blue-600">
-          <span>모인 기부퐁</span>
+        <div className="flex items-center justify-between text-sm text-blue-600">
+          <span className="font-semibold">모인 기부퐁</span>
           <span className="text-gray-600">
             {fmt(currentPong)} / {fmt(goalPong)} 퐁
           </span>
         </div>
 
-        <Progress value={percent} className="h-2 bg-gray-200" />
+        <Progress value={percent} className="mb-2 h-2 bg-gray-200" />
       </CardContent>
     </Card>
   )
