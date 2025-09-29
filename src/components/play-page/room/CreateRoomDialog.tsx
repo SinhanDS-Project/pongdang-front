@@ -140,7 +140,12 @@ export function CreateRoomDialog({ open, onOpenChange }: Props) {
 
     const selectedLevel = levels.find((level) => level.id === values.game_level_id)
 
-    if (selectedLevel && selectedLevel.entry_fee > (user?.pong_balance ?? 0)) {
+    if (!selectedLevel) {
+      setErrorMsg('유효하지 않은 난이도입니다. 다시 시도해주세요.')
+      return
+    }
+
+    if (selectedLevel.entry_fee > (user?.pong_balance ?? 0)) {
       setErrorMsg('퐁이 부족합니다. 보유 퐁을 확인하세요.')
       return
     }
