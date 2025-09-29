@@ -30,7 +30,7 @@ export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex flex-col max-h-[90dvh] w-[calc(100%-1rem)] h-full max-w-lg rounded-2xl shadow-xl p-0">
+      <DialogContent className="max-w-lg rounded-2xl p-6 shadow-xl">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-2xl font-extrabold tracking-tight">{chatLog.title}</DialogTitle>
         </DialogHeader>
