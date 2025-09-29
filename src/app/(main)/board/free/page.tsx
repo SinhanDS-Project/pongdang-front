@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/net/client-axios'
 import type { Board } from '@/types/board'
+import type { PageResp } from '@/types/board'
 import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
@@ -20,15 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-
-// API 응답 타입
-type PageResp = {
-  boards: {
-    content: Board[]
-    total_pages: number
-    number: number
-  }
-}
 
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
