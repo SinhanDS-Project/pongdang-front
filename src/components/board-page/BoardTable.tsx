@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { Board } from '@/components/board-page/types'
+import type { Board } from '@/types/board'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type Props = {
@@ -101,7 +101,7 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
         <TableBody>
           {items.map((item, idx) => {
             const no = (page - 1) * pageSize + idx + 1
-            const href = `/board/${item.id}`
+            const href = `/board/${item.id}?category=${variant}`
 
             return (
               <TableRow
@@ -117,6 +117,9 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
                   <Link href={href} className="inline-block hover:underline">
                     {item.title}
                   </Link>
+                  {variant === 'FREE' && item.reply_count !== undefined && (
+                    <span className="ml-2 text-sm text-gray-500">[{item.reply_count}]</span>
+                  )}
                 </TableCell>
 
                 <TableCell className="text-center">{item.nickname}</TableCell>
