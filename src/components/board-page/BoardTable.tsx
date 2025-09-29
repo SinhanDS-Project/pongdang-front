@@ -77,39 +77,29 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
       )}
 
       <Table className="w-full table-auto text-sm sm:text-base">
-        <TableHeader>
-          <TableRow>
-            {variant === 'FREE' && (
-              <>
-                <TableHead className="text-center">No</TableHead>
-                <TableHead className="text-center">제목</TableHead>
-                <TableHead className="text-center">작성자</TableHead>
-                <TableHead className="hidden text-center sm:table-cell">
-                  <div className="flex items-center justify-center gap-1">
-                    <Eye className="h-4 w-4 text-gray-500" />
-                    <span>조회수</span>
-                  </div>
-                </TableHead>
-                <TableHead className="hidden text-center sm:table-cell">
-                  <div className="flex items-center justify-center gap-1">
-                    <Heart className="h-4 w-4 text-pink-500" />
-                    <span>좋아요</span>
-                  </div>
-                </TableHead>
-                <TableHead className="hidden text-center sm:table-cell">작성일</TableHead>
-              </>
-            )}
-
-            {variant === 'NOTICE' && (
-              <>
-                <TableHead className="hidden text-center sm:table-cell">No</TableHead>
-                <TableHead className="hidden text-center sm:table-cell">제목</TableHead>
-                <TableHead className="hidden text-center sm:table-cell">작성자</TableHead>
-                <TableHead className="hidden text-center sm:table-cell">작성일</TableHead>
-              </>
-            )}
-          </TableRow>
-        </TableHeader>
+        {/* FREE일 때만 헤더 출력 */}
+        {variant === 'FREE' && (
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">No</TableHead>
+              <TableHead className="text-center">제목</TableHead>
+              <TableHead className="text-center">작성자</TableHead>
+              <TableHead className="hidden text-center sm:table-cell">
+                <div className="flex items-center justify-center gap-1">
+                  <Eye className="h-4 w-4 text-gray-500" />
+                  <span>조회수</span>
+                </div>
+              </TableHead>
+              <TableHead className="hidden text-center sm:table-cell">
+                <div className="flex items-center justify-center gap-1">
+                  <Heart className="h-4 w-4 text-pink-500" />
+                  <span>좋아요</span>
+                </div>
+              </TableHead>
+              <TableHead className="hidden text-center sm:table-cell">작성일</TableHead>
+            </TableRow>
+          </TableHeader>
+        )}
 
         <TableBody>
           {items.map((item, idx) => {
