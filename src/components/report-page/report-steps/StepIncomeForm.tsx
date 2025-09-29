@@ -117,7 +117,7 @@ export function StepIncomeForm() {
                 가장 큰 소비 항목은 무엇인가요?
                 <HoverCard>
                   <HoverCardTrigger asChild className="">
-                    <div className="text-xs font-light hover:underline">소비 항목</div>
+                    <div className="text-xs font-light underline hover:font-normal">소비 항목 상세</div>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <div className="overflow-x-auto rounded-lg border">

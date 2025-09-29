@@ -2,6 +2,8 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 import { AlertCircle, MessageCircle, Reply } from 'lucide-react'
 
 type ChatLog = {
@@ -28,9 +30,13 @@ function formatDate(date: string | Date) {
 export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
   if (!chatLog) return null
 
+  // 모바일 모드 && 가로 모드
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg rounded-2xl p-6 shadow-xl">
+      <DialogContent className={cn("max-w-lg rounded-2xl p-6 shadow-xl max-h-[90dvh]", isMobile ? "w-full h-[90dvh]" : "w-[calc(100%-1rem)]", isMobileLandscape && "overflow-y-auto h-full")}>
         <DialogHeader className="mb-4">
           <DialogTitle className="text-2xl font-extrabold tracking-tight">{chatLog.title}</DialogTitle>
         </DialogHeader>

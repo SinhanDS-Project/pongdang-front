@@ -166,16 +166,25 @@ export async function findPasswordRequestEmailCode(email: string) {
   return data
 }
 
-export async function changeNickname(newNickname: string) {
-  const res = await api.put('/api/user/update', { new_nickname: newNickname })
-
-  return res
+type UserUpdateRequest = {
+  password?: string
+  new_password?: string
+  new_nickname?: string
 }
 
-export async function changePassword(params: { oldPassword: string; newPassword: string }) {
-  const res = await api.put('/api/user/update', { password: params.oldPassword, new_password: params.newPassword })
+export async function changeProfile({ file, userRequest }: { file?: File; userRequest?: UserUpdateRequest }) {
+  const fd = new FormData()
 
-  return res
+  const safeJson = JSON.stringify(userRequest ?? {})
+  fd.append('userRequest', new Blob([safeJson], { type: 'application/json' }))
+
+  if (file) {
+    fd.append('profile_image', file, file.name)
+  }
+
+  const { data } = await api.put('/api/user/update', fd)
+
+  return data
 }
 
 export async function unregisterAccount(): Promise<void> {

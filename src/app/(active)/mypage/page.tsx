@@ -2,7 +2,7 @@
 
 import { Droplet, Heart, Wallet } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import ChangePongModal from '@/components/my-page/ChangePongModal'
 import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
@@ -14,7 +14,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
 
+import { changeProfile } from '@/features/auth'
 import { useMe } from '@/hooks/use-me'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 /* ── 타입 ───────────────────────── */
 type TabKey = 'pong' | 'donate' | 'purchase' | 'chatlog'
@@ -65,7 +67,7 @@ const HISTORY_LABELS: Record<string, string> = {
 }
 
 export default function MyPageContent() {
-  const { user } = useMe()
+  const { user, mutate } = useMe()
 
   const [openEdit, setOpenEdit] = useState<boolean>(false)
   const [openChange, setOpenChange] = useState<boolean>(false)
@@ -73,6 +75,9 @@ export default function MyPageContent() {
   // 상태
   const [isError, setIsError] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   const [active, setActive] = useState<TabKey>('pong')
   const [page, setPage] = useState(1)
@@ -85,6 +90,29 @@ export default function MyPageContent() {
   const [selectedChatLog, setSelectedChatLog] = useState<ChatLogType | null>(null)
 
   const size = 10
+
+  const handleClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) return
+
+    try {
+      setUploading(true)
+
+      await changeProfile({ file: file })
+
+      await mutate()
+    } catch (e: any) {
+      alert(e?.response?.data?.message ?? '저장 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // API 호출
   useEffect(() => {
@@ -130,21 +158,63 @@ export default function MyPageContent() {
       .finally(() => setIsLoading(false))
   }, [active, page])
 
+  const { isMobile, isTablet, isPc } = useIsMobile()
+
   return (
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
       {/* 상단 영역 */}
-      <div className="grid grid-cols-4 gap-x-8">
-        <div className="bg-placeholder relative aspect-square w-full overflow-hidden rounded-full">
+      <div
+        className={cn(
+          'gap-4',
+          isMobile && 'flex flex-col',
+          isTablet && 'flex flex-col gap-x-6',
+          isPc && 'grid grid-cols-4 gap-x-8',
+        )}
+      >
+        <div
+          className={cn(
+            'group relative aspect-square overflow-hidden rounded-full',
+            isMobile && 'mx-auto w-24',
+            isTablet && 'mx-auto w-56 min-w-32',
+            isPc && 'mx-0 w-full',
+          )}
+        >
           <Image
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
             fill
-            className="object-cover"
+            className="cursor-pointer object-cover"
           />
+
+          {/* 업로드 중 오버레이 */}
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center gap-x-2 bg-black/50 font-semibold text-white">
+              <div className="border-primary-white h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"></div>
+              업로드 중...
+            </div>
+          )}
+
+          {/* Hover 시 오버레이 */}
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/10 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+            onClick={handleClick}
+          >
+            <span className="text-xs font-bold md:text-sm">이미지 변경</span>
+          </div>
+
+          {/* 숨겨진 파일 입력 */}
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
 
-        <div className="col-span-3 flex flex-col gap-y-4">
-          <div className="flex w-full items-center justify-between gap-2 text-3xl font-extrabold">
+        <div className={cn('flex flex-col gap-y-4', isTablet && 'col-span-3', isPc && 'col-span-3')}>
+          <div
+            className={cn(
+              'font-extrabold',
+              isMobile && 'flex flex-col items-center gap-3 text-center text-xl',
+              isTablet && 'flex flex-row items-center justify-between text-2xl',
+              isPc && 'flex flex-row items-center justify-between text-left text-3xl',
+            )}
+          >
             <div className="text-foreground">
               안녕하세요, <span className="text-secondary-royal">{user?.nickname}</span> 님
             </div>
@@ -161,7 +231,7 @@ export default function MyPageContent() {
                 onClick={() => setOpenEdit(true)}
                 className="hover:shadow-badge text-primary-black hover:text-primary-white border bg-white font-semibold hover:bg-gray-300"
               >
-                나의 정보확인하기
+                나의 정보 확인하기
               </Button>
             </div>
           </div>
@@ -170,18 +240,40 @@ export default function MyPageContent() {
           <div className="bg-secondary-light flex grow flex-col gap-y-2 rounded-xl p-4">
             <div className="text-primary-white flex items-center gap-x-2">
               <Wallet />
-              <span className="text-2xl font-bold">나의 보유 퐁</span>
+              <span className={cn('font-bold', isMobile && 'text-xl', isTablet && 'text-2xl', isPc && 'text-3xl')}>
+                나의 보유 퐁
+              </span>
             </div>
             <div className="bg-primary-white flex grow gap-x-4 rounded-lg p-4">
               {/* 일반 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Droplet className="text-secondary-royal" />
-                  <span className="text-base font-bold">일반 퐁</span>
+                  <span className={cn('font-bold', isMobile && 'text-sm', isTablet && 'text-base', isPc && 'text-lg')}>
+                    일반 퐁
+                  </span>
                 </div>
                 <div className="mr-4 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.pong_balance?.toLocaleString() ?? 0}</span>
-                  <span className="text-secondary-royal text-4xl">퐁</span>
+                  <span
+                    className={cn(
+                      'text-secondary-navy',
+                      isMobile && 'text-2xl',
+                      isTablet && 'text-4xl',
+                      isPc && 'text-5xl',
+                    )}
+                  >
+                    {user?.pong_balance?.toLocaleString() ?? 0}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-secondary-royal',
+                      isMobile && 'text-xl',
+                      isTablet && 'text-3xl',
+                      isPc && 'text-4xl',
+                    )}
+                  >
+                    퐁
+                  </span>
                 </div>
               </div>
 
@@ -191,11 +283,33 @@ export default function MyPageContent() {
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Heart className="text-secondary-red" />
-                  <span className="text-base font-bold">기부 퐁</span>
+                  <span
+                    className={cn('font-bold', isMobile && 'text-sm', isTablet && 'text-base', isPc && 'text-base')}
+                  >
+                    기부 퐁
+                  </span>
                 </div>
                 <div className="mr-8 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className="text-secondary-navy text-5xl">{user?.dona_balance?.toLocaleString() ?? 0}</span>
-                  <span className="text-secondary-red text-4xl">퐁</span>
+                  <span
+                    className={cn(
+                      'text-secondary-navy',
+                      isMobile && 'text-2xl',
+                      isTablet && 'text-4xl',
+                      isPc && 'text-5xl',
+                    )}
+                  >
+                    {user?.dona_balance?.toLocaleString() ?? 0}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-secondary-red',
+                      isMobile && 'text-xl',
+                      isTablet && 'text-3xl',
+                      isPc && 'text-4xl',
+                    )}
+                  >
+                    퐁
+                  </span>
                 </div>
               </div>
             </div>
@@ -219,7 +333,7 @@ export default function MyPageContent() {
                 setPage(1)
               }}
               className={cn(
-                'text-primary-white w-32 rounded-t-lg py-2.5 text-center text-xl font-semibold',
+                'text-primary-white text-md w-24 rounded-t-lg py-2.5 text-center font-semibold sm:w-28 sm:text-base md:w-32 md:text-lg lg:text-xl',
                 active === tap.key ? 'bg-secondary-sky' : 'bg-gray-300',
               )}
             >
@@ -323,7 +437,7 @@ function DonationHistory({ history, page, size }: { history: DonationHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell>{row.title}</TableCell>
+            <TableCell className="max-w-[200px] truncate">{row.title}</TableCell>
             <TableCell className="flex items-center justify-center gap-x-1 py-4 text-red-400">
               <Heart />
               <span className="font-bold">{row.amount}</span>
@@ -343,7 +457,7 @@ function PurchaseHistory({ history, page, size }: { history: PurchaseHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell className="py-4">{row.name}</TableCell>
+            <TableCell className="max-w-[200px] truncate py-4">{row.name}</TableCell>
             <TableCell className="font-bold">{row.price}</TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
           </TableRow>
@@ -370,7 +484,10 @@ function ChatLog({
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell onClick={() => onOpen(row)} className="cursor-pointer py-4 hover:font-bold hover:underline">
+            <TableCell
+              onClick={() => onOpen(row)}
+              className="max-w-[200px] cursor-pointer truncate py-4 hover:font-bold hover:underline"
+            >
               {row.title}
             </TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.chat_date)}</TableCell>

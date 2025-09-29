@@ -2,19 +2,22 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, CheckCircle, Eye, EyeOff, Loader2, UserIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
+
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
-import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
+import { changeProfile, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
-import { useRouter } from 'next/navigation'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -28,6 +31,8 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
   const { mutate } = useMe()
 
   const [panel, setPanel] = useState<Panel>('overview')
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
 
   // 닫히면 내부 상태 초기화
   const handleOpenChange = async (v: boolean) => {
@@ -38,21 +43,27 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl p-0 shadow-xl">
-        <div className="p-6">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-2xl font-extrabold tracking-tight">
-              {panel === 'overview'
-                ? '내 프로필'
-                : panel === 'nickname'
-                  ? '닉네임 변경'
-                  : panel === 'password'
-                    ? '비밀번호 변경'
-                    : panel === 'withdraw'
-                      ? '경고문'
-                      : '알림'}
-            </DialogTitle>
-          </DialogHeader>
+      <DialogContent
+        className={cn(
+          'flex min-h-[70dvh] max-w-xl flex-col rounded-2xl p-0 shadow-xl',
+          isMobile ? 'h-[90dvh] w-full' : 'w-full max-w-xl min-w-lg',
+          isMobileLandscape && 'h-full',
+        )}
+      >
+        <DialogHeader className="mb-4 shrink-0 p-6">
+          <DialogTitle className="text-2xl font-extrabold tracking-tight">
+            {panel === 'overview'
+              ? '내 프로필'
+              : panel === 'nickname'
+                ? '닉네임 변경'
+                : panel === 'password'
+                  ? '비밀번호 변경'
+                  : panel === 'withdraw'
+                    ? '경고문'
+                    : '알림'}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
           {panel === 'overview' && (
             <Overview
               onEditNickname={() => setPanel('nickname')}
@@ -200,7 +211,7 @@ function NicknameForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: ()
     try {
       setSubmitting(true)
 
-      await changeNickname(values.nickname)
+      await changeProfile({ userRequest: { new_nickname: values.nickname } })
 
       onSaved()
     } catch (e: any) {
@@ -333,7 +344,7 @@ function PasswordForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: ()
   async function onSubmit(values: PasswordFormData) {
     setSubmitting(true)
     try {
-      await changePassword({ oldPassword: values.password, newPassword: values.newPassword })
+      await changeProfile({ userRequest: { password: values.password, new_password: values.newPassword } })
 
       onSaved()
     } catch (e: any) {
