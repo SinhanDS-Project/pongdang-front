@@ -56,7 +56,7 @@ export default function BoardDetailPage() {
           // 실패 시 그냥 board API로
         }
 
-        // 2️⃣ 일반 게시글 API 호출
+        // 2 일반 게시글 API 호출
         try {
           const { data } = await api.get(`/api/board/${id}`)
           if (!alive) return
@@ -81,7 +81,7 @@ export default function BoardDetailPage() {
     }
   }, [id])
 
-  // 댓글 불러오기 (공지사항 제외)
+  // 댓글 불러오기 (자유게시판만)
   useEffect(() => {
     if (!id || !post || post.category === 'NOTICE') return
     ;(async () => {
@@ -113,7 +113,16 @@ export default function BoardDetailPage() {
 
               {/* 작성자 / 조회수 / 좋아요 / 작성일 */}
               <div className="mb-3 grid grid-cols-4 text-center text-sm text-gray-500">
-                <span>{post.nickname}</span>
+                {/* 작성자 + 프로필 */}
+                <span className="flex items-center justify-center gap-2">
+                  {post.profile_image ? (
+                    <img src={post.profile_image} alt={post.nickname} className="h-6 w-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-6 w-6 rounded-full bg-gray-300" /> // 기본 회색
+                  )}
+                  {post.nickname}
+                </span>
+
                 <span>조회수 {post.view_count ?? 0}</span>
                 <button
                   onClick={async () => {
