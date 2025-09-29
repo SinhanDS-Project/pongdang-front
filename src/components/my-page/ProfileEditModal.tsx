@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input'
 import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
+import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -27,6 +29,8 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
   const { mutate } = useMe()
 
   const [panel, setPanel] = useState<Panel>('overview')
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
 
   // 닫히면 내부 상태 초기화
   const handleOpenChange = async (v: boolean) => {
@@ -37,9 +41,8 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl p-0 shadow-xl">
-        <div className="p-6">
-          <DialogHeader className="mb-4">
+      <DialogContent className={cn("flex flex-col max-h-[90dvh] w-[calc(100%-1rem)] max-w-lg rounded-2xl p-0 shadow-xl", isMobileLandscape && "h-full")}>
+          <DialogHeader className="shrink-0 p-6 mb-4">
             <DialogTitle className="text-2xl font-extrabold tracking-tight">
               {panel === 'overview'
                 ? '내 프로필'
@@ -52,6 +55,7 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
                       : '알림'}
             </DialogTitle>
           </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: "touch" }}>
           {panel === 'overview' && (
             <Overview
               onEditNickname={() => setPanel('nickname')}

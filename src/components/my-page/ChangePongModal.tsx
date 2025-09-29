@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 
 import { useMe } from '@/hooks/use-me'
 import { api } from '@/lib/net/client-axios'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 
 type Panel = 'change' | 'success'
@@ -86,16 +88,19 @@ export function ChangePongModal({ open, onOpenChange }: Props) {
   // 환산된 퐁 계산
   const convertedPong = Math.floor(Number(amount || 0) / 100)
 
+  // 모바일모드 & 가로모드 적용
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl p-0 shadow-xl">
-        <div className="p-6">
-          <DialogHeader className="mb-4">
+      <DialogContent className={cn("flex flex-col max-h-[90dvh] w-[calc(100%-1rem)] max-w-lg rounded-2xl p-0 shadow-xl", isMobileLandscape && "h-full")}>
+          <DialogHeader className="p-6 mb-4">
             <DialogTitle className="text-2xl font-extrabold tracking-tight">
               {panel === 'change' ? '포인트 전환하기' : '알림'}
             </DialogTitle>
           </DialogHeader>
-
+          <div className="flex flex-1 min-h-0 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: "touch" }}>
           <div className="flex flex-col gap-y-8">
             {/* 성공 화면 */}
             {panel === 'success' && <Success onClose={() => handleOpenChange(false)} />}
