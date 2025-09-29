@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
-import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
+import { changeProfile, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
 
@@ -82,7 +82,6 @@ function Overview({
   onEditPassword: () => void
   onWithdrawDone: () => void
 }) {
-  
   const { user } = useMe()
 
   return (
@@ -200,7 +199,7 @@ function NicknameForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: ()
     try {
       setSubmitting(true)
 
-      await changeNickname(values.nickname)
+      await changeProfile({ userRequest: { new_nickname: values.nickname } })
 
       onSaved()
     } catch (e: any) {
@@ -333,7 +332,7 @@ function PasswordForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: ()
   async function onSubmit(values: PasswordFormData) {
     setSubmitting(true)
     try {
-      await changePassword({ oldPassword: values.password, newPassword: values.newPassword })
+      await changeProfile({ userRequest: { password: values.password, new_password: values.newPassword } })
 
       onSaved()
     } catch (e: any) {

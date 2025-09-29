@@ -2,7 +2,7 @@
 
 import { Droplet, Heart, Wallet } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import ChangePongModal from '@/components/my-page/ChangePongModal'
 import ChatLogDetailModal from '@/components/my-page/ChatLogDetail'
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
 
+import { changeProfile } from '@/features/auth'
 import { useMe } from '@/hooks/use-me'
 
 /* ── 타입 ───────────────────────── */
@@ -65,7 +66,7 @@ const HISTORY_LABELS: Record<string, string> = {
 }
 
 export default function MyPageContent() {
-  const { user } = useMe()
+  const { user, mutate } = useMe()
 
   const [openEdit, setOpenEdit] = useState<boolean>(false)
   const [openChange, setOpenChange] = useState<boolean>(false)
@@ -73,6 +74,9 @@ export default function MyPageContent() {
   // 상태
   const [isError, setIsError] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   const [active, setActive] = useState<TabKey>('pong')
   const [page, setPage] = useState(1)
@@ -85,6 +89,29 @@ export default function MyPageContent() {
   const [selectedChatLog, setSelectedChatLog] = useState<ChatLogType | null>(null)
 
   const size = 10
+
+  const handleClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) return
+
+    try {
+      setUploading(true)
+
+      await changeProfile({ file: file })
+
+      await mutate()
+    } catch (e: any) {
+      alert(e?.response?.data?.message ?? '저장 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // API 호출
   useEffect(() => {
@@ -139,8 +166,18 @@ export default function MyPageContent() {
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
             fill
-            className="object-cover"
+            className="cursor-pointer object-cover"
+            onClick={handleClick}
           />
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center gap-x-2 bg-black/50 font-semibold text-white">
+              <div className="border-primary-white h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"></div>
+              업로드 중...
+            </div>
+          )}
+
+          {/* 숨겨진 파일 입력 */}
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
 
         <div className="col-span-3 flex flex-col gap-y-4">
