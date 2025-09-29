@@ -6,8 +6,8 @@ export default function BoardLayout({ children }: { children: ReactNode }) {
     <div className="font-pretendard mx-auto max-w-5xl px-4 pt-8 pb-3">
       {/* 헤더 */}
       <header className="mb-16 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12">
-        {/* 아이콘 */}
-        <div className="flex flex-shrink-0 items-center justify-center">
+        {/* 아이콘 → 모바일에서는 숨기기 */}
+        <div className="hidden flex-shrink-0 items-center justify-center sm:flex">
           <BoardIcon className="block h-40 w-36 overflow-visible" />
         </div>
 
