@@ -1,40 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { api } from '@/lib/net/client-axios'
-import type { Board } from '@/components/board-page/types'
-import { FreeTable } from '@/components/board-page/FreeTable'
+import type { Board } from '@/types/board'
+import type { PageResp } from '@/types/board'
+import { BoardTable } from '@/components/board-page/BoardTable'
 import { PongPagination } from '@/components/PongPagination'
 import axios, { type AxiosError } from 'axios'
+import { useRouter } from 'next/navigation'
+import BoardTabs from '@/components/board-page/BoardTabs'
+import { useMe } from '@/hooks/use-me'
 
-// 글쓰기 버튼
-function WriteButton() {
-  return (
-    <Link
-      href="/board/write"
-      aria-label="글쓰기"
-      className={[
-        'rounded-full px-5 py-2.5 font-medium shadow-sm transition',
-        'border-[var(--color-secondary-royal)] bg-[var(--color-secondary-royal)] text-white',
-        'hover:border-[var(--color-secondary-navy)] hover:bg-[var(--color-secondary-navy)]',
-        'focus:ring-2 focus:ring-[var(--color-secondary-royal)] focus:ring-offset-2 focus:outline-none',
-      ].join(' ')}
-    >
-      글쓰기
-    </Link>
-  )
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
-type PageResp = {
-  boards: {
-    content: Board[]
-    total_pages: number
-    number: number
-  }
-}
-
-// 에러 메시지 추출
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
     const ax = err as AxiosError<{ message?: string }>
@@ -52,8 +39,14 @@ export default function FreePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 정렬 기준 상태
+  // 정렬 상태
   const [sort, setSort] = useState<'createdAt' | 'viewCount' | 'likeCount'>('createdAt')
+
+  const router = useRouter()
+  const { user } = useMe()
+
+  // 모달 열림 상태
+  const [openLoginModal, setOpenLoginModal] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -65,7 +58,6 @@ export default function FreePage() {
           params: { page, category: 'FREE', sort, size: pageSize },
         })
         if (!alive) return
-
         setItems(data.boards?.content ?? [])
         setTotalPages(Math.max(1, data.boards?.total_pages ?? 1))
       } catch (err: unknown) {
@@ -87,56 +79,25 @@ export default function FreePage() {
       {error && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
-
-      {/* 정렬 버튼 + 글쓰기 버튼 */}
-      <div className="mb-3 flex items-center justify-between">
-        {/* 정렬 버튼들 - 살짝 오른쪽으로 */}
-        <div className="ml-4 flex gap-2">
-          <button
-            onClick={() => setSort('createdAt')}
-            className={[
-              'rounded px-3 py-1 text-sm font-medium',
-              sort === 'createdAt'
-                ? 'bg-[var(--color-secondary-royal)] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-            ].join(' ')}
-          >
-            최신순
-          </button>
-          <button
-            onClick={() => setSort('viewCount')}
-            className={[
-              'rounded px-3 py-1 text-sm font-medium',
-              sort === 'viewCount'
-                ? 'bg-[var(--color-secondary-royal)] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-            ].join(' ')}
-          >
-            조회순
-          </button>
-          <button
-            onClick={() => setSort('likeCount')}
-            className={[
-              'rounded px-3 py-1 text-sm font-medium',
-              sort === 'likeCount'
-                ? 'bg-[var(--color-secondary-royal)] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-            ].join(' ')}
-          >
-            좋아요순
-          </button>
-        </div>
-
-        {/* 글쓰기 버튼  */}
-        <div className="mr-8">
-          <WriteButton />
-        </div>
-      </div>
-
+      <BoardTabs activeCategory="FREE" />
       {loading ? (
         <div className="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">불러오는 중…</div>
       ) : (
-        <FreeTable items={items} page={page} pageSize={pageSize} basePath="/board" title={undefined} />
+        <BoardTable
+          items={items}
+          page={page}
+          pageSize={pageSize}
+          variant="FREE"
+          basePath="/board/free"
+          onSortChange={setSort}
+          onWriteClick={() => {
+            if (!user) {
+              setOpenLoginModal(true)
+              return
+            }
+            router.push('/board/write')
+          }}
+        />
       )}
 
       <div className="mt-4 flex items-center justify-between">
@@ -145,6 +106,29 @@ export default function FreePage() {
           <PongPagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
       </div>
+
+      {/* 글쓰기 -  로그인 필요 모달 */}
+      <AlertDialog open={openLoginModal} onOpenChange={setOpenLoginModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              글쓰기를 하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소하기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                router.push('/signin')
+              }}
+              className="bg-secondary-royal hover:bg-secondary-navy"
+            >
+              로그인하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

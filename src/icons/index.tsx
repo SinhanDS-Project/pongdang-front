@@ -20,6 +20,7 @@ import SuccessIcon from './success.svg'
 import TitleCoinIcon from './title_coin.svg'
 import TrophyIcon from './trophy.svg'
 import YellowTurtleIcon from './yellow_turtle.svg'
+import SupportIcon from './support.svg'
 
 export {
   BackCoinIcon,
@@ -44,4 +45,5 @@ export {
   TitleCoinIcon,
   TrophyIcon,
   YellowTurtleIcon,
+  SupportIcon,
 }

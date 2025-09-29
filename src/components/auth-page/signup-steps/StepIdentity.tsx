@@ -1,6 +1,8 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { isAxiosError } from 'axios'
+import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -65,6 +67,8 @@ const maskPhone = (p: string) =>
   p.replace(/(\d{3})-(\d{2,4})-(\d{4})/, (_, a, b, c) => `${a}-${'*'.repeat(b.length)}-${c}`)
 
 export function StepIdentity() {
+  const router = useRouter()
+
   // ✅ zustand 액션 및 스냅샷
   const setStep = useSignupStore((s) => s.setStep)
   const patch = useSignupStore((s) => s.patch)
@@ -80,6 +84,9 @@ export function StepIdentity() {
   const [submitting, setSubmitting] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [bpUser, setBpUser] = useState<BettingUser | null>(null)
+
+  // ✅ 이미 가입된 회원 모달 상태
+  const [alreadyOpen, setAlreadyOpen] = useState(false)
 
   const { seconds, cooldown, running, canResend, start, startCooldown } = useVerifyTimer(180)
 
@@ -182,7 +189,15 @@ export function StepIdentity() {
       setBpUser(response)
       setDialogOpen(true) // 다이얼로그 열어 질문
     } catch (error) {
-      // 조회 실패(없음 등) → 그대로 Step2로 (이메일 직접 입력/인증)
+      if (
+        isAxiosError(error) &&
+        error.response?.data &&
+        (error.response.data as any).error === 'USER_ALREADY_REGISTERED'
+      ) {
+        setAlreadyOpen(true)
+        return
+      }
+
       patch({ emailLockedFromBetting: false, emailVerified: false })
       setStep(2)
     } finally {
@@ -345,6 +360,27 @@ export function StepIdentity() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleSkipLink}>건너뛰기</AlertDialogCancel>
             <AlertDialogAction onClick={handleAcceptLink}>연결하기</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ✅ 이미 가입된 회원 모달 */}
+      <AlertDialog open={alreadyOpen} onOpenChange={setAlreadyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>이미 가입된 회원</AlertDialogTitle>
+            <AlertDialogDescription>이미 가입된 회원입니다. 로그인 화면으로 이동할까요?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAlreadyOpen(false)}>닫기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setAlreadyOpen(false)
+                router.replace('/signin') // 👉 프로젝트 로그인 경로로 변경 가능
+              }}
+            >
+              로그인으로 이동
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

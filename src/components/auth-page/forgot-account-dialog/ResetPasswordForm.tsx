@@ -64,8 +64,6 @@ export function ResetPasswordForm({ open, onBack, onDone }: { open: boolean; onB
       start(300)
       startCooldown(30)
     } catch (e: any) {
-      console.log("🚀 ~ onRequestCode ~ e:", e)
-      
       setError(e?.response?.data?.message ?? '인증코드 전송 실패')
     } finally {
       setRequesting(false)

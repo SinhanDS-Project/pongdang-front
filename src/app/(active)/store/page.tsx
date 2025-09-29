@@ -6,7 +6,7 @@ import LoadingModal from '@/components/store-page/LoadingModal'
 import ProductList from '@/components/store-page/ProductList'
 import ProductModal from '@/components/store-page/ProductModal'
 import SuccessModal from '@/components/store-page/SuccessModal'
-import { BackendProduct, Category, mapProducts, Product, PRODUCT_TYPE, SpringPage } from '@/components/store-page/types'
+import { BackendProduct, Category, mapProducts, Product, PRODUCT_TYPE, SpringPage } from '@/types/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useMe } from '@/hooks/use-me'
@@ -14,6 +14,14 @@ import { api } from '@/lib/net/client-axios'
 import type { AxiosError } from 'axios'
 import { Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 // ── 디바운스 ───────────────────────────────
 function useDebounce<T>(value: T, delay = 500): T {
@@ -52,12 +60,12 @@ export default function StorePage() {
   // 모달 상태
   const [selected, setSelected] = useState<Product | null>(null)
   const [paying, setPaying] = useState(false)
-
-  // 모달 상태들
   const [errorOpen, setErrorOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [loadingOpen, setLoadingOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
 
   // 유저 상태
   const { user, mutate } = useMe()
@@ -65,7 +73,7 @@ export default function StorePage() {
   // 검색/카테고리 바뀌면 1페이지부터
   useEffect(() => setPage(1), [activeCat, debouncedQuery])
 
-  // 서버 호출
+  // ── 서버 호출 ─────────────────────────
   useEffect(() => {
     const run = async () => {
       setLoading(true)
@@ -79,7 +87,8 @@ export default function StorePage() {
           params.keyword = kw
         } else if (activeCat !== 'ALL') {
           url = '/api/store/product/category'
-          params.type = activeCat
+          // 녀ㅠ → OTT 로 변환
+          params.type = activeCat === 'SUB' ? 'OTT' : activeCat
         }
 
         const { data } = await api.get<SpringPage<BackendProduct>>(url, { params })
@@ -237,9 +246,47 @@ export default function StorePage() {
       />
 
       {/* 상품 모달 */}
-      {selected && <ProductModal product={selected} onClose={closeModal} onPay={handlePay} paying={paying} />}
+      {selected && (
+        <ProductModal
+          product={selected}
+          onClose={closeModal}
+          onPay={(p) => {
+            setPendingProduct(p)
+            setConfirmOpen(true)
+          }}
+          paying={paying}
+        />
+      )}
 
       {/* 모달들 */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>결제 확인</DialogTitle>
+            <DialogDescription>
+              {pendingProduct?.name}을(를) {pendingProduct?.price.toLocaleString()} 퐁으로 결제하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+              취소
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingProduct) {
+                  handlePay(pendingProduct)
+                }
+                setConfirmOpen(false)
+              }}
+              disabled={paying}
+              className="bg-secondary-royal hover:bg-secondary-navy font-light text-white"
+            >
+              {paying ? '결제 중…' : '결제하기'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ErrorModal open={errorOpen} message={errorMessage} onClose={() => setErrorOpen(false)} />
       <LoadingModal open={loadingOpen} message="이메일로 상품을 발송중입니다." />
       <SuccessModal

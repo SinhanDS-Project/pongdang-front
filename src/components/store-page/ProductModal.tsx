@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Product } from './types'
+import { Product } from '../../types/store'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -86,6 +86,7 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
           >
             {paying ? '결제 중…' : '결제하기'}
           </Button>
+
           <Button type="button" variant="outline" onClick={onClose} className="rounded">
             닫기
           </Button>
