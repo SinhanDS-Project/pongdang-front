@@ -106,14 +106,14 @@ export function StepGoalForm() {
 
     const payload: ReportPayload & { age?: number } = {
       // 이전 스텝 (스토어)
-      income: incomeSnap,
-      spend: spendSnap,
+      income: incomeSnap * 10000,
+      spend: spendSnap * 10000,
       main_category: mainCategorySnap!, // 위에서 !!로 확인함
-      current_saving: currentSavingSnap,
+      current_saving: currentSavingSnap * 10000,
       loan: loanSnap,
 
       // 현재 스텝 (폼 값)
-      saving_goal: values.saving_goal,
+      saving_goal: values.saving_goal * 10000,
       invest_type: values.invest_type!,
       goal_term: values.goal_term!,
 
