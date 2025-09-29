@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { revalidateMe, useMe } from '@/hooks/use-me'
 
 /* ── 타입 정의 ───────────────────────── */
 type DonationDetail = {
