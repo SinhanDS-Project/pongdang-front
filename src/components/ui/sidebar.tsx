@@ -36,9 +36,9 @@ type SidebarContextProps = {
   state: "expanded" | "collapsed"
   open: boolean
   setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
+  openMobileOrTablet: boolean
+  setOpenMobileOrTablet: (open: boolean) => void
+  isMobileOrTablet: boolean
   toggleSidebar: () => void
 }
 
@@ -66,9 +66,9 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
-  const isMobile = useIsMobile()
-  const [openMobile, setOpenMobile] = React.useState(false)
-
+  const { isMobile, isTablet } = useIsMobile()
+  const isMobileOrTablet = isMobile || isTablet
+  const [openMobileOrTablet, setOpenMobileOrTablet] = React.useState(false)
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(defaultOpen)
@@ -90,8 +90,8 @@ function SidebarProvider({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+    return isMobileOrTablet ? setOpenMobileOrTablet((open) => !open) : setOpen((open) => !open)
+  }, [isMobileOrTablet, setOpen, setOpenMobileOrTablet])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -118,12 +118,12 @@ function SidebarProvider({
       state,
       open,
       setOpen,
-      isMobile,
-      openMobile,
-      setOpenMobile,
+      isMobileOrTablet,
+      openMobileOrTablet,
+      setOpenMobileOrTablet,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobileOrTablet, openMobileOrTablet, setOpenMobileOrTablet, toggleSidebar]
   )
 
   return (
@@ -163,7 +163,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMobileOrTablet, state, openMobileOrTablet, setOpenMobileOrTablet } = useSidebar()
 
   if (collapsible === "none") {
     return (
@@ -180,9 +180,9 @@ function Sidebar({
     )
   }
 
-  if (isMobile) {
+  if (isMobileOrTablet) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet open={openMobileOrTablet} onOpenChange={setOpenMobileOrTablet} {...props}>
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -509,7 +509,7 @@ function SidebarMenuButton({
   tooltip?: string | React.ComponentProps<typeof TooltipContent>
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const Comp = asChild ? Slot : "button"
-  const { isMobile, state } = useSidebar()
+  const { isMobileOrTablet, state } = useSidebar()
 
   const button = (
     <Comp
@@ -538,7 +538,7 @@ function SidebarMenuButton({
       <TooltipContent
         side="right"
         align="center"
-        hidden={state !== "collapsed" || isMobile}
+        hidden={state !== "collapsed" || isMobileOrTablet}
         {...tooltip}
       />
     </Tooltip>
