@@ -176,18 +176,18 @@ export function StepGoalForm() {
             <FormItem>
               <FormLabel>투자 성향이 가장 가까운 것은 무엇인가요?</FormLabel>
               <FormControl>
-                <RadioGroup onValueChange={field.onChange} value={field.value ?? ''} className="flex gap-4">
+                <RadioGroup onValueChange={field.onChange} value={field.value ?? ''} className="flex flex-col gap-4">
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="안정형" id="invest-stable" />
-                    <FormLabel htmlFor="invest-stable">안정형</FormLabel>
+                    <FormLabel htmlFor="invest-stable">나는 손실 위험 없이 안전하게 자금을 지키고 싶다.</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="중립형" id="invest-neutral" />
-                    <FormLabel htmlFor="invest-neutral">중립형</FormLabel>
+                    <FormLabel htmlFor="invest-neutral">나는 수익과 안정 사이에서 균형을 맞추고 싶다.</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="공격형" id="invest-aggressive" />
-                    <FormLabel htmlFor="invest-aggressive">공격형</FormLabel>
+                    <FormLabel htmlFor="invest-aggressive">나는 높은 수익을 위해 위험을 감수할 수 있다.</FormLabel>
                   </FormItem>
                 </RadioGroup>
               </FormControl>
@@ -207,26 +207,26 @@ export function StepGoalForm() {
                 <RadioGroup
                   onValueChange={field.onChange} // 문자열 그대로 저장
                   value={field.value ?? ''} // RHF 제어값
-                  className="flex gap-4"
+                  className="flex flex-col gap-4"
                 >
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="단기" id="goal-term-short" />
                     <FormLabel htmlFor="goal-term-short" className="font-normal">
-                      단기
+                      1~3년 이내 목표
                     </FormLabel>
                   </FormItem>
 
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="중기" id="goal-term-mid" />
                     <FormLabel htmlFor="goal-term-mid" className="font-normal">
-                      중기
+                      3~7년 이내 목표
                     </FormLabel>
                   </FormItem>
 
                   <FormItem className="flex items-center gap-2">
                     <RadioGroupItem value="장기" id="goal-term-long" />
                     <FormLabel htmlFor="goal-term-long" className="font-normal">
-                      장기
+                      7년 이상, 장기 투자/저축 포함
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>
