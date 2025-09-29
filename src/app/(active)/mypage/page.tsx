@@ -62,6 +62,7 @@ const HISTORY_LABELS: Record<string, string> = {
   DONATION_D: '기부(기부)',
   ADD: '이벤트',
   ENTRY: '게임 참가',
+  CONVERT: '신한마이포인트 전환',
 }
 
 export default function MyPageContent() {
@@ -292,14 +293,18 @@ export default function MyPageContent() {
 
 function formatDate(date: string | Date) {
   const parsedDate = typeof date === 'string' ? new Date(date) : date
-  return parsedDate.toISOString().split('T')[0] // "2025-09-03"
+  return parsedDate.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
 }
 
 function PongHistory({ history, page, size }: { history: PongHistoryType[]; page: number; size: number }) {
   return (
     <TableBody>
       {history.map((row, idx) => {
-        const isPlus = ['GAME_P', 'GAME_D', 'ADD'].includes(row.pong_history_type)
+        const isPlus = ['GAME_P', 'GAME_D', 'ADD', 'CONVERT'].includes(row.pong_history_type)
 
         return (
           <TableRow key={row.id}>

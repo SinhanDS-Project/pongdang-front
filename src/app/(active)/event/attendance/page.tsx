@@ -44,7 +44,7 @@ export default function AttendancePage() {
         setAttendance(map)
 
         if (map[today]) {
-          setRewardMsg('오늘 이미 출석체크를 완료했습니다. ✅')
+          setRewardMsg('오늘 출석체크를 완료했습니다. ✅')
           setSubMsg('이미 1퐁이 적립되었습니다.')
         }
       } catch (e) {

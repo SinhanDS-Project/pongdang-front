@@ -1,7 +1,7 @@
 'use client'
 
 import ProductCard from './ProductCard'
-import { Product } from './types'
+import { Product } from '../../types/store'
 
 export default function ProductList({ products, onSelect }: { products: Product[]; onSelect?: (p: Product) => void }) {
   if (!products?.length) {

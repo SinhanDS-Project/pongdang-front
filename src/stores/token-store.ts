@@ -7,6 +7,7 @@ class TokenStore {
     if (typeof window === 'undefined') return null
     const v = localStorage.getItem(this.ACCESS_KEY)
     this.accessTokenMemory = v
+
     return v
   }
 
@@ -23,12 +24,14 @@ class TokenStore {
   set(token: string) {
     this.accessTokenMemory = token
     localStorage.setItem(this.ACCESS_KEY, token)
+
     this.emit()
   }
 
   clear() {
     this.accessTokenMemory = null
     localStorage.removeItem(this.ACCESS_KEY)
+
     this.emit()
   }
 

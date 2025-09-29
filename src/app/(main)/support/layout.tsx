@@ -4,23 +4,31 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { SupportIcon } from '@/icons'
+
 export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-8 pb-3">
+    <div className="font-pretendard mx-auto max-w-5xl px-4 pt-8 pb-3">
       {/* 헤더 */}
-      <header className="mb-6">
-        <h1 className="text-[60px] font-bold text-[#0045FF]" style={{ fontFamily: 'Pretendard' }}>
-          고객지원
-        </h1>
-        <p className="mt-5 hidden text-[32px] font-bold text-[#6AADEF] md:block" style={{ fontFamily: 'Pretendard' }}>
-          자주 묻는 질문과 1:1 문의
-        </p>
+      <header className="mb-16 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12">
+        {/* 아이콘 */}
+        <div className="flex flex-shrink-0 items-center justify-center">
+          <SupportIcon className="block h-40 w-36 overflow-visible" />
+        </div>
+
+        {/* 텍스트 */}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-[60px] leading-none font-extrabold text-blue-600">고객지원</h1>
+          <p className="mt-2 hidden text-[32px] leading-snug font-semibold text-blue-400 md:block">
+            자주 묻는 질문과 1:1 문의
+          </p>
+        </div>
       </header>
 
       {/* 탭 */}
-      <nav className="mb-6" style={{ fontFamily: 'Pretendard' }}>
+      <nav className="mb-6">
         <div className="relative flex border-b border-gray-200">
           <Link
             href="/support/faq"

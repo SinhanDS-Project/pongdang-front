@@ -1,14 +1,11 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { api } from '@/lib/net/client-axios'
-import type { Board } from '@/components/board-page/types'
-import 'react-quill-new/dist/quill.snow.css'
-
-// SSR 끄고 동적 import
-const ReactQuill = dynamic(() => import('react-quill-new').then((m) => m.default), { ssr: false })
+import type { Board } from '@/types/board'
+import ReactQuillEditor from '@/components/board-page/ReactQuill'
+import BoardTabs from '@/components/board-page/BoardTabs'
 
 export default function BoardEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -18,41 +15,7 @@ export default function BoardEditPage() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // Quill 옵션
-  const formats = useMemo(
-    () => [
-      'size',
-      'color',
-      'background',
-      'bold',
-      'italic',
-      'underline',
-      'strike',
-      'blockquote',
-      'list',
-      'indent',
-      'image',
-    ],
-    [],
-  )
-  const modules = useMemo(
-    () => ({
-      toolbar: {
-        container: [
-          [{ size: ['small', false, 'large', 'huge'] }],
-          [{ color: [] }, { background: [] }],
-          ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-          [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
-          ['image'],
-        ],
-      },
-    }),
-    [],
-  )
-
-  const onChangeEditorValue = useCallback((v: string) => setContent(v), [])
-
-  // plain text 추출 (태그 제거 후)
+  // text 추출 (태그 제거 후)
   const plainText = useMemo(() => content.replace(/<[^>]+>/g, '').trim(), [content])
   const titleEmpty = title.trim().length === 0
 
@@ -91,6 +54,7 @@ export default function BoardEditPage() {
 
   return (
     <main className="mx-auto max-w-6xl">
+      <BoardTabs activeCategory="FREE" />
       <section className="relative rounded-2xl border bg-gray-50 p-4 shadow-sm sm:p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}
@@ -106,27 +70,7 @@ export default function BoardEditPage() {
 
             {/* 에디터 */}
             <div className="mt-5">
-              <div className="quill-wrap overflow-hidden rounded-xl border border-gray-200" style={{ height: 500 }}>
-                <ReactQuill
-                  theme="snow"
-                  value={content}
-                  formats={formats}
-                  modules={modules}
-                  onChange={onChangeEditorValue}
-                  style={{ height: '100%' }}
-                />
-              </div>
-
-              <style jsx global>{`
-                .quill-wrap .ql-container {
-                  height: calc(100% - 42px);
-                }
-                .quill-wrap .ql-editor {
-                  height: 100%;
-                  overflow-y: auto;
-                }
-              `}</style>
-
+              <ReactQuillEditor value={content} onChange={setContent} height={500} />
               <p className="mt-2 text-xs text-gray-500">최대 2048자까지 쓸 수 있습니다</p>
             </div>
           </div>

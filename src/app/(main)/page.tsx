@@ -8,19 +8,19 @@ import { serverFetchJSON } from '@/lib/net/server-fetch'
 export const revalidate = 60 // 페이지 캐시 재생성 주기 (초)
 
 export default async function MainHome() {
-   // 빌드 시점에 환경변수가 없으면 호출 스킵
+  // 빌드 시점에 환경변수가 없으면 호출 스킵
   const base =
-    process.env.NEXT_PUBLIC_API_BASE_URL   // 브라우저용 공개 URL
-    ?? process.env.API_BASE_URL            // 서버용 내부 URL (옵션)
-    ?? '';
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? // 브라우저용 공개 URL
+    process.env.API_BASE_URL ?? // 서버용 내부 URL (옵션)
+    ''
 
   if (!base) {
     // 빌드/런타임에 주소가 없으면 최소 UI
-    return <div>기본 화면</div>;
+    return <div>기본 화면</div>
   }
   const [bannerResponse, storeResponse, noticeResponse] = await Promise.allSettled([
     serverFetchJSON<{ banners: Banner[] }>('/api/content/banner/list', { auth: 'none' }),
-    serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=1&size=4', { auth: 'none' }),
+    serverFetchJSON<{ content: StoreItem[] }>('/api/store/product?page=12&size=4', { auth: 'none' }),
     serverFetchJSON<{ boards: { content: NoticeItem[] } }>('/api/board?category=NOTICE&page=1&size=5', {
       auth: 'none',
     }),
@@ -78,6 +78,7 @@ export default async function MainHome() {
         ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
       />
       <StoreSection items={storeItems} />
+
       <NoticeSection items={noticeItems} />
     </div>
   )

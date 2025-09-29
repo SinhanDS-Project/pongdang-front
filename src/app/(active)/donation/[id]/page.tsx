@@ -29,41 +29,25 @@ type DonationDetail = {
 }
 
 type WalletType = 'PONG' | 'DONA'
+type ErrorResponse = { message?: string; error?: string }
 
-type User = {
-  id: number
-  user_name: string
-  nickname: string
-  pong_balance: number
-  dona_balance: number
-}
-
-type ErrorResponse = {
-  message?: string
-  error?: string
-}
-
+/* ── 숫자 포맷 ───────────────────────── */
 const fmt = (v?: number | null) => (typeof v === 'number' && !isNaN(v) ? v.toLocaleString('ko-KR') : '0')
 
 /* ── 컴포넌트 ───────────────────────── */
 export default function DonationDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useMe() // ✅ 유저 정보 불러오기
   const [donation, setDonation] = useState<DonationDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [walletType, setWalletType] = useState<WalletType>('PONG')
   const [amount, setAmount] = useState<number>(0)
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-
-  // 폼 에러 메시지
   const [formError, setFormError] = useState<string | null>(null)
 
-  // 모달 상태
   const [termsOpen, setTermsOpen] = useState(false)
   const [donateOpen, setDonateOpen] = useState(false)
-
-  // 기부 완료 축하 화면 상태
   const [showCelebration, setShowCelebration] = useState(false)
   
   // 모바일 모드 && 가로 모드
@@ -71,7 +55,7 @@ export default function DonationDetailPage() {
   const isMobileLandscape = isMobile && isLandscape
   
 
-  /* ── 데이터 로딩 ───────────────────── */
+  /* ── 기부 상세 불러오기 ───────────────────── */
   useEffect(() => {
     const fetchDonation = async () => {
       try {
@@ -79,27 +63,15 @@ export default function DonationDetailPage() {
         setDonation(data)
       } catch (err) {
         const axiosErr = err as AxiosError<ErrorResponse>
-        if (axiosErr.response?.status === 404) {
-          setError('❌ 기부 정보가 존재하지 않습니다.')
-        } else {
-          setError(axiosErr.response?.data?.message || '⚠️ 기부 정보를 불러오는 중 오류가 발생했습니다.')
-        }
-      }
-    }
-
-    const fetchUser = async () => {
-      try {
-        const { data } = await api.get<User>('/api/user/me', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        })
-        setUser(data)
-      } catch {
-        // 로그인 안 된 경우 무시
+        setError(
+          axiosErr.response?.status === 404
+            ? '❌ 기부 정보가 존재하지 않습니다.'
+            : axiosErr.response?.data?.message || '⚠️ 기부 정보를 불러오는 중 오류가 발생했습니다.',
+        )
       }
     }
 
     fetchDonation()
-    fetchUser()
   }, [id])
 
   if (error) return <p className="p-6 text-center text-red-500">{error}</p>
@@ -118,17 +90,16 @@ export default function DonationDetailPage() {
 
     try {
       setLoading(true)
-      await api.post(
-        '/api/donation',
-        {
-          donation_info_id: donation.id,
-          amount,
-          wallet_type: walletType,
-        },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } },
-      )
-      setDonateOpen(false) // 기부 모달 닫기
-      setShowCelebration(true) // 축하 화면 열기
+      await api.post('/api/donation', {
+        donation_info_id: donation.id,
+        amount,
+        wallet_type: walletType,
+      })
+
+      await revalidateMe() //  기부 성공 후 최신 유저 정보 새로고침
+
+      setDonateOpen(false)
+      setShowCelebration(true)
       setAmount(0)
       setWalletType('PONG')
     } catch (err) {
