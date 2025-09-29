@@ -41,7 +41,7 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn("flex flex-col max-w-lg rounded-2xl p-0 shadow-xl min-h-[70dvh]", isMobile ? "w-full h-[90dvh]" : "w-[calc(100%-1rem)] max-w-lg min-h-[70dvh]", isMobileLandscape && "h-full")}>
+      <DialogContent className={cn("flex flex-col max-w-xl rounded-2xl p-0 shadow-xl min-h-[70dvh]", isMobile ? "w-full h-[90dvh]" : "w-full min-w-lg max-w-xl", isMobileLandscape && "h-full")}>
           <DialogHeader className="shrink-0 p-6 mb-4">
             <DialogTitle className="text-2xl font-extrabold tracking-tight">
               {panel === 'overview'
