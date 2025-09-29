@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { changeProfile, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -42,21 +43,27 @@ export function ProfileEditModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn("flex flex-col max-w-xl rounded-2xl p-0 shadow-xl min-h-[70dvh]", isMobile ? "w-full h-[90dvh]" : "w-full min-w-lg max-w-xl", isMobileLandscape && "h-full")}>
-          <DialogHeader className="shrink-0 p-6 mb-4">
-            <DialogTitle className="text-2xl font-extrabold tracking-tight">
-              {panel === 'overview'
-                ? '내 프로필'
-                : panel === 'nickname'
-                  ? '닉네임 변경'
-                  : panel === 'password'
-                    ? '비밀번호 변경'
-                    : panel === 'withdraw'
-                      ? '경고문'
-                      : '알림'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: "touch" }}>
+      <DialogContent
+        className={cn(
+          'flex min-h-[70dvh] max-w-xl flex-col rounded-2xl p-0 shadow-xl',
+          isMobile ? 'h-[90dvh] w-full' : 'w-full max-w-xl min-w-lg',
+          isMobileLandscape && 'h-full',
+        )}
+      >
+        <DialogHeader className="mb-4 shrink-0 p-6">
+          <DialogTitle className="text-2xl font-extrabold tracking-tight">
+            {panel === 'overview'
+              ? '내 프로필'
+              : panel === 'nickname'
+                ? '닉네임 변경'
+                : panel === 'password'
+                  ? '비밀번호 변경'
+                  : panel === 'withdraw'
+                    ? '경고문'
+                    : '알림'}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
           {panel === 'overview' && (
             <Overview
               onEditNickname={() => setPanel('nickname')}

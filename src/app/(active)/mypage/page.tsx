@@ -158,20 +158,32 @@ export default function MyPageContent() {
       .finally(() => setIsLoading(false))
   }, [active, page])
 
-  const { isMobile, isTablet, isPc }  = useIsMobile()
+  const { isMobile, isTablet, isPc } = useIsMobile()
 
   return (
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
       {/* 상단 영역 */}
-      <div className={cn("gap-4", isMobile && "flex flex-col", isTablet && "flex flex-col gap-x-6", isPc && "grid grid-cols-4 gap-x-8")}>
-        <div className={cn("group relative aspect-square overflow-hidden rounded-full", isMobile && "w-24 mx-auto",
-          isTablet && "min-w-32 w-56 mx-auto", isPc && "w-full mx-0")}>
+      <div
+        className={cn(
+          'gap-4',
+          isMobile && 'flex flex-col',
+          isTablet && 'flex flex-col gap-x-6',
+          isPc && 'grid grid-cols-4 gap-x-8',
+        )}
+      >
+        <div
+          className={cn(
+            'group relative aspect-square overflow-hidden rounded-full',
+            isMobile && 'mx-auto w-24',
+            isTablet && 'mx-auto w-56 min-w-32',
+            isPc && 'mx-0 w-full',
+          )}
+        >
           <Image
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
             fill
             className="cursor-pointer object-cover"
-            onClick={handleClick}
           />
 
           {/* 업로드 중 오버레이 */}
@@ -183,17 +195,26 @@ export default function MyPageContent() {
           )}
 
           {/* Hover 시 오버레이 */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
-            <span className="text-sm font-bold">프로필 이미지 변경</span>
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/10 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+            onClick={handleClick}
+          >
+            <span className="text-xs font-bold md:text-sm">이미지 변경</span>
           </div>
 
           {/* 숨겨진 파일 입력 */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
 
-        <div className={cn("flex flex-col gap-y-4", isTablet && "col-span-3", isPc && "col-span-3")}>
-          <div className={cn("font-extrabold", isMobile && "flex flex-col items-center gap-3 text-center text-xl",
-            isTablet && "flex flex-row items-center justify-between text-2xl", isPc && "flex flex-row items-center justify-between text-left text-3xl")}>
+        <div className={cn('flex flex-col gap-y-4', isTablet && 'col-span-3', isPc && 'col-span-3')}>
+          <div
+            className={cn(
+              'font-extrabold',
+              isMobile && 'flex flex-col items-center gap-3 text-center text-xl',
+              isTablet && 'flex flex-row items-center justify-between text-2xl',
+              isPc && 'flex flex-row items-center justify-between text-left text-3xl',
+            )}
+          >
             <div className="text-foreground">
               안녕하세요, <span className="text-secondary-royal">{user?.nickname}</span> 님
             </div>
@@ -219,18 +240,40 @@ export default function MyPageContent() {
           <div className="bg-secondary-light flex grow flex-col gap-y-2 rounded-xl p-4">
             <div className="text-primary-white flex items-center gap-x-2">
               <Wallet />
-              <span className={cn("font-bold", isMobile && "text-xl", isTablet && "text-2xl", isPc && "text-3xl")}>나의 보유 퐁</span>
+              <span className={cn('font-bold', isMobile && 'text-xl', isTablet && 'text-2xl', isPc && 'text-3xl')}>
+                나의 보유 퐁
+              </span>
             </div>
             <div className="bg-primary-white flex grow gap-x-4 rounded-lg p-4">
               {/* 일반 퐁 */}
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Droplet className="text-secondary-royal" />
-                  <span className={cn("font-bold", isMobile && "text-sm", isTablet && "text-base", isPc && "text-lg")}>일반 퐁</span>
+                  <span className={cn('font-bold', isMobile && 'text-sm', isTablet && 'text-base', isPc && 'text-lg')}>
+                    일반 퐁
+                  </span>
                 </div>
                 <div className="mr-4 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className={cn("text-secondary-navy", isMobile && "text-2xl", isTablet && "text-4xl", isPc && "text-5xl")}>{user?.pong_balance?.toLocaleString() ?? 0}</span>
-                  <span className={cn("text-secondary-royal", isMobile && "text-xl", isTablet && "text-3xl", isPc && "text-4xl")}>퐁</span>
+                  <span
+                    className={cn(
+                      'text-secondary-navy',
+                      isMobile && 'text-2xl',
+                      isTablet && 'text-4xl',
+                      isPc && 'text-5xl',
+                    )}
+                  >
+                    {user?.pong_balance?.toLocaleString() ?? 0}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-secondary-royal',
+                      isMobile && 'text-xl',
+                      isTablet && 'text-3xl',
+                      isPc && 'text-4xl',
+                    )}
+                  >
+                    퐁
+                  </span>
                 </div>
               </div>
 
@@ -240,11 +283,33 @@ export default function MyPageContent() {
               <div className="flex grow flex-col">
                 <div className="flex items-center gap-x-2">
                   <Heart className="text-secondary-red" />
-                  <span className={cn("font-bold", isMobile && "text-sm", isTablet && "text-base", isPc && "text-base")}>기부 퐁</span>
+                  <span
+                    className={cn('font-bold', isMobile && 'text-sm', isTablet && 'text-base', isPc && 'text-base')}
+                  >
+                    기부 퐁
+                  </span>
                 </div>
                 <div className="mr-8 flex grow items-center justify-end gap-x-4 font-bold">
-                  <span className={cn("text-secondary-navy", isMobile && "text-2xl", isTablet && "text-4xl", isPc && "text-5xl")}>{user?.dona_balance?.toLocaleString() ?? 0}</span>
-                  <span className={cn("text-secondary-red", isMobile && "text-xl", isTablet && "text-3xl", isPc && "text-4xl")}>퐁</span>
+                  <span
+                    className={cn(
+                      'text-secondary-navy',
+                      isMobile && 'text-2xl',
+                      isTablet && 'text-4xl',
+                      isPc && 'text-5xl',
+                    )}
+                  >
+                    {user?.dona_balance?.toLocaleString() ?? 0}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-secondary-red',
+                      isMobile && 'text-xl',
+                      isTablet && 'text-3xl',
+                      isPc && 'text-4xl',
+                    )}
+                  >
+                    퐁
+                  </span>
                 </div>
               </div>
             </div>
@@ -268,7 +333,7 @@ export default function MyPageContent() {
                 setPage(1)
               }}
               className={cn(
-                'text-primary-white w-24 sm:w-28 md:w-32 rounded-t-lg py-2.5 text-center text-md sm:text-base md:text-lg lg:text-xl font-semibold',
+                'text-primary-white text-md w-24 rounded-t-lg py-2.5 text-center font-semibold sm:w-28 sm:text-base md:w-32 md:text-lg lg:text-xl',
                 active === tap.key ? 'bg-secondary-sky' : 'bg-gray-300',
               )}
             >
@@ -372,7 +437,7 @@ function DonationHistory({ history, page, size }: { history: DonationHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell className="truncate max-w-[200px]">{row.title}</TableCell>
+            <TableCell className="max-w-[200px] truncate">{row.title}</TableCell>
             <TableCell className="flex items-center justify-center gap-x-1 py-4 text-red-400">
               <Heart />
               <span className="font-bold">{row.amount}</span>
@@ -392,7 +457,7 @@ function PurchaseHistory({ history, page, size }: { history: PurchaseHistoryType
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell className="py-4 truncate max-w-[200px]">{row.name}</TableCell>
+            <TableCell className="max-w-[200px] truncate py-4">{row.name}</TableCell>
             <TableCell className="font-bold">{row.price}</TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.created_at)}</TableCell>
           </TableRow>
@@ -419,7 +484,10 @@ function ChatLog({
         return (
           <TableRow key={row.id}>
             <TableCell className="hidden sm:table-cell">{(page - 1) * size + (idx + 1)}</TableCell>
-            <TableCell onClick={() => onOpen(row)} className="cursor-pointer py-4 hover:font-bold hover:underline truncate max-w-[200px]">
+            <TableCell
+              onClick={() => onOpen(row)}
+              className="max-w-[200px] cursor-pointer truncate py-4 hover:font-bold hover:underline"
+            >
               {row.title}
             </TableCell>
             <TableCell className="hidden sm:table-cell">{formatDate(row.chat_date)}</TableCell>
