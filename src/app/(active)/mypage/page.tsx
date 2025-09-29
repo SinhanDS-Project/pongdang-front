@@ -61,7 +61,7 @@ const HISTORY_LABELS: Record<string, string> = {
   DONATION_D: '기부(기부)',
   ADD: '이벤트',
   ENTRY: '게임 참가',
-  CONVERT: '신한마이포인트 전환',
+  CONVERT: '마이신한포인트 전환',
 }
 
 export default function MyPageContent() {
