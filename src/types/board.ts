@@ -9,6 +9,7 @@ export type Board = {
   like_count: number
   view_count: number
   user_id: number
+  reply_count: number
 }
 
 export type Reply = {
