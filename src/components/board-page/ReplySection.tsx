@@ -2,23 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/net/client-axios'
-
-type User = {
-  id: number
-  nickname: string
-}
-
-type Reply = {
-  id: number
-  content: string
-  writer: string
-  created_at: string
-  user_id: number
-}
+import type { Reply, Board } from '@/types/board'
 
 type Props = {
   boardId: string
-  currentUser: User | null
+  currentUser: Board['user_id'] extends number ? { id: number; nickname: string } | null : null
 }
 
 export default function ReplySection({ boardId, currentUser }: Props) {
@@ -27,7 +15,7 @@ export default function ReplySection({ boardId, currentUser }: Props) {
   const [replyContent, setReplyContent] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
 
-  // 수정 모드 상태 (replyId -> 수정중인 댓글 ID)
+  // 수정 모드 상태
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingContent, setEditingContent] = useState('')
 
@@ -106,7 +94,12 @@ export default function ReplySection({ boardId, currentUser }: Props) {
             return (
               <li key={r.id} className="border-b pb-2 last:border-b-0">
                 <div className="flex items-center justify-between text-sm">
-                  <div>
+                  <div className="flex items-center gap-2">
+                    {r.profile_image ? (
+                      <img src={r.profile_image} alt={r.writer} className="h-6 w-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-gray-300" />
+                    )}
                     <span className="font-semibold">{r.writer}</span>
                     <span className="ml-2 text-xs text-gray-400">
                       {new Date(r.created_at).toLocaleDateString('ko-KR')}
