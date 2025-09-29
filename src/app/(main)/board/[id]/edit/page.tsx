@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
-import type { Board } from '@/components/board-page/types'
+import type { Board } from '@/types/board'
 import ReactQuillEditor from '@/components/board-page/ReactQuill'
 import BoardTabs from '@/components/board-page/BoardTabs'
 
