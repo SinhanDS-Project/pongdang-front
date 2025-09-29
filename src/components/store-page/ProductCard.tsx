@@ -30,12 +30,12 @@ export default function ProductCard({ product, onClick }: { product: Product; on
     >
       <CardContent className="flex flex-col gap-y-2 p-0">
         {/* 이미지 */}
-        <div className="bg-placeholder relative aspect-[2/1] w-full overflow-hidden rounded">
+        <div className="relative aspect-[2/1] w-full overflow-hidden rounded bg-white">
           <Image
             src={imgSrc}
             alt={product.name}
             fill
-            className="object-cover"
+            className="object-contain"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={false}
           />

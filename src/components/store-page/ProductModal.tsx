@@ -16,6 +16,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { PongIcon } from '@/icons'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 type Props = {
   product: Product
@@ -27,16 +29,20 @@ type Props = {
 export default function ProductModal({ product, onClose, onPay, paying = false }: Props) {
   const price = Number(product.price || 0)
 
+  // 모바일 모드 && 가로 모드
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
+
   return (
     <Dialog open onOpenChange={(open) => (!open ? onClose() : void 0)}>
-      <DialogContent className="max-w-sm gap-0 overflow-hidden p-0">
+      <DialogContent className={cn("max-w-sm gap-0 overflow-hidden p-0 flex flex-col", isMobileLandscape && "h-full max-h-[90dvh]")}>
         {/* 헤더 */}
-        <DialogHeader className="p-4">
+        <DialogHeader className="shrink-0 p-4">
           <DialogTitle className="text-xl">{product.name}</DialogTitle>
           <DialogDescription className="sr-only">상품 상세 정보 및 결제</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="h-80 max-h-96 px-4 pb-4">
+        <ScrollArea className="flex-1 min-h-0 px-4 pb-4">
           {/* 이미지 */}
           <div className="relative mb-4 aspect-[2/1]">
             <Image
@@ -76,7 +82,7 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
         </ScrollArea>
 
         {/* 푸터 */}
-        <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-2">
+        <DialogFooter className="shrink-0 grid grid-cols-2 gap-2 px-4 py-2">
           <Button
             type="button"
             variant="default"
@@ -86,6 +92,7 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
           >
             {paying ? '결제 중…' : '결제하기'}
           </Button>
+
           <Button type="button" variant="outline" onClick={onClose} className="rounded">
             닫기
           </Button>

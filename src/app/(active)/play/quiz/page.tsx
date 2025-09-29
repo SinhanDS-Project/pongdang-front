@@ -88,10 +88,12 @@ export default function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0)
   const [finished, setFinished] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(true) // 생성중 상태
+  const [generating, setGenerating] = useState(true)
   const [message, setMessage] = useState('')
   const [showBell, setShowBell] = useState(false)
-  const [rewarded, setRewarded] = useState(false) // 퐁 지급 여부 상태
+  const [rewarded, setRewarded] = useState(false)
+
+  const [alreadyPlayed, setAlreadyPlayed] = useState(false) //  중복 참여 여부
 
   // 오늘의 퀴즈 조회
   useEffect(() => {
@@ -100,7 +102,6 @@ export default function QuizPage() {
         setGenerating(true)
         await api.post('/api/quiz')
 
-        // 2초 생성중 모달 유지
         await new Promise((res) => setTimeout(res, 2000))
         setGenerating(false)
 
@@ -129,21 +130,19 @@ export default function QuizPage() {
     if (!current || selected === null) return
 
     try {
-      //  1번 문제 제출시 오늘 푼 기록 체크
       if (step === 0) {
         try {
           await api.post('/api/quiz/check')
         } catch (err) {
           if (err instanceof AxiosError && err.response?.status === 409) {
             setMessage('⚠️ 오늘은 이미 퀴즈에 참여하셨습니다.')
-            setFinished(true) // 더 진행 못하게 종료 처리
+            setAlreadyPlayed(true) //  중복 참여 플래그
             return
           }
-          throw err // 다른 에러는 기존 로직으로
+          throw err
         }
       }
 
-      //  정답 체크
       if (selected === current.answerIdx) {
         setCorrectCount((c) => c + 1)
       }
@@ -172,12 +171,12 @@ export default function QuizPage() {
     try {
       await api.post('/api/quiz/submit', { correctCount })
       setMessage(`🎉 축하합니다! ${correctCount}퐁이 지급되었습니다.`)
-      setRewarded(true) //  지급 완료 상태로 전환
+      setRewarded(true)
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         if (err.response?.data?.error === 'ALREADY_TODAY_QUIZ_FINISHED') {
           setMessage('⚠️ 오늘은 이미 퀴즈에 참여하셨습니다.')
-          setRewarded(true) // 이미 지급된 상태로 처리
+          setRewarded(true)
         } else {
           setMessage('❌ 지급 요청에 실패했습니다. 잠시 후 다시 시도해주세요.')
         }
@@ -197,17 +196,17 @@ export default function QuizPage() {
   }, [finished, correctCount])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center p-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-start p-6 pt-10">
       <h1 className="mb-6 text-2xl font-bold">🔔 도전! 금융 골든벨 🔔</h1>
 
       {generating ? (
-        //  생성중 모달
+        // 생성중 모달
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, ease: 'easeInOut' }}
-            className="rounded-2xl bg-white p-10 text-center shadow-2xl"
+            className="w-[90%] max-w-lg rounded-2xl bg-white p-10 text-center shadow-2xl"
           >
             <motion.div
               className="mb-6 text-6xl"
@@ -223,22 +222,19 @@ export default function QuizPage() {
           </motion.div>
         </div>
       ) : loading ? (
-        //  로딩 상태
         <p className="text-gray-600">퀴즈 불러오는 중...</p>
-      ) : finished && quizzes.length === 0 ? (
-        //  퀴즈 없거나 에러 메시지
-        <p>{message}</p>
-      ) : quizzes.length === 0 ? (
-        <p>퀴즈가 없습니다.</p>
+      ) : alreadyPlayed ? (
+        //  이미 참여한 경우
+        <p className="mt-6 flex items-center justify-center rounded bg-yellow-50 px-6 py-3 text-xl font-bold whitespace-nowrap text-yellow-700 shadow">
+          {message}
+        </p>
       ) : !finished ? (
         // 퀴즈 진행중
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
-          {/* 문제 */}
           <div className="mb-3 text-lg font-semibold">
             Q{current.position}. {current.question}
           </div>
 
-          {/* 보기 */}
           <div className="mb-4 space-y-2">
             {current.choices.map((c, idx) => {
               const isChosen = selected === idx
@@ -266,7 +262,6 @@ export default function QuizPage() {
             })}
           </div>
 
-          {/* 제출 / 다음 */}
           {!showResult ? (
             <button
               type="submit"
@@ -302,7 +297,7 @@ export default function QuizPage() {
           )}
         </form>
       ) : (
-        //  퀴즈 끝
+        // 퀴즈 끝
         <div className="text-center">
           <p className="mb-2 text-xl font-bold">
             퀴즈 완료! 맞힌 개수: {correctCount} / {quizzes.length}
@@ -316,7 +311,9 @@ export default function QuizPage() {
             <button
               onClick={savePong}
               disabled={rewarded}
-              className={`mt-4 w-full rounded px-4 py-2 text-lg font-bold text-white transition ${rewarded ? 'cursor-not-allowed bg-green-500 opacity-50' : 'bg-green-500 hover:bg-green-600'} `}
+              className={`mt-4 w-full rounded px-4 py-2 text-lg font-bold text-white transition ${
+                rewarded ? 'cursor-not-allowed bg-green-500 opacity-50' : 'bg-green-500 hover:bg-green-600'
+              }`}
             >
               퐁 받기
             </button>

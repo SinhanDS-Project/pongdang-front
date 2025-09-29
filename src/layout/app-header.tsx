@@ -135,6 +135,8 @@ export function AppHeader() {
         withCredentials: true,
         headers: access ? { Authorization: `Bearer ${access}` } : undefined,
       })
+
+      router.replace('/')
     } catch {}
     tokenStore.clear()
     await revalidateMe()
@@ -244,7 +246,7 @@ export function AppHeader() {
               <DropdownMenu>
                 <DropdownMenuTrigger className="hidden rounded-full ring-0 outline-none md:block">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
+                    <AvatarImage src={user?.profile_img || '/placeholder-banner.png'} alt="@shadcn" />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>

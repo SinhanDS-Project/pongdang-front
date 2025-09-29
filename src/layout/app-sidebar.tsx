@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import * as React from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -45,7 +45,9 @@ import { apiPublic } from '@/lib/net/client-axios'
 import { tokenStore } from '@/stores/token-store'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isMobile } = useSidebar()
+  const route = useRouter()
+
+  const { isMobileOrTablet } = useSidebar()
 
   const { user } = useMe()
 
@@ -56,6 +58,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         withCredentials: true,
         headers: access ? { Authorization: `Bearer ${access}` } : undefined,
       })
+
+      route.replace('/')
     } catch {}
     tokenStore.clear()
     await revalidateMe()
@@ -196,7 +200,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/placeholder-banner.png" alt="@shadcn" />
+                    <AvatarImage src={user?.profile_img || '/placeholder-banner.png'} alt="@shadcn" />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -208,7 +212,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
+                side={isMobileOrTablet ? 'bottom' : 'right'}
                 align="end"
                 sideOffset={4}
               >
