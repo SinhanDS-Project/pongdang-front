@@ -11,6 +11,7 @@ export default function BoardEditPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
+  const [post, setPost] = useState<Board | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
@@ -24,6 +25,7 @@ export default function BoardEditPage() {
     ;(async () => {
       try {
         const { data } = await api.get<Board>(`/api/board/${id}`)
+        setPost(data)
         setTitle(data.title)
         setContent(data.content)
       } catch (e) {
@@ -39,8 +41,14 @@ export default function BoardEditPage() {
     if (titleEmpty) return alert('제목을 입력해주세요.')
     if (!plainText) return alert('내용을 입력해주세요.')
 
+    if (!post) return
+
     try {
-      await api.put(`/api/board/${id}`, { title, content })
+      await api.put(`/api/board/${id}`, {
+        ...post, // 기존 데이터 유지
+        title,
+        content,
+      })
       alert('수정되었습니다.')
       router.push(`/board/${id}`)
     } catch (e) {
@@ -54,7 +62,7 @@ export default function BoardEditPage() {
 
   return (
     <main className="mx-auto max-w-6xl">
-      <BoardTabs activeCategory="FREE" />
+      <BoardTabs activeCategory={post?.category ?? 'FREE'} />
       <section className="relative rounded-2xl border bg-gray-50 p-4 shadow-sm sm:p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_220px]">
           {/* 왼쪽: 에디터 영역 */}

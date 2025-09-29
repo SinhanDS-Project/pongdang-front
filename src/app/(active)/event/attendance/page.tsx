@@ -7,14 +7,15 @@ import { AxiosError } from 'axios'
 type AttendanceMap = Record<number, boolean>
 
 export default function AttendancePage() {
+  // 오늘 날짜 (CSR 전용이라 hydration mismatch X)
   const now = useMemo(() => new Date(), [])
   const year = now.getFullYear()
   const month = now.getMonth()
   const today = now.getDate()
 
-  //  월요일 시작 기준 보정
+  // 월요일 시작 기준 보정
   const rawFirstDay = new Date(year, month, 1).getDay() // 0=일~6=토
-  const firstDay = (rawFirstDay + 6) % 7 // 월=0, 화=1, ..., 일=6
+  const firstDay = (rawFirstDay + 6) % 7 // 월=0, ..., 일=6
 
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
@@ -26,7 +27,7 @@ export default function AttendancePage() {
   const dateStr = (y: number, m1: number, d: number) =>
     `${y}-${String(m1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
-  //  서버에서 출석 기록 불러오기
+  // 서버에서 출석 기록 불러오기
   useEffect(() => {
     ;(async () => {
       try {
@@ -64,18 +65,10 @@ export default function AttendancePage() {
     setSubMsg('')
 
     try {
-      const payload = {
-        year,
-        month: month + 1,
-        day,
-        date: dateStr(year, month + 1, day),
-      }
-
-      // 퐁 적립
       await api.put('/api/wallet/add', {
-        amount: 1, // 출석 보상 퐁
-        wallet_type: 'PONG', // 포인트 타입
-        event_type: 'ATTENDANCE', // 이벤트 타입
+        amount: 1,
+        wallet_type: 'PONG',
+        event_type: 'ATTENDANCE',
       })
 
       setAttendance((prev) => ({ ...prev, [day]: true }))
@@ -101,16 +94,20 @@ export default function AttendancePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="mb-16 text-center text-2xl font-bold">📅 퐁당퐁당 출석체크 ✔️</h1>
-      <p className="mb-8 text-center text-2xl font-bold text-gray-700">
+    <main className="mx-auto max-w-3xl p-4 sm:p-8">
+      <h1 className="mb-8 text-center text-xl font-bold sm:mb-16 sm:text-2xl">📅 퐁당퐁당 출석체크 ✔️</h1>
+      <p className="mb-6 text-center text-xl font-bold text-gray-700 sm:mb-8 sm:text-2xl">
         {year}년 {month + 1}월
       </p>
 
-      <div className="grid grid-cols-7 gap-3 text-center text-lg">
-        {/*  요일 헤더 (월요일 시작) */}
-        {['월', '화', '수', '목', '금', '토', '일'].map((d) => (
-          <div key={d} className="font-semibold text-gray-700">
+      {/* 달력 */}
+      <div className="grid grid-cols-7 gap-1 text-center text-sm sm:gap-3 sm:text-lg">
+        {/* 요일 헤더 */}
+        {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
+          <div
+            key={d}
+            className={`font-semibold ${i === 5 ? 'text-blue-500' : i === 6 ? 'text-red-500' : 'text-gray-700'}`}
+          >
             {d}
           </div>
         ))}
@@ -132,15 +129,16 @@ export default function AttendancePage() {
               onClick={() => handleCheck(day)}
               disabled={checked || loading || !isToday}
               className={[
-                'flex h-16 w-16 items-center justify-center rounded-lg border text-lg font-semibold transition',
-
+                'flex items-center justify-center rounded-lg border font-semibold transition',
+                'h-10 w-10 text-sm', // 모바일
+                'sm:h-16 sm:w-16 sm:text-lg', // 태블릿 이상
                 checked
                   ? isToday
-                    ? 'cursor-default bg-sky-600 text-white shadow-md' // 오늘 출석 완료
-                    : 'cursor-default bg-sky-300 text-white shadow-sm' // 과거 출석
+                    ? 'cursor-default bg-sky-600 text-white shadow-md'
+                    : 'cursor-default bg-sky-300 text-white shadow-sm'
                   : isToday
                     ? 'border-2 border-blue-500 bg-white text-blue-600 hover:scale-105 hover:bg-blue-50'
-                    : 'cursor-not-allowed border-gray-300 text-gray-400 opacity-60', // 다른 날짜
+                    : 'cursor-not-allowed border-gray-300 text-gray-400 opacity-60',
               ].join(' ')}
             >
               {day}
@@ -149,12 +147,12 @@ export default function AttendancePage() {
         })}
       </div>
 
-      {/* 안내/메시지 */}
-      <div className="mt-8 text-center">
+      {/* 안내 메시지 */}
+      <div className="mt-6 text-center sm:mt-8">
         {rewardMsg && (
           <>
-            <p className="mb-2 text-xl font-bold text-green-600">{rewardMsg}</p>
-            {subMsg && <p className="text-lg text-gray-700">{subMsg}</p>}
+            <p className="mb-1 text-lg font-bold text-green-600 sm:mb-2 sm:text-xl">{rewardMsg}</p>
+            {subMsg && <p className="text-sm text-gray-700 sm:text-lg">{subMsg}</p>}
           </>
         )}
       </div>

@@ -95,11 +95,12 @@ export default function ReplySection({ boardId, currentUser }: Props) {
               <li key={r.id} className="border-b pb-2 last:border-b-0">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    {r.profile_image ? (
-                      <img src={r.profile_image} alt={r.writer} className="h-6 w-6 rounded-full object-cover" />
+                    {r.profile_img ? (
+                      <img src={r.profile_img.trim()} alt={r.writer} className="h-6 w-6 rounded-full object-cover" />
                     ) : (
                       <div className="h-6 w-6 rounded-full bg-gray-300" />
                     )}
+
                     <span className="font-semibold">{r.writer}</span>
                     <span className="ml-2 text-xs text-gray-400">
                       {new Date(r.created_at).toLocaleDateString('ko-KR')}
