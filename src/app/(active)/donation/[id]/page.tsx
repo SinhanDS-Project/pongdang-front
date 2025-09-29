@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 /* ── 타입 정의 ───────────────────────── */
 type DonationDetail = {
@@ -63,6 +65,11 @@ export default function DonationDetailPage() {
 
   // 기부 완료 축하 화면 상태
   const [showCelebration, setShowCelebration] = useState(false)
+  
+  // 모바일 모드 && 가로 모드
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
+  
 
   /* ── 데이터 로딩 ───────────────────── */
   useEffect(() => {
@@ -216,7 +223,7 @@ export default function DonationDetailPage() {
 
             {/* 기부 모달 */}
             <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
-              <DialogContent className="max-w-lg">
+              <DialogContent className={cn("max-w-lg max-h-[90dvh]", isMobileLandscape && "h-full")}>
                 <DialogHeader>
                   <DialogTitle>기부 퐁 선택 & 입력</DialogTitle>
                   <p className="mt-1 text-sm text-gray-500">어떤 퐁으로 기부할지 선택하고, 기부할 퐁을 입력하세요.</p>
