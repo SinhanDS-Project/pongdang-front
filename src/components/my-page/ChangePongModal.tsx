@@ -94,7 +94,7 @@ export function ChangePongModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn("max-w-lg rounded-2xl p-0 shadow-xl max-h-[90dvh]", isMobileLandscape && "h-full")}>
+      <DialogContent className={cn("max-w-lg rounded-2xl p-0 shadow-xl max-h-[90dvh]", isMobile ? "w-full h-[90dvh]" : "w-[calc(100%-1rem)]", isMobileLandscape && "h-full")}>
         <div className="p-6">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-extrabold tracking-tight">

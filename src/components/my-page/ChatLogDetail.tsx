@@ -36,7 +36,7 @@ export default function ChatLogDetailModal({ open, onClose, chatLog }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className={cn("max-w-lg rounded-2xl p-6 shadow-xl max-h-[90dvh]", isMobileLandscape && "overflow-y-auto h-full")}>
+      <DialogContent className={cn("max-w-lg rounded-2xl p-6 shadow-xl max-h-[90dvh]", isMobile ? "w-full h-[90dvh]" : "w-[calc(100%-1rem)]", isMobileLandscape && "overflow-y-auto h-full")}>
         <DialogHeader className="mb-4">
           <DialogTitle className="text-2xl font-extrabold tracking-tight">{chatLog.title}</DialogTitle>
         </DialogHeader>
