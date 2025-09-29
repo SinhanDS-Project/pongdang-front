@@ -117,7 +117,7 @@ export default function BoardDetailPage() {
                 <span className="flex items-center justify-center gap-2">
                   {post.profile_img ? (
                     <img
-                      src={post.profile_img.trim()} // ✅ trim() 추가
+                      src={post.profile_img.trim()}
                       alt={post.nickname}
                       className="h-6 w-6 rounded-full object-cover"
                     />
