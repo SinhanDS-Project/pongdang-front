@@ -161,7 +161,8 @@ export default function MyPageContent() {
     <div className="container mx-auto flex grow flex-col gap-y-4 p-4 md:p-6 lg:p-8">
       {/* 상단 영역 */}
       <div className="grid grid-cols-4 gap-x-8">
-        <div className="bg-placeholder relative aspect-square w-full overflow-hidden rounded-full">
+        <div className="group relative aspect-square w-full overflow-hidden rounded-full">
+          {/* 프로필 이미지 */}
           <Image
             src={user?.profile_img || '/placeholder-banner.png'}
             alt={`${user?.user_name} 프로필 이미지`}
@@ -169,12 +170,19 @@ export default function MyPageContent() {
             className="cursor-pointer object-cover"
             onClick={handleClick}
           />
+
+          {/* 업로드 중 오버레이 */}
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center gap-x-2 bg-black/50 font-semibold text-white">
               <div className="border-primary-white h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"></div>
               업로드 중...
             </div>
           )}
+
+          {/* Hover 시 오버레이 */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+            <span className="text-sm font-bold">프로필 이미지 변경</span>
+          </div>
 
           {/* 숨겨진 파일 입력 */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
