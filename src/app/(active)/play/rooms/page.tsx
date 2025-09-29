@@ -151,7 +151,7 @@ export default function PlayRoomsHome() {
       <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
         <div className="flex items-center gap-2">
           <div className="text-foreground/70">
-            다같이 퐁!<span className="text-secondary-royal">게임방</span>
+            다같이 퐁! <span className="text-secondary-royal">게임방</span>
           </div>
           <GameIcon />
         </div>
