@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 
 import { useMe } from '@/hooks/use-me'
 import { api } from '@/lib/net/client-axios'
+import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 
 type Panel = 'change' | 'success'
@@ -85,10 +87,14 @@ export function ChangePongModal({ open, onOpenChange }: Props) {
 
   // 환산된 퐁 계산
   const convertedPong = Math.floor(Number(amount || 0) / 100)
+  
+  // 모바일 모드 && 가로 모드
+  const { isMobile, isLandscape } = useIsMobile()
+  const isMobileLandscape = isMobile && isLandscape
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl p-0 shadow-xl">
+      <DialogContent className={cn("max-w-lg rounded-2xl p-0 shadow-xl max-h-[90dvh]", isMobileLandscape && "h-full")}>
         <div className="p-6">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-extrabold tracking-tight">
