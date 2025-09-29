@@ -7,6 +7,7 @@ import FailIcon from './fail.svg'
 import FrontCoinIcon from './front_coin.svg'
 import GameIcon from './game.svg'
 import GreenTurtleIcon from './green_turtle.svg'
+import HeartIcon from './heart.svg'
 import HostIcon from './host.svg'
 import OrangeTurtleIcon from './orange_turtle.svg'
 import PinkTurtleIcon from './pink_turtle.svg'
@@ -31,6 +32,7 @@ export {
   FrontCoinIcon,
   GameIcon,
   GreenTurtleIcon,
+  HeartIcon,
   HostIcon,
   OrangeTurtleIcon,
   PinkTurtleIcon,
