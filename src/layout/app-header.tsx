@@ -135,6 +135,8 @@ export function AppHeader() {
         withCredentials: true,
         headers: access ? { Authorization: `Bearer ${access}` } : undefined,
       })
+
+      router.replace('/')
     } catch {}
     tokenStore.clear()
     await revalidateMe()

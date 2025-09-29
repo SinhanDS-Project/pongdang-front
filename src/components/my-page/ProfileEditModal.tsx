@@ -2,9 +2,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, CheckCircle, Eye, EyeOff, Loader2, UserIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
+
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -14,8 +17,6 @@ import { Input } from '@/components/ui/input'
 import { changeNickname, changePassword, checkNicknameDup, unregisterAccount } from '@/features/auth'
 
 import { useMe } from '@/hooks/use-me'
-import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
 
 // 내부 화면 타입
 type Panel = 'overview' | 'nickname' | 'password' | 'success' | 'withdraw'
@@ -86,7 +87,6 @@ function Overview({
   onEditPassword: () => void
   onWithdrawDone: () => void
 }) {
-  
   const { user } = useMe()
 
   return (
@@ -488,13 +488,17 @@ function Success({ onClose }: { onClose: () => void }) {
 }
 
 function Withdraw({ onClose }: { onClose: () => void }) {
+  const route = useRouter()
   const [submitting, setSubmitting] = useState(false)
 
   const onClick = async () => {
     setSubmitting(true)
     try {
       await unregisterAccount()
+
       onClose()
+
+      route.replace('/')
     } finally {
       setSubmitting(false)
     }
