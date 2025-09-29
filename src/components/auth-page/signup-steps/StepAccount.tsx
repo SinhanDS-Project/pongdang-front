@@ -139,7 +139,7 @@ export function StepAccount() {
               <Input value={emailSnap} disabled className="pl-9" />
             </div>
             <p className="text-muted-foreground mt-2 text-xs">
-              베팅포인트에서 가져온 이메일입니다. 이 단계에서는 이메일 변경/인증이 생략됩니다.
+              신한에서 가져온 이메일입니다. 이 단계에서는 이메일 변경/인증이 생략됩니다.
             </p>
           </div>
         ) : (
