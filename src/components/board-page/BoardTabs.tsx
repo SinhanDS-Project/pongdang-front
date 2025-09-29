@@ -25,7 +25,7 @@ export default function BoardTabs({ activeCategory }: { activeCategory?: string 
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={[
-                'relative -mb-[1px] flex-1 pb-2 text-center text-2xl font-bold',
+                'relative -mb-[1px] flex-1 pb-2 text-center text-[24px] font-extrabold sm:text-[20px]',
                 active ? 'text-black' : 'text-[#D9D9D9]',
               ].join(' ')}
             >
