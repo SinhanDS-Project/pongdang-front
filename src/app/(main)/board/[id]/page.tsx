@@ -42,7 +42,7 @@ export default function BoardDetailPage() {
       try {
         setLoading(true)
 
-        //  먼저 공지사항 API 시도 (로그인 필요 없음)
+        // 먼저 공지사항 API 시도 (로그인 필요 없음)
         try {
           const { data: noticeData } = await api.get(`/api/support/detail/${id}`)
           if (!alive) return
@@ -56,7 +56,7 @@ export default function BoardDetailPage() {
           // 실패 시 그냥 board API로
         }
 
-        // 2 일반 게시글 API 호출
+        //  일반 게시글 API 호출
         try {
           const { data } = await api.get(`/api/board/${id}`)
           if (!alive) return
@@ -115,8 +115,12 @@ export default function BoardDetailPage() {
               <div className="mb-3 grid grid-cols-4 text-center text-sm text-gray-500">
                 {/* 작성자 + 프로필 */}
                 <span className="flex items-center justify-center gap-2">
-                  {post.profile_image ? (
-                    <img src={post.profile_image} alt={post.nickname} className="h-6 w-6 rounded-full object-cover" />
+                  {post.profile_img ? (
+                    <img
+                      src={post.profile_img.trim()} // ✅ trim() 추가
+                      alt={post.nickname}
+                      className="h-6 w-6 rounded-full object-cover"
+                    />
                   ) : (
                     <div className="h-6 w-6 rounded-full bg-gray-300" /> // 기본 회색
                   )}
