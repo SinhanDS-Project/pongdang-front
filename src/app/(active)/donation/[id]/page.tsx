@@ -1,18 +1,22 @@
 'use client'
 
+import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
+import { revalidateMe, useMe } from '@/hooks/use-me'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { api } from '@/lib/net/client-axios'
+import { cn } from '@/lib/utils'
+import { Button } from '@components/ui/button'
+import { DialogDescription } from '@radix-ui/react-dialog'
+import type { AxiosError } from 'axios'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ClipboardList, Heart, Pin } from 'lucide-react'
+import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { api } from '@/lib/net/client-axios'
-import type { AxiosError } from 'axios'
-import Image from 'next/image'
-import { Progress } from '@/components/ui/progress'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
-import { revalidateMe, useMe } from '@/hooks/use-me'
 
 /* ── 타입 정의 ───────────────────────── */
 type DonationDetail = {
@@ -50,11 +54,10 @@ export default function DonationDetailPage() {
   const [termsOpen, setTermsOpen] = useState(false)
   const [donateOpen, setDonateOpen] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
-  
+
   // 모바일 모드 && 가로 모드
   const { isMobile, isLandscape } = useIsMobile()
   const isMobileLandscape = isMobile && isLandscape
-  
 
   /* ── 기부 상세 불러오기 ───────────────────── */
   useEffect(() => {
@@ -113,155 +116,180 @@ export default function DonationDetailPage() {
 
   /* ── UI ────────────────────────────── */
   return (
-    <>
-      <div className="flex w-full justify-center px-2 py-6 sm:px-4 md:px-6">
-        <div className="w-full max-w-4xl space-y-8">
-          {/* 이미지 + 제목 */}
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg shadow">
-            <Image src={donation.img || '/placeholder-banner.png'} alt={donation.title} fill className="object-cover" />
-            <div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-4 text-white">
-              <h1 className="text-2xl font-bold md:text-3xl">{donation.title}</h1>
-              {donation.org && <p className="mt-1 text-base opacity-90">{donation.org}</p>}
-            </div>
-          </div>
-
-          {/* 모금 소개 */}
-          <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
-            <h2 className="text-xl font-semibold">📌 모금 소개</h2>
-            <p className="my-4 text-base leading-relaxed text-gray-800 md:my-6 md:text-lg">{donation.content}</p>
-          </section>
-
-          {/* 목적 */}
-          {donation.purpose && (
-            <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
-              <h2 className="text-xl font-semibold">🎯 목적</h2>
-              <p className="my-2 text-base text-gray-700 md:my-4 md:text-lg">{donation.purpose}</p>
-            </section>
-          )}
-
-          {/* 모집 기간 */}
-          <section className="space-y-4 rounded-lg bg-gray-50 p-4 shadow-sm md:p-6">
-            <h2 className="text-xl font-semibold">📅 모집 기간</h2>
-            <p className="my-2 text-base text-gray-600 md:my-4 md:text-lg">
-              {donation.start_date?.slice(0, 10)} ~ {donation.end_date?.slice(0, 10)}
-            </p>
-          </section>
-
-          <hr className="my-6 border-t border-gray-300" />
-
-          {/* 기부하기 섹션 */}
-          <section className="space-y-4 text-center">
-            <p className="text-gray-600">여러분의 소중한 기부가 큰 변화를 만듭니다.</p>
-
-            {/* 약관 모달 */}
-            <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  size="lg"
-                  className="rounded-full bg-sky-500 px-12 py-4 text-lg font-extrabold text-white shadow-md transition-transform hover:scale-105 hover:bg-sky-600"
-                >
-                  ❤️ 지금 기부하기
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>기부 약관 동의</DialogTitle>
-                </DialogHeader>
-                <div className="max-h-[400px] space-y-4 overflow-y-auto text-sm text-gray-700">
-                  <p>기부금 영수증 발급 및 세액공제를 위해 개인정보 제공 동의가 필요합니다.</p>
-                  <p>
-                    1. 제공 받는 자 : 국세청 <br />
-                    2. 제공 항목 : 이름, 주민등록번호(암호화된 값), 기부 내역 <br />
-                    3. 이용 목적 : 기부금 영수증 발행 및 세액 공제 <br />
-                    4. 보유 및 이용기간 : 관련 법령에 따른 보관 기간
-                  </p>
-                </div>
-                <DialogFooter className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setTermsOpen(false)}>
-                    동의하지 않음
-                  </Button>
-                  <Button
-                    className="bg-sky-500 text-white hover:bg-sky-600"
-                    onClick={() => {
-                      setTermsOpen(false)
-                      setDonateOpen(true)
-                    }}
-                  >
-                    동의하고 계속
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* 기부 모달 */}
-            <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
-              <DialogContent className={cn("max-w-lg max-h-[90dvh]", isMobileLandscape && "h-full")}>
-                <DialogHeader>
-                  <DialogTitle>기부 퐁 선택 & 입력</DialogTitle>
-                  <p className="mt-1 text-sm text-gray-500">어떤 퐁으로 기부할지 선택하고, 기부할 퐁을 입력하세요.</p>
-                </DialogHeader>
-
-                {/* 잔액 카드 */}
-                <div className="my-4 grid grid-cols-2 gap-4">
-                  <div
-                    onClick={() => setWalletType('PONG')}
-                    className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
-                      walletType === 'PONG' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <h3 className="text-lg font-bold">일반퐁</h3>
-                    <p className="text-sm text-gray-600">일반 활동으로 적립된 퐁</p>
-                    <p className="mt-2 font-semibold text-sky-600">{user ? fmt(user.pong_balance) : 0} 보유</p>
-                  </div>
-
-                  <div
-                    onClick={() => setWalletType('DONA')}
-                    className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
-                      walletType === 'DONA' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <h3 className="text-lg font-bold">기부퐁</h3>
-                    <p className="text-sm text-gray-600">특별 활동으로 적립된 퐁</p>
-                    <p className="mt-2 font-semibold text-sky-600">{user ? fmt(user.dona_balance) : 0} 보유</p>
-                  </div>
-                </div>
-
-                {/* 금액 입력 */}
-                <div className="space-y-2">
-                  <Input
-                    type="number"
-                    placeholder="기부 퐁을 입력하세요"
-                    value={amount || ''}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                  />
-                  {formError && <p className="text-sm text-red-500">{formError}</p>}
-                  {amount > 0 && user && (
-                    <p className="text-sm text-gray-500">
-                      예상 잔액 퐁:{' '}
-                      {walletType === 'PONG' ? fmt(user.pong_balance - amount) : fmt(user.dona_balance - amount)}
-                    </p>
-                  )}
-                </div>
-
-                {/* 진행 퍼센트 */}
-                <div className="mt-4">
-                  <p className="mb-1 text-sm text-gray-600">이번 기부 후 예상 진행률:</p>
-                  <Progress value={Math.min(100, Math.round(((currentPong + amount) / goalPong) * 100))} />
-                </div>
-
-                <DialogFooter className="mt-6 flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setDonateOpen(false)}>
-                    취소
-                  </Button>
-                  <Button disabled={loading} className="bg-sky-500 text-white hover:bg-sky-600" onClick={handleDonate}>
-                    {loading ? '기부 중...' : '기부하기'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </section>
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <div className="relative mb-8 aspect-[8/3] w-full overflow-hidden rounded-lg shadow">
+        <Image src={donation.img || '/placeholder-banner.png'} alt={donation.title} fill className="object-cover" />
+        <div className="absolute inset-0 flex flex-col justify-end bg-black/30 p-4 text-white">
+          <div className="text-2xl font-bold md:text-3xl">{donation.title}</div>
+          {donation.org && <p className="mt-1 text-base opacity-90">{donation.org}</p>}
         </div>
       </div>
+
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="text-foreground/70 flex items-end gap-2">
+            <span className="text-secondary-royal text-3xl font-extrabold">모집기간: </span>
+            <span className="text-2xl font-bold">
+              {donation.start_date?.slice(0, 10)} ~ {donation.end_date?.slice(0, 10)}
+            </span>
+          </div>
+        </div>
+        <Button
+          size={'lg'}
+          onClick={() => setTermsOpen(true)}
+          className="bg-secondary-royal hover:bg-secondary-sky text-base font-bold"
+        >
+          <Heart />
+          기부하기
+        </Button>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-x-2">
+          <Pin className="text-red-500" />
+          <span className="text-2xl font-extrabold">소개</span>
+        </div>
+        <Card className="shadow-lg">
+          <CardContent className="text-accent-foreground px-4 leading-relaxed font-semibold whitespace-pre-wrap">
+            {donation.content}
+          </CardContent>
+        </Card>
+      </div>
+      <Separator className="my-8" />
+      <div className="space-y-4">
+        <div className="flex items-center gap-x-2">
+          <ClipboardList />
+          <span className="text-2xl font-extrabold">목적</span>
+        </div>
+        <Card className="shadow-lg">
+          <CardContent className="text-accent-foreground px-4 leading-relaxed font-semibold whitespace-pre-wrap">
+            {donation.purpose}
+          </CardContent>
+        </Card>
+      </div>
+      <Separator className="my-8" />
+      <p className="text-center text-gray-600">여러분의 소중한 기부가 큰 변화를 만듭니다.</p>
+
+      {/* 약관 모달 */}
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>기부 약관 동의</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-8">
+            <div className="text-foreground space-y-4">
+              <p className="text-base font-semibold">
+                기부금 영수증 발급 및 세액공제를 위해 개인정보 제공 동의가 필요합니다.
+              </p>
+              <div className="flex flex-col">
+                <p className="mb-1 text-base font-medium">탈퇴 시 아래 내용이 적용됩니다:</p>
+                <ul className="list-disc space-y-1 pl-4">
+                  <li>제공 받는 자 : 국세청</li>
+                  <li>제공 항목 : 이름, 주민등록번호(암호화된 값), 기부 내역</li>
+                  <li>이용 목적 : 기부금 영수증 발행 및 세액 공제</li>
+                  <li>보유 및 이용기간 : 관련 법령에 따른 보관 기간</li>
+                </ul>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => setTermsOpen(false)}>
+                동의하지 않음
+              </Button>
+              <Button
+                className="bg-sky-500 text-white hover:bg-sky-600"
+                onClick={() => {
+                  setTermsOpen(false)
+                  setDonateOpen(true)
+                }}
+              >
+                동의하고 계속
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 기부 모달 */}
+      <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
+        <DialogContent className={cn('max-h-[90dvh] max-w-lg', isMobileLandscape && 'h-full')}>
+          <DialogHeader>
+            <DialogTitle>기부 퐁 선택 & 입력</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              어떤 퐁으로 기부할지 선택하고, 기부할 퐁을 입력하세요.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* 잔액 카드 */}
+          <div className="my-4 grid grid-cols-2 gap-4">
+            <Card
+              className={cn(
+                'cursor-pointer border py-2 shadow transition',
+                walletType === 'PONG' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50',
+              )}
+              onClick={() => setWalletType('PONG')}
+            >
+              <CardContent className="text-accent-foreground px-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <div className="text-base font-extrabold">일반퐁</div>
+                    <div className="text-xs text-gray-600">일반 활동으로 적립된 퐁</div>
+                  </div>
+                  <div className="text-base font-bold text-sky-600">{user ? fmt(user.pong_balance) : 0} 보유</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card
+              className={cn(
+                'cursor-pointer border py-2 shadow transition',
+                walletType === 'DONA' ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:bg-gray-50',
+              )}
+              onClick={() => setWalletType('DONA')}
+            >
+              <CardContent className="text-accent-foreground px-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <div className="text-base font-extrabold">기부퐁</div>
+                    <div className="text-xs text-gray-600">특별 활동으로 적립된 퐁</div>
+                  </div>
+                  <div className="text-base font-bold text-rose-500">{user ? fmt(user.dona_balance) : 0} 보유</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 금액 입력 */}
+          <div className="space-y-2">
+            <p className="text-sm">기부할 퐁:</p>
+            <Input
+              type="number"
+              placeholder="기부 퐁을 입력하세요"
+              value={amount || ''}
+              onChange={(e) => setAmount(Number(e.target.value))}
+            />
+            {formError && <p className="text-sm text-red-500">{formError}</p>}
+            {amount > 0 && user && (
+              <p className="text-sm text-gray-500">
+                예상 잔액 퐁:{' '}
+                {walletType === 'PONG' ? fmt(user.pong_balance - amount) : fmt(user.dona_balance - amount)}
+              </p>
+            )}
+          </div>
+
+          {/* 진행 퍼센트 */}
+          <div className="mt-4">
+            <p className="mb-2 text-sm">이번 기부 후 예상 진행률:</p>
+            <Progress value={Math.min(100, Math.round(((currentPong + amount) / goalPong) * 100))} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={() => setDonateOpen(false)}>
+              취소
+            </Button>
+            <Button disabled={loading} className="bg-sky-500 text-white hover:bg-sky-600" onClick={handleDonate}>
+              {loading ? '기부 중...' : '기부하기'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 🎉 기부 감사 애니메이션 */}
       <AnimatePresence>
@@ -312,6 +340,6 @@ export default function DonationDetailPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   )
 }
