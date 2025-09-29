@@ -5,14 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/net/client-axios'
 import BoardTabs from '@/components/board-page/BoardTabs'
 import dynamic from 'next/dynamic'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
-
-// ✅ ReactQuillEditor를 동적 import + SSR 비활성화
+// ReactQuillEditor를 동적 import + SSR 비활성화
 const ReactQuillEditor = dynamic(() => import('@/components/board-page/ReactQuill'), {
   ssr: false,
 })
 
-// 📝 실제 본문 (body 역할)
+// 실제 본문 (body 역할)
 function WriteBody() {
   const router = useRouter()
   const sp = useSearchParams()
@@ -21,14 +22,18 @@ function WriteBody() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
+  // 모달 상태
+  const [successOpen, setSuccessOpen] = useState(false)
+  const [errorOpen, setErrorOpen] = useState(false)
+
   // HTML 태그 제거 후 텍스트만 확인
   const plainText = useMemo(() => content.replace(/<[^>]+>/g, '').trim(), [content])
   const titleEmpty = title.trim().length === 0
 
   // 최종 onSubmit
   const onSubmit = async () => {
-    if (titleEmpty) return alert('제목을 입력해주세요.')
-    if (!plainText) return alert('내용을 입력해주세요.')
+    if (titleEmpty) return setErrorOpen(true)
+    if (!plainText) return setErrorOpen(true)
 
     try {
       await api.post('/api/board', {
@@ -36,10 +41,9 @@ function WriteBody() {
         content,
         category: cat,
       })
-      alert('게시글이 등록되었습니다.')
-      router.push('/board')
+      setSuccessOpen(true) //  성공 모달 열기
     } catch (e) {
-      alert('등록 중 오류가 발생했습니다.')
+      setErrorOpen(true) //  실패 모달 열기
     }
   }
 
@@ -83,11 +87,47 @@ function WriteBody() {
           </div>
         </div>
       </section>
+
+      {/* ✅  글 등록 성공 모달 */}
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>게시글 등록 완료 🎉</DialogTitle>
+          </DialogHeader>
+          <p className="mt-2 text-gray-600">게시글이 성공적으로 등록되었습니다.</p>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setSuccessOpen(false)
+                router.push('/board/free')
+              }}
+              className="bg-[var(--color-secondary-royal)] text-white"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ❌ 글 등록 실패 에러 모달 */}
+      <Dialog open={errorOpen} onOpenChange={setErrorOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>등록 실패 ⚠️</DialogTitle>
+          </DialogHeader>
+          <p className="mt-2 text-gray-600">제목과 내용을 확인하거나, 다시 시도해주세요.</p>
+          <DialogFooter>
+            <Button onClick={() => setErrorOpen(false)} variant="destructive">
+              닫기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
 
-// 📄 페이지 컴포넌트 (Suspense로 WriteBody 감싸기)
+// 페이지 컴포넌트 (Suspense로 WriteBody 감싸기)
 export default function Page() {
   return (
     <Suspense fallback={<div>로딩 중...</div>}>
