@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Board } from '@/types/board'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Eye, Heart } from 'lucide-react'
 
 type Props = {
   items: Board[]
@@ -33,34 +34,31 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
           <div className="ml-4 flex gap-2">
             <button
               onClick={() => onSortChange?.('createdAt')}
-              className={[
-                'rounded px-3 py-1 text-sm font-medium',
+              className={
                 sort === 'createdAt'
-                  ? 'bg-[var(--color-secondary-royal)] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-              ].join(' ')}
+                  ? 'rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white'
+                  : 'rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-200'
+              }
             >
               최신순
             </button>
             <button
               onClick={() => onSortChange?.('viewCount')}
-              className={[
-                'rounded px-3 py-1 text-sm font-medium',
+              className={
                 sort === 'viewCount'
-                  ? 'bg-[var(--color-secondary-royal)] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-              ].join(' ')}
+                  ? 'rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white'
+                  : 'rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-200'
+              }
             >
               조회수
             </button>
             <button
               onClick={() => onSortChange?.('likeCount')}
-              className={[
-                'rounded px-3 py-1 text-sm font-medium',
+              className={
                 sort === 'likeCount'
-                  ? 'bg-[var(--color-secondary-royal)] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-              ].join(' ')}
+                  ? 'rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white'
+                  : 'rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-200'
+              }
             >
               좋아요
             </button>
@@ -70,12 +68,7 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
           <div className="mr-8">
             <button
               onClick={onWriteClick}
-              className={[
-                'rounded-full px-5 py-2.5 font-medium shadow-sm transition',
-                'border-[var(--color-secondary-royal)] bg-[var(--color-secondary-royal)] text-white',
-                'hover:border-[var(--color-secondary-navy)] hover:bg-[var(--color-secondary-navy)]',
-                'focus:ring-2 focus:ring-[var(--color-secondary-royal)] focus:ring-offset-2 focus:outline-none',
-              ].join(' ')}
+              className="rounded-full bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
             >
               글쓰기
             </button>
@@ -83,20 +76,40 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
         </div>
       )}
 
-      {/* 테이블 */}
-      <Table className="w-full table-auto text-center text-sm sm:text-base">
-        {variant === 'FREE' && (
-          <TableHeader>
-            <TableRow>
-              <TableHead>No</TableHead>
-              <TableHead>제목</TableHead>
-              <TableHead>작성자</TableHead>
-              <TableHead>조회수</TableHead>
-              <TableHead>좋아요</TableHead>
-              <TableHead>작성일</TableHead>
-            </TableRow>
-          </TableHeader>
-        )}
+      <Table className="w-full table-auto text-sm sm:text-base">
+        <TableHeader>
+          <TableRow>
+            {variant === 'FREE' && (
+              <>
+                <TableHead className="text-center">No</TableHead>
+                <TableHead className="text-center">제목</TableHead>
+                <TableHead className="text-center">작성자</TableHead>
+                <TableHead className="hidden text-center sm:table-cell">
+                  <div className="flex items-center justify-center gap-1">
+                    <Eye className="h-4 w-4 text-gray-500" />
+                    <span>조회수</span>
+                  </div>
+                </TableHead>
+                <TableHead className="hidden text-center sm:table-cell">
+                  <div className="flex items-center justify-center gap-1">
+                    <Heart className="h-4 w-4 text-pink-500" />
+                    <span>좋아요</span>
+                  </div>
+                </TableHead>
+                <TableHead className="hidden text-center sm:table-cell">작성일</TableHead>
+              </>
+            )}
+
+            {variant === 'NOTICE' && (
+              <>
+                <TableHead className="hidden text-center sm:table-cell">No</TableHead>
+                <TableHead className="hidden text-center sm:table-cell">제목</TableHead>
+                <TableHead className="hidden text-center sm:table-cell">작성자</TableHead>
+                <TableHead className="hidden text-center sm:table-cell">작성일</TableHead>
+              </>
+            )}
+          </TableRow>
+        </TableHeader>
 
         <TableBody>
           {items.map((item, idx) => {
@@ -104,17 +117,10 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
             const href = `/board/${item.id}?category=${variant}`
 
             return (
-              <TableRow
-                key={item.id}
-                className="hover:bg-muted/60 cursor-pointer"
-                onClick={() => router.push(href)}
-                role="link"
-                tabIndex={0}
-              >
-                <TableCell>{no}</TableCell>
-
+              <TableRow key={item.id} className="cursor-pointer hover:bg-gray-100" onClick={() => router.push(href)}>
+                <TableCell className="text-center">{no}</TableCell>
                 <TableCell className="max-w-[320px] truncate text-center whitespace-nowrap">
-                  <Link href={href} className="inline-block hover:underline">
+                  <Link href={href} className="hover:underline">
                     {item.title}
                   </Link>
                   {variant === 'FREE' && item.reply_count !== undefined && (
@@ -126,24 +132,33 @@ export function BoardTable({ items, page, pageSize, variant, sort, onSortChange,
 
                 {variant === 'FREE' && (
                   <>
-                    <TableCell className="text-right">{item.view_count}</TableCell>
-                    <TableCell className="text-right">{item.like_count}</TableCell>
+                    <TableCell className="hidden text-center sm:table-cell">
+                      <div className="inline-flex items-center justify-center gap-1 text-gray-600">
+                        <Eye className="h-4 w-4 text-gray-500" />
+                        <span>{item.view_count}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden text-center sm:table-cell">
+                      <div className="inline-flex items-center justify-center gap-1 text-pink-600">
+                        <Heart className="h-4 w-4" />
+                        <span>{item.like_count}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden text-center text-gray-500 sm:table-cell">
+                      {formatDate(item.created_at)}
+                    </TableCell>
                   </>
                 )}
 
-                <TableCell className="text-muted-foreground hidden text-right sm:table-cell">
-                  {formatDate(item.created_at)}
-                </TableCell>
+                {variant === 'NOTICE' && (
+                  <TableCell className="hidden text-center text-gray-500 sm:table-cell">
+                    {formatDate(item.created_at)}
+                  </TableCell>
+                )}
               </TableRow>
             )
           })}
         </TableBody>
-
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={variant === 'FREE' ? 6 : 4} />
-          </TableRow>
-        </TableFooter>
       </Table>
     </section>
   )
