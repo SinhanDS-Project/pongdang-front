@@ -127,7 +127,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuItem>
             </Collapsible>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild tooltip={'단체게임'}>
                 <Link href="/play/rooms">
                   <Swords />
                   <span>단체게임</span>
