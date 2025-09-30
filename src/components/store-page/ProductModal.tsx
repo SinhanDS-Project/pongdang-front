@@ -35,14 +35,14 @@ export default function ProductModal({ product, onClose, onPay, paying = false }
 
   return (
     <Dialog open onOpenChange={(open) => (!open ? onClose() : void 0)}>
-      <DialogContent className={cn("max-w-sm gap-0 overflow-hidden p-0 flex flex-col", isMobileLandscape && "h-full max-h-[90dvh]")}>
+      <DialogContent className={cn("max-w-sm gap-0 overflow-hidden p-0 flex flex-col", isMobileLandscape && "h-full max-h-[90dvh]")} style={{ height: "80vh", maxHeight: "90vh" }}>
         {/* 헤더 */}
         <DialogHeader className="shrink-0 p-4">
           <DialogTitle className="text-xl">{product.name}</DialogTitle>
           <DialogDescription className="sr-only">상품 상세 정보 및 결제</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 px-4 pb-4">
+        <ScrollArea className="flex-1 min-h-0 px-4 pb-4 overflow-auto">
           {/* 이미지 */}
           <div className="relative mb-4 aspect-[2/1]">
             <Image
