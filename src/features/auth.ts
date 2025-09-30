@@ -181,7 +181,6 @@ export async function changeProfile({ file, userRequest }: { file?: File; userRe
   if (file) {
     fd.append('profile_image', file, file.name)
   }
-
   const { data } = await api.put('/api/user/update', fd)
 
   return data

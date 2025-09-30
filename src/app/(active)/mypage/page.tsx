@@ -97,18 +97,19 @@ export default function MyPageContent() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    console.log('[fileChange]', file) // ✅ 선택 파일 확인
     if (!file) return
-
     if (file.size > 5 * 1024 * 1024) return
 
     try {
       setUploading(true)
-
-      await changeProfile({ file: file })
-
+      console.log('[changeProfile] call start') // ✅ 호출 여부
+      await changeProfile({ file, userRequest: {} })
+      console.log('[changeProfile] success') // ✅ 성공 여부
       await mutate()
-    } catch (e: any) {
-      alert(e?.response?.data?.message ?? '저장 중 오류가 발생했습니다.')
+    } catch (err) {
+      console.error('[changeProfile] error', err) // ✅ 네트워크/서버 에러
+      alert((err as any)?.response?.data?.message ?? '저장 중 오류가 발생했습니다.')
     } finally {
       setUploading(false)
     }
@@ -184,6 +185,7 @@ export default function MyPageContent() {
             alt={`${user?.user_name} 프로필 이미지`}
             fill
             className="cursor-pointer object-cover"
+            onClick={handleClick}
           />
 
           {/* 업로드 중 오버레이 */}

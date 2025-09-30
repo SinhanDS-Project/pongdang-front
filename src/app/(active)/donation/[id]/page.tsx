@@ -240,7 +240,7 @@ export default function DonationDetailPage() {
             >
               <h3 className="text-lg font-bold">기부퐁</h3>
               <p className="text-sm text-gray-600">특별 활동으로 적립된 퐁</p>
-              <p className="mt-2 font-semibold text-rose-300">{user ? fmt(user.dona_balance) : 0} 보유</p>
+              <p className="mt-2 font-semibold text-rose-400">{user ? fmt(user.dona_balance) : 0} 보유</p>
             </div>
           </div>
 
