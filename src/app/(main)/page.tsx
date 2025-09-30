@@ -75,7 +75,7 @@ export default async function MainHome() {
           ] as string[][]
         }
         ctaHref="/report"
-        ctaLabel="나의 금융 소비에 맞는 AI 추천 받으러 가기"
+        ctaLabel="나의 금융 소비에 맞는 AI 금융 리포트 생성하기"
       />
       <StoreSection items={storeItems} />
 
