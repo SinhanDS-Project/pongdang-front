@@ -1,3 +1,4 @@
+export { BankruptcyDialog } from './BankruptcyDialog'
 export { DiceCard } from './DiceCard'
 export { GameBoard } from './GameBoard'
 export { InfoDialog } from './InfoDialog'

@@ -31,16 +31,16 @@ export function TollDialog({
     <AlertDialog open={open}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-center text-2xl">통행료 지불</AlertDialogTitle>
+          <AlertDialogTitle className="text-center text-base md:text-2xl">통행료 지불</AlertDialogTitle>
         </AlertDialogHeader>
         <div className="flex flex-col items-center gap-y-4 font-semibold">
-          <div className="text-base">
+          <div className="text-sm md:text-base">
             <span className={cn(land.color ? colorMap[land.color] : 'text-card-foreground')}>"{land.name}"</span>의
             통행료를 <span className="text-red-500">{land.toll}G</span> 지불해야합니다.
           </div>
           {insufficient ? (
             <>
-              <div className="mb-4 text-sm">
+              <div className="mb-4 text-xs md:text-sm">
                 <span className={cn(colorMap[myInfo.turtle_id])}>{myInfo.nickname}</span>
                 <span className="text-red-700">님의 잔액이 {land.toll - myInfo.balance}G 부족합니다</span>
               </div>
@@ -55,10 +55,10 @@ export function TollDialog({
             <>
               <div className="mb-4 text-sm">
                 통행료를 지불하고 <span className={cn(colorMap[myInfo.turtle_id])}>{myInfo.nickname}</span>님의 잔액이
-                <span className="text-game-normal">{myInfo.balance - land.toll}G</span>남습니다
+                <span className="text-game-normal"> {myInfo.balance - land.toll}G</span>남습니다
               </div>
               <Button
-                className="bg-secondary-sky hover:bg-secondary-royal w-full py-2.5 text-base font-semibold text-white"
+                className="bg-secondary-sky hover:bg-secondary-royal w-full rounded py-2.5 text-base font-semibold text-white md:rounded-lg"
                 onClick={onConfirmPay}
               >
                 지불하기

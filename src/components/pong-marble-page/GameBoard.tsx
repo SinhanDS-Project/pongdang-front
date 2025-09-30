@@ -112,7 +112,7 @@ export function GameBoard({ players, lands, vault, message }: GameBoardProps) {
       <div
         key={index}
         className={cn(
-          'relative flex aspect-square min-h-[60px] flex-col items-center justify-center rounded-lg border-2 p-1 text-xs font-medium transition-all duration-300',
+          'relative flex aspect-square flex-col items-center justify-center rounded border-2 p-1 text-xs font-medium transition-all duration-300 md:rounded-lg',
           getSquareColor(index),
         )}
       >
@@ -150,16 +150,16 @@ export function GameBoard({ players, lands, vault, message }: GameBoardProps) {
         })}
 
         {/* 중앙 영역 */}
-        <div className="col-start-2 col-end-7 row-start-2 row-end-7 flex flex-col items-center justify-center rounded-lg border-2 border-slate-400 bg-slate-200 p-4">
-          <div className="flex flex-col items-center justify-center gap-y-4">
-            <div className="mb-2 text-xl font-bold text-indigo-500">
+        <div className="col-start-2 col-end-7 row-start-2 row-end-7 flex flex-col items-center justify-center rounded border border-slate-400 bg-slate-200 md:rounded-lg md:border-2 md:p-4">
+          <div className="flex flex-col items-center justify-center gap-y-2 md:gap-y-4">
+            <div className="mb-2 text-xs font-bold text-indigo-500 md:text-xl">
               "{message || '퐁마블 게임에 오신 것을 환영합니다!!'}"
             </div>
-            <div className="flex flex-col items-center gap-4 rounded-lg border-2 border-sky-500 bg-sky-100 p-3">
-              <div className="text-base font-bold text-blue-700">금고에 모인 금액</div>
-              <div className="flex gap-x-4 text-xl font-bold text-yellow-900">
+            <div className="flex flex-col items-center gap-1 rounded border border-sky-500 bg-sky-100 p-1 md:gap-4 md:rounded-lg md:border-2 md:p-3">
+              <div className="text-[10px] font-bold text-blue-700 md:text-base">금고에 모인 금액</div>
+              <div className="flex items-center gap-x-4 text-base font-bold text-yellow-900 md:text-xl">
                 <CoinsIcon />
-                <div className="w-20 items-center text-center">{vault}</div>
+                <div className="w-10 items-center text-center md:w-20">{vault}</div>
                 <div>G</div>
               </div>
             </div>

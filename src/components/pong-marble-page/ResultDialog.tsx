@@ -98,10 +98,10 @@ export function ResultDialog({ open, players, roomId, meUserId, initialSeconds =
 
   return (
     <AlertDialog open={open}>
-      <AlertDialogContent className={cn('rounded-xl text-white shadow-2xl sm:max-w-md', bgClass)}>
+      <AlertDialogContent className={cn('rounded p-1 text-white shadow-2xl sm:max-w-md md:rounded-xl md:p-6', bgClass)}>
         <AlertDialogHeader className="gap-y-4">
-          <div className="text-end">{displaySec}초 후 대기방으로 이동합니다</div>
-          <AlertDialogTitle className="text-center text-7xl font-extrabold">
+          <div className="text-end text-[10px] md:text-sm">{displaySec}초 후 대기방으로 이동합니다</div>
+          <AlertDialogTitle className="text-center text-xl font-extrabold md:text-7xl">
             {myRank ? `${myRank}등` : '결과'}
           </AlertDialogTitle>
         </AlertDialogHeader>
@@ -114,13 +114,15 @@ export function ResultDialog({ open, players, roomId, meUserId, initialSeconds =
                 <div key={p.user_id} className="flex items-center justify-between px-4">
                   <div className="flex items-center gap-2">
                     {winnerRow ? <TrophyIcon /> : <PlayerIcon />}
-                    <span className="text-lg">{p.rank ?? '-'}등</span>
+                    <span className="text-sm md:text-lg">{p.rank ?? '-'}등</span>
                   </div>
                   <div className="truncate">{p.nickname}</div>
                   {(p.reward ?? 0) > 0 ? (
-                    <div className="text-secondary-navy w-12 text-right text-base font-bold">{p.reward}퐁</div>
+                    <div className="text-secondary-navy w-12 text-right text-xs font-bold md:text-base">
+                      {p.reward}퐁
+                    </div>
                   ) : (
-                    <div className="w-12" />
+                    <div className="w-6 md:w-12" />
                   )}
                 </div>
               )

@@ -62,10 +62,10 @@ export function QuizDialog({ open, quiz, turnOrder, meOrder, onAnswer, onClose }
       <AlertDialog open={open} onOpenChange={(o) => (!o ? onClose() : void 0)}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-center text-2xl">금융 퀴즈</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-base md:text-2xl">금융 퀴즈</AlertDialogTitle>
           </AlertDialogHeader>
           <div className="flex flex-col items-center gap-y-8 py-6 font-semibold">
-            <div className="text-muted-foreground text-base">퀴즈 데이터를 불러오는 중입니다</div>
+            <div className="text-muted-foreground text-sm md:text-base">퀴즈 데이터를 불러오는 중입니다</div>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -95,18 +95,18 @@ export function QuizDialog({ open, quiz, turnOrder, meOrder, onAnswer, onClose }
     <AlertDialog open={open} onOpenChange={(o) => (!o ? onClose() : void 0)}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-center text-2xl">금융 퀴즈</AlertDialogTitle>
+          <AlertDialogTitle className="text-center text-base md:text-2xl">금융 퀴즈</AlertDialogTitle>
         </AlertDialogHeader>
 
-        <div className="flex flex-col gap-y-4 font-semibold">
+        <div className="flex flex-col gap-y-1 font-semibold md:gap-y-4">
           {/* 상단 안내 (누가 푸는지) */}
           {turnOrder != null && (
-            <div className="text-muted-foreground text-center text-xs">
+            <div className="text-muted-foreground text-center text-[10px] md:text-xs">
               {isMine ? '당신의 문제입니다. 정답을 선택하세요!' : `현재 ${turnOrder}번 플레이어가 문제를 풉니다.`}
             </div>
           )}
 
-          <div className="w-full text-base">Q. {data.question}</div>
+          <div className="w-full text-sm md:text-base">Q. {data.question}</div>
 
           <RadioGroup
             value={selected !== null ? String(selected) : undefined}
@@ -138,7 +138,7 @@ export function QuizDialog({ open, quiz, turnOrder, meOrder, onAnswer, onClose }
               return (
                 <div key={idx} className={cn(base, preSubmitClass || postSubmitClass || spectatorClass)}>
                   <RadioGroupItem id={`q-${idx}`} value={String(idx)} disabled={!isMine || submitted} />
-                  <Label htmlFor={`q-${idx}`} className="flex-1 cursor-pointer text-sm">
+                  <Label htmlFor={`q-${idx}`} className="flex-1 cursor-pointer text-xs md:text-sm">
                     {idx + 1}. {c}
                   </Label>
                 </div>
@@ -153,7 +153,7 @@ export function QuizDialog({ open, quiz, turnOrder, meOrder, onAnswer, onClose }
           {(submitted || !isMine) && data.explanation && (
             <div
               className={cn(
-                'mx-2 mt-1 rounded p-4 text-xs',
+                'mx-2 mt-1 rounded p-4 text-[10px] md:text-xs',
                 (!isMine && 'bg-emerald-50 text-emerald-900') ||
                   (isCorrect ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'),
               )}

@@ -23,17 +23,19 @@ export function PlayerCard({ player, isTurn }: { player?: Player | null; isTurn:
 
   return (
     <Card
-      className={cn('border-2 shadow-md transition-all', {
+      className={cn('md:py-6" gap-1 rounded border py-1 shadow-md transition-all md:gap-6 md:rounded-lg md:border-2', {
         'border-secondary-sky bg-secondary-light/30 ring-secondary-sky/10': isTurn === player.turn_order,
         'border-red-200 bg-red-50 opacity-50 ring-red-300': !player.active,
       })}
     >
-      <CardHeader className="flex items-center gap-x-4 text-xl font-bold">
-        <Icon />
-        <span>{player.nickname}</span>
+      <CardHeader className="relative flex items-center px-0 md:block md:gap-x-4 md:px-6 md:text-xl">
+        <div className="absolute -translate-1/3 md:block">
+          <Icon />
+        </div>
+        <span className="w-full text-center text-xs font-bold md:text-start md:text-xl">{player.nickname}</span>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-end gap-x-4 text-lg font-extrabold">
+      <CardContent className="grow px-2 md:px-6">
+        <div className="flex items-center justify-between gap-x-2 text-base font-extrabold md:justify-end md:gap-x-4 md:text-lg">
           <CoinsIcon />
           <div className="text-secondary-royal">{player.balance}</div>
           <div>G</div>
@@ -45,9 +47,9 @@ export function PlayerCard({ player, isTurn }: { player?: Player | null; isTurn:
 
 export function EmptySlotCard() {
   return (
-    <Card className="border-border bg-card rounded-lg border-2">
-      <CardContent className="text-muted-foreground flex h-full items-center justify-center text-sm">
-        <X className="h-10 w-10" />
+    <Card className="border-border bg-card rounded border py-2 md:rounded-lg md:border-2 md:py-6">
+      <CardContent className="text-muted-foreground flex h-full items-center justify-center">
+        <X className="md:h-10 md:w-10" />
       </CardContent>
     </Card>
   )
