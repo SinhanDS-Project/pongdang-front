@@ -221,40 +221,27 @@ export default function DonationDetailPage() {
 
           {/* 잔액 카드 */}
           <div className="my-4 grid grid-cols-2 gap-4">
-            <Card
-              className={cn(
-                'cursor-pointer border py-2 shadow transition',
-                walletType === 'PONG' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50',
-              )}
+            <div
               onClick={() => setWalletType('PONG')}
+              className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
+                walletType === 'PONG' ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'
+              }`}
             >
-              <CardContent className="text-accent-foreground px-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <div className="text-base font-extrabold">일반퐁</div>
-                    <div className="text-xs text-gray-600">일반 활동으로 적립된 퐁</div>
-                  </div>
-                  <div className="text-base font-bold text-sky-600">{user ? fmt(user.pong_balance) : 0} 보유</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card
-              className={cn(
-                'cursor-pointer border py-2 shadow transition',
-                walletType === 'DONA' ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:bg-gray-50',
-              )}
+              <h3 className="text-lg font-bold">일반퐁</h3>
+              <p className="text-sm text-gray-600">일반 활동으로 적립된 퐁</p>
+              <p className="mt-2 font-semibold text-sky-600">{user ? fmt(user.pong_balance) : 0} 보유</p>
+            </div>
+
+            <div
               onClick={() => setWalletType('DONA')}
+              className={`cursor-pointer rounded-lg border p-4 text-center shadow-sm transition ${
+                walletType === 'DONA' ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:bg-gray-50'
+              }`}
             >
-              <CardContent className="text-accent-foreground px-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <div className="text-base font-extrabold">기부퐁</div>
-                    <div className="text-xs text-gray-600">특별 활동으로 적립된 퐁</div>
-                  </div>
-                  <div className="text-base font-bold text-rose-500">{user ? fmt(user.dona_balance) : 0} 보유</div>
-                </div>
-              </CardContent>
-            </Card>
+              <h3 className="text-lg font-bold">기부퐁</h3>
+              <p className="text-sm text-gray-600">특별 활동으로 적립된 퐁</p>
+              <p className="mt-2 font-semibold text-rose-300">{user ? fmt(user.dona_balance) : 0} 보유</p>
+            </div>
           </div>
 
           {/* 금액 입력 */}
