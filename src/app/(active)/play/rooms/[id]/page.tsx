@@ -21,13 +21,24 @@ import { HostIcon, PlayerIcon } from '@/icons'
 
 import { api } from '@/lib/net/client-axios'
 import { cn } from '@/lib/utils'
-import { tokenStore } from '@/stores/token-store' // ✅ 통일
+
+import { tokenStore } from '@/stores/token-store'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
+import GameView from '@/layout/game-view'
+
 import { useMe } from '@/hooks/use-me'
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Client } from '@stomp/stompjs'
 
 type Player = {
@@ -325,122 +336,157 @@ export default function GameRoomPage() {
 
   if (loading || status === 'loading') return <div className="container mx-auto p-6">불러오는 중…</div>
   if (error || !room)
-    return <div className="container mx-auto p-6 text-red-600">{error ?? '방을 찾을 수 없습니다.'}</div>
+    return (
+      <AlertDialog
+        open={!!error}
+        // 사용자가 ESC/바깥 클릭으로 닫아도, 상태는 방향에 의해 결정되므로 무시
+        onOpenChange={() => {
+          /* orientation으로만 제어 */
+        }}
+      >
+        <AlertDialogContent className="max-w-sm sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>방을 찾을 수 없습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              해당 방을 찾을 수 없습니다
+              <br />
+              게임방 리스트에서 다시 시도해주세요
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Button className="bg-secondary-royal hover:bg-secondary-sky" onClick={() => router.push('/play/rooms')}>
+            게임방 리스트로 이동
+          </Button>
+        </AlertDialogContent>
+      </AlertDialog>
+    )
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
-        <div className="flex items-center gap-2">
+    <GameView>
+      <div className="p-4 md:container md:mx-auto md:p-6 lg:p-8">
+        <div className="mb-6 flex items-center justify-between text-xl font-extrabold md:text-3xl">
           <div className="text-foreground/70">{room.title}</div>
+          <Button onClick={() => router.push('/play/rooms')} className="bg-secondary-royal hover:bg-secondary-sky">
+            나가기
+          </Button>
         </div>
-        <Button onClick={() => router.push('/play/rooms')} className="bg-secondary-royal hover:bg-secondary-sky">
-          나가기
-        </Button>
-      </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="col-span-3 flex flex-col justify-between gap-6">
-          {/* 플레이어 슬롯 */}
-          <div className="grid grid-cols-4 gap-3">
-            {slots.map((slot, idx) => {
-              if (slot.type === 'locked') {
-                return (
-                  <Card key={`locked-${idx}`} className="bg-muted/50 aspect-square opacity-60">
-                    <CardContent className="flex h-full items-center justify-center p-0">
-                      <div className="text-muted-foreground text-xs">사용 불가</div>
-                    </CardContent>
-                  </Card>
-                )
-              }
-              if (slot.type === 'empty') {
-                return (
-                  <Card key={`empty-${idx}`} className="bg-muted/60 aspect-square">
-                    <CardContent className="text-muted-foreground flex h-full items-center justify-center text-sm">
-                      <X className="h-10 w-10" />
-                    </CardContent>
-                  </Card>
-                )
-              }
-              if (slot.type === 'player')
-                return <PlayerTile key={`player-${idx}`} player={slot.player} hostId={hostId} />
-            })}
-          </div>
-
-          {/* 채팅/알림 영역 */}
-          <Card className="relative h-36 gap-0 py-2">
-            <CardContent
-              className="mb-9 flex max-h-20 grow items-center justify-center overflow-y-scroll text-sm"
-              ref={chatBoxRef}
-            >
-              {messages.length === 0 ? (
-                <div className="text-muted-foreground flex h-full items-center justify-center">채팅/알림 영역</div>
-              ) : (
-                <div className="item flex w-full flex-col space-y-2">
-                  {messages.map((m, idx) =>
-                    m.system ? (
-                      <div key={idx} className="text-muted-foreground text-center text-xs">
-                        {m.message}
-                      </div>
-                    ) : (
-                      <div key={idx} className="flex items-center gap-1">
-                        <span className="font-bold">{m.sender === user?.nickname ? '나' : `#${m.sender}`}</span>:
-                        <span className="break-words">{m.message}</span>
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
-            </CardContent>
-            <div className="absolute bottom-2 flex w-full gap-2 px-2">
-              <Input
-                placeholder="메시지를 입력하세요"
-                value={chatMsg}
-                onChange={(e) => setChatMsg(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') sendChat()
-                }}
-              />
-              <Button className="bg-secondary-royal hover:bg-secondary-navy" onClick={sendChat}>
-                전송
-              </Button>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="col-span-3 flex flex-col justify-between gap-6">
+            {/* 플레이어 슬롯 */}
+            <div className="grid grid-cols-4 gap-3">
+              {slots.map((slot, idx) => {
+                if (slot.type === 'locked') {
+                  return (
+                    <Card key={`locked-${idx}`} className="bg-muted/50 aspect-square opacity-60">
+                      <CardContent className="flex h-full items-center justify-center p-0">
+                        <div className="text-muted-foreground text-xs">사용 불가</div>
+                      </CardContent>
+                    </Card>
+                  )
+                }
+                if (slot.type === 'empty') {
+                  return (
+                    <Card key={`empty-${idx}`} className="bg-muted/60 aspect-square">
+                      <CardContent className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                        <X className="h-10 w-10" />
+                      </CardContent>
+                    </Card>
+                  )
+                }
+                if (slot.type === 'player')
+                  return <PlayerTile key={`player-${idx}`} player={slot.player} hostId={hostId} />
+              })}
             </div>
-          </Card>
-        </div>
 
-        <div className="col-span-1 flex flex-col justify-between">
-          <TurtleSelectGrid onSelect={chooseTurtle} taken={takenByOthers} myChoice={myChoice} level={room.level} />
-          {/* 시작 / 준비 버튼 */}
-          <div className="mt-8">
-            {isHostMe ? (
-              <Button
-                className="bg-secondary-royal hover:bg-secondary-navy h-14 w-full text-lg font-extrabold"
-                disabled={!canStart || me?.turtle_id === 'default'}
-                onClick={startGame}
-                aria-disabled={!isHostMe}
-                title={!isHostMe ? '방장만 시작할 수 있습니다' : undefined}
+            {/* 채팅/알림 영역 */}
+            <Card className="relative h-36 gap-0 py-2">
+              <CardContent
+                className="mb-9 flex max-h-20 grow items-center justify-center overflow-y-scroll text-sm"
+                ref={chatBoxRef}
               >
-                게임시작
-              </Button>
-            ) : (
-              <Button
-                onClick={toggleReady}
-                className={cn(
-                  'h-14 w-full text-lg font-extrabold',
-                  me?.ready ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-secondary-royal hover:bg-secondary-navy',
+                {messages.length === 0 ? (
+                  <div className="text-muted-foreground flex h-full items-center justify-center">채팅/알림 영역</div>
+                ) : (
+                  <div className="item flex w-full flex-col space-y-2">
+                    {messages.map((m, idx) =>
+                      m.system ? (
+                        <div key={idx} className="text-muted-foreground text-center text-xs">
+                          {m.message}
+                        </div>
+                      ) : (
+                        <div key={idx} className="flex items-center gap-1">
+                          <span className="font-bold">{m.sender === user?.nickname ? '나' : `#${m.sender}`}</span>:
+                          <span className="break-words">{m.message}</span>
+                        </div>
+                      ),
+                    )}
+                  </div>
                 )}
-                disabled={me?.turtle_id === 'default'}
-              >
-                {me?.ready ? '준비해제' : '준비하기'}
-              </Button>
-            )}
+              </CardContent>
+              <div className="absolute bottom-2 flex w-full gap-2 px-2">
+                <Input
+                  placeholder="메시지를 입력하세요"
+                  value={chatMsg}
+                  onChange={(e) => setChatMsg(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (e.nativeEvent.isComposing) {
+                        e.currentTarget.addEventListener(
+                          'compositionend',
+                          () => {
+                            sendChat()
+                          },
+                          { once: true }, // 한 번만 실행
+                        )
+                      } else {
+                        e.preventDefault()
+                        sendChat()
+                      }
+                    }
+                  }}
+                />
+                <Button className="bg-secondary-royal hover:bg-secondary-navy" onClick={sendChat}>
+                  전송
+                </Button>
+              </div>
+            </Card>
+          </div>
 
-            <p className="text-muted-foreground mt-2 text-xs">
-              {isHostMe ? '모든 인원이 준비되면 시작할 수 있어요.' : '방장만 게임을 시작할 수 있습니다.'}
-            </p>
+          <div className="col-span-1 flex flex-col justify-between">
+            <TurtleSelectGrid onSelect={chooseTurtle} taken={takenByOthers} myChoice={myChoice} level={room.level} />
+            {/* 시작 / 준비 버튼 */}
+            <div className="mt-8">
+              {isHostMe ? (
+                <Button
+                  className="bg-secondary-royal hover:bg-secondary-navy h-14 w-full text-lg font-extrabold"
+                  disabled={!canStart || me?.turtle_id === 'default'}
+                  onClick={startGame}
+                  aria-disabled={!isHostMe}
+                  title={!isHostMe ? '방장만 시작할 수 있습니다' : undefined}
+                >
+                  게임시작
+                </Button>
+              ) : (
+                <Button
+                  onClick={toggleReady}
+                  className={cn(
+                    'h-14 w-full text-lg font-extrabold',
+                    me?.ready ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-secondary-royal hover:bg-secondary-navy',
+                  )}
+                  disabled={me?.turtle_id === 'default'}
+                >
+                  {me?.ready ? '준비해제' : '준비하기'}
+                </Button>
+              )}
+
+              <p className="text-muted-foreground mt-2 text-xs">
+                {isHostMe ? '모든 인원이 준비되면 시작할 수 있어요.' : '방장만 게임을 시작할 수 있습니다.'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </GameView>
   )
 }
 

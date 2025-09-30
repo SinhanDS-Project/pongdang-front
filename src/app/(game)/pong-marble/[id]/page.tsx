@@ -1,14 +1,9 @@
 'use client'
-import { useParams } from 'next/navigation'
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
-
-import { useMarbleSocket } from '@/lib/socket/useMarbleSocket'
-
-import { useMe } from '@/hooks/use-me'
 
 import { Game, Land, Player, Quiz, RoomState } from '@/types/pongMarble'
 
 import {
+  BankruptcyDialog,
   DiceCard,
   GameBoard,
   InfoDialog,
@@ -18,10 +13,21 @@ import {
   ResultDialog,
   TollDialog,
 } from '@/components/pong-marble-page'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-
+import { useMe } from '@/hooks/use-me'
 import { api } from '@/lib/net/client-axios'
+import { useMarbleSocket } from '@/lib/socket/useMarbleSocket'
 import { Bell } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
 type Room = {
   title: string
@@ -245,6 +251,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export default function PongMarblePage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
 
   const { user, status } = useMe()
 
@@ -260,6 +267,7 @@ export default function PongMarblePage() {
   const [purchaseModal, setPurchaseModal] = useState<null | { land_id: number; price: number }>(null)
   const [tollModal, setTollModal] = useState<null | { land: Land }>(null)
   const [infoModal, setInfoModal] = useState<null | { title: string; message: string }>(null)
+  const [bankruptcyModal, setBankruptcyModal] = useState<null | { title: string; message: string }>(null)
   const [gameEnded, setGameEnded] = useState<boolean>(false)
 
   const [animPositions, setAnimPositions] = useState<Record<number, number> | null>(null)
@@ -544,11 +552,23 @@ export default function PongMarblePage() {
       }
       if (land_id === 15) {
         tax(15)
+
+        if (my && land.price > my.balance) {
+          setBankruptcyModal({ title: '저금', message: '저금 칸 도착! 보유하신 금액이 부족하여 파산합니다' })
+          return
+        }
+
         setInfoModal({ title: '저금', message: '저금 칸 도착! 5G 금고에 저금했습니다' })
         return
       }
       if (land_id === 22) {
         tax(22)
+
+        if (my && land.price > my.balance) {
+          setBankruptcyModal({ title: '세금', message: '세금 칸 도착! 보유하신 금액이 부족하여 파산합니다' })
+          return
+        }
+
         setInfoModal({ title: '세금', message: '세금 칸 도착! 세금 10G 납부했습니다' })
         return
       }
@@ -580,13 +600,35 @@ export default function PongMarblePage() {
 
   if (loading || status === 'loading') return <div className="container mx-auto p-6">불러오는 중…</div>
   if (error || !room || !user)
-    return <div className="container mx-auto p-6 text-red-600">{error ?? '게임을 찾을 수 없습니다.'}</div>
+    return (
+      <AlertDialog
+        open={!!error}
+        // 사용자가 ESC/바깥 클릭으로 닫아도, 상태는 방향에 의해 결정되므로 무시
+        onOpenChange={() => {
+          /* orientation으로만 제어 */
+        }}
+      >
+        <AlertDialogContent className="max-w-sm sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>게임을 찾을 수 없습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              해당 게임을 찾을 수 없습니다
+              <br />
+              게임방 리스트으로 이동해주세요
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Button className="bg-secondary-royal hover:bg-secondary-sky" onClick={() => router.push('/play/rooms')}>
+            게임방 리스트로 이동
+          </Button>
+        </AlertDialogContent>
+      </AlertDialog>
+    )
 
   return (
     <div className="grid h-full w-full grid-cols-5 gap-4">
-      <div className="grid grid-rows-5 gap-4">
-        <Card className="flex items-center justify-center">
-          <CardContent className="flex justify-between gap-2 text-xl font-extrabold">
+      <div className="grid grid-rows-5 gap-1 md:gap-4">
+        <Card className="flex items-center justify-center rounded py-2 md:rounded-lg md:py-6">
+          <CardContent className="flex justify-between px-0 text-xs font-bold md:gap-2 md:px-2 md:text-xl md:font-extrabold">
             <div>Round</div>
             <div className="text-primary-shinhan w-8 text-center">{roomState.round}</div>
             <div>/ {roomState.max_round}</div>
@@ -594,17 +636,17 @@ export default function PongMarblePage() {
         </Card>
         <PlayerCard player={slots[0]!} isTurn={roomState.current_turn} />
         <PlayerCard player={slots[2]!} isTurn={roomState.current_turn} />
-        <Card className="row-span-2">
-          <CardHeader className="flex items-center gap-x-4 text-base font-bold">
-            <Bell />
-            <span>알림</span>
+        <Card className="row-span-2 gap-1 rounded py-2 md:gap-6 md:rounded-lg md:py-6">
+          <CardHeader className="flex items-center px-2 md:gap-x-4 md:px-6">
+            <Bell className="h-4 w-4 md:h-6 md:w-6" />
+            <span className="text-xs font-semibold md:text-base md:font-bold">알림</span>
           </CardHeader>
-          <CardContent className="grow">
+          <CardContent className="grow px-2 md:px-6">
             <div ref={scrollRef} className="max-h-40 grow space-y-2 overflow-y-auto">
               {state.messages.map((m, i) => (
                 <div
                   key={i}
-                  className="bg-muted text-muted-foreground border-secondary-sky rounded border-l-2 px-2 py-1 text-sm"
+                  className="bg-muted text-muted-foreground border-secondary-sky rounded border-l-2 px-1 py-0.5 text-[10px] md:px-2 md:py-1 md:text-sm"
                 >
                   {m}
                 </div>
@@ -631,9 +673,13 @@ export default function PongMarblePage() {
       </div>
 
       {/* 우측 */}
-      <div className="grid grid-rows-5 gap-4">
-        <Card className="flex items-center justify-center">
-          <CardContent className="text-xl font-extrabold">{room?.title || ''}</CardContent>
+      <div className="grid grid-rows-5 gap-1 md:gap-4">
+        <Card className="flex items-center justify-center rounded py-2 md:rounded-lg md:py-6">
+          <CardContent className="px-0 text-xs font-bold md:px-2 md:text-xl md:font-extrabold">
+            <span className="line-clamp-1 w-[5ch] overflow-hidden text-ellipsis whitespace-nowrap">
+              {room?.title || ''}
+            </span>
+          </CardContent>
         </Card>
         <PlayerCard player={slots[1]!} isTurn={roomState.current_turn} />
         <PlayerCard player={slots[3]!} isTurn={roomState.current_turn} />
@@ -684,6 +730,12 @@ export default function PongMarblePage() {
         open={!!infoModal}
         title={infoModal?.title ?? ''}
         message={infoModal?.message ?? ''}
+        onClose={() => setInfoModal(null)}
+      />
+      <BankruptcyDialog
+        open={!!bankruptcyModal}
+        title={bankruptcyModal?.title ?? ''}
+        message={bankruptcyModal?.message ?? ''}
         onClose={() => setInfoModal(null)}
       />
       <QuizDialog

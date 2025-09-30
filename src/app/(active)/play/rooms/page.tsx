@@ -13,6 +13,8 @@ import { EmptyRoomCard } from '@/components/play-page/room/EmptyRoomCard'
 import { GameRoomCard } from '@/components/play-page/room/GameRoomCard'
 import { PongPagination } from '@/components/PongPagination'
 import { Button } from '@/components/ui/button'
+import GameView from '@/layout/game-view'
+
 import { GameIcon } from '@/icons'
 
 type GameRoom = {
@@ -147,46 +149,48 @@ export default function PlayRoomsHome() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
-        <div className="flex items-center gap-2">
-          <div className="text-foreground/70">
-            다같이 퐁! <span className="text-secondary-royal">게임방</span>
+    <GameView>
+      <div className="container mx-auto p-4 md:p-6 lg:p-8">
+        <div className="mb-6 flex items-center justify-between text-3xl font-extrabold">
+          <div className="flex items-center gap-2">
+            <div className="text-foreground/70">
+              다같이 퐁! <span className="text-secondary-royal">게임방</span>
+            </div>
+            <GameIcon />
           </div>
-          <GameIcon />
+          <Button onClick={() => setCreateOpen(true)} className="bg-secondary-royal hover:bg-secondary-sky">
+            방만들기
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="bg-secondary-royal hover:bg-secondary-sky">
-          방만들기
-        </Button>
+
+        {/* 목록 상태 */}
+        {loading ? (
+          <div className="text-muted-foreground py-10 text-center">불러오는 중…</div>
+        ) : error ? (
+          <div className="py-10 text-center text-red-600">{error}</div>
+        ) : (
+          <>
+            {/* 2×3 고정 그리드 */}
+            <div className="grid grid-cols-1 grid-rows-6 gap-2 md:grid-cols-2 md:grid-rows-3">
+              {roomsWithPlaceholders.map((room, idx) =>
+                room ? (
+                  <GameRoomCard key={(room as GameRoom).id} {...(room as GameRoom)} />
+                ) : (
+                  <EmptyRoomCard key={`empty-${idx}`} />
+                ),
+              )}
+            </div>
+
+            {/* 페이지네이션 */}
+            <div className="mt-6 flex justify-center">
+              <PongPagination page={page} totalPages={totalPages} onChange={goPage} />
+            </div>
+          </>
+        )}
+
+        {/* 방 만들기 모달 */}
+        <CreateRoomDialog open={createOpen} onOpenChange={setCreateOpen} />
       </div>
-
-      {/* 목록 상태 */}
-      {loading ? (
-        <div className="text-muted-foreground py-10 text-center">불러오는 중…</div>
-      ) : error ? (
-        <div className="py-10 text-center text-red-600">{error}</div>
-      ) : (
-        <>
-          {/* 2×3 고정 그리드 */}
-          <div className="grid grid-cols-2 grid-rows-3 gap-2">
-            {roomsWithPlaceholders.map((room, idx) =>
-              room ? (
-                <GameRoomCard key={(room as GameRoom).id} {...(room as GameRoom)} />
-              ) : (
-                <EmptyRoomCard key={`empty-${idx}`} />
-              ),
-            )}
-          </div>
-
-          {/* 페이지네이션 */}
-          <div className="mt-6 flex justify-center">
-            <PongPagination page={page} totalPages={totalPages} onChange={goPage} />
-          </div>
-        </>
-      )}
-
-      {/* 방 만들기 모달 */}
-      <CreateRoomDialog open={createOpen} onOpenChange={setCreateOpen} />
-    </div>
+    </GameView>
   )
 }
