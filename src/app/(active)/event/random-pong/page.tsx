@@ -50,38 +50,10 @@ export default function RandomPongPage() {
     setMessage('💧 마음에 드는 물방울을 하나 골라보세요!')
   }
 
-  // 시작 버튼 → 참여 여부 체크
-  const handleStart = async (container: HTMLDivElement | null) => {
+  // 시작 버튼 → 버블 생성만
+  const handleStart = (container: HTMLDivElement | null) => {
     if (!container) return
-    try {
-      // 🎯 서버에 참여 여부 확인 (참여 안 했으면 200, 이미 했으면 409 반환된다고 가정)
-      await api.put('/api/wallet/add', {
-        amount: 0, // 0 포인트 적립으로 참여 여부만 체크
-        wallet_type: 'PONG',
-        event_type: 'BUBBLE',
-      })
-
-      // 참여 가능 → 버블 생성
-      generateBubbles(container)
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status
-        const errorCode = err.response?.data?.error
-
-        if (status === 409 && errorCode === 'ALREADY_BUBBLE_FINISHED') {
-          setMessage('⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.')
-          setBubbles([])
-          return
-        }
-        if (status === 401) {
-          setMessage('🔑 로그인 후 이용해주세요.')
-          return
-        }
-        setMessage(err.response?.data?.message ?? '❌ 이벤트 참여 확인 실패. 다시 시도해주세요.')
-      } else {
-        setMessage('알 수 없는 오류가 발생했습니다.')
-      }
-    }
+    generateBubbles(container)
   }
 
   // 버블 클릭 시 처리
@@ -100,6 +72,18 @@ export default function RandomPongPage() {
       if (bubble.amount > 0) setShowCelebration(true)
     } catch (err) {
       if (axios.isAxiosError(err)) {
+        const status = err.response?.status
+        const errorCode = err.response?.data?.error
+
+        if (status === 409 && errorCode === 'ALREADY_BUBBLE_FINISHED') {
+          setMessage('⚠️ 오늘 이미 퐁 터트리기 이벤트 참여가 완료되었습니다.')
+          setBubbles([])
+          return
+        }
+        if (status === 401) {
+          setMessage('🔑 로그인 후 이용해주세요.')
+          return
+        }
         setMessage(err.response?.data?.message ?? '적립에 실패했습니다. 잠시 후 다시 시도해주세요.')
       } else {
         setMessage('알 수 없는 오류가 발생했습니다.')
